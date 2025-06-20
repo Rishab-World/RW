@@ -1,0 +1,174 @@
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 215 28% 17%;
+    --card: 0 0% 100%;
+    --card-foreground: 215 28% 17%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 215 28% 17%;
+    --primary: 43 96% 56%;
+    --primary-foreground: 26 83% 14%;
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 215 28% 17%;
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+    --accent: 43 96% 56%;
+    --accent-foreground: 26 83% 14%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 43 23% 88%;
+    --input: 43 23% 88%;
+    --ring: 43 96% 56%;
+    --radius: 0.5rem;
+    --sidebar-background: 210 40% 98%;
+    --sidebar-foreground: 215 28% 17%;
+    --sidebar-primary: 43 96% 56%;
+    --sidebar-primary-foreground: 26 83% 14%;
+    --sidebar-accent: 43 96% 96%;
+    --sidebar-accent-foreground: 26 83% 14%;
+    --sidebar-border: 43 23% 88%;
+    --sidebar-ring: 43 96% 56%;
+  }
+
+  .dark {
+    --background: 215 28% 17%;
+    --foreground: 210 40% 98%;
+    --card: 215 28% 17%;
+    --card-foreground: 210 40% 98%;
+    --popover: 215 28% 17%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 43 96% 56%;
+    --primary-foreground: 26 83% 14%;
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 43 96% 56%;
+    --sidebar-background: 215 28% 17%;
+    --sidebar-foreground: 210 40% 98%;
+    --sidebar-primary: 43 96% 56%;
+    --sidebar-primary-foreground: 26 83% 14%;
+    --sidebar-accent: 217.2 32.6% 17.5%;
+    --sidebar-accent-foreground: 210 40% 98%;
+    --sidebar-border: 217.2 32.6% 17.5%;
+    --sidebar-ring: 43 96% 56%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-gradient-to-br from-slate-50 to-blue-50 text-foreground;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+  }
+}
+
+@layer components {
+  .status-badge {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+  }
+  .status-active {
+    @apply bg-emerald-100 text-emerald-800 border border-emerald-200;
+  }
+  .status-pending {
+    @apply bg-amber-100 text-amber-800 border border-amber-200;
+  }
+  .status-rejected {
+    @apply bg-red-100 text-red-800 border border-red-200;
+  }
+  .status-completed {
+    @apply bg-blue-100 text-blue-800 border border-blue-200;
+  }
+  .status-shortlisted {
+    @apply bg-purple-100 text-purple-800 border border-purple-200;
+  }
+  .status-selected {
+    @apply bg-green-100 text-green-800 border border-green-200;
+  }
+
+  /* Professional themed elements */
+  .professional-card {
+    @apply bg-white/70 backdrop-blur-sm border border-amber-200 shadow-lg hover:shadow-xl transition-all duration-300;
+    background-image: 
+      radial-gradient(circle at 25% 25%, rgba(251, 191, 36, 0.1) 0%, transparent 50%),
+      radial-gradient(circle at 75% 75%, rgba(59, 130, 246, 0.1) 0%, transparent 50%);
+  }
+
+  .professional-button {
+    @apply bg-gradient-to-r from-amber-500 to-yellow-600 hover:from-amber-600 hover:to-yellow-700 
+           text-white shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200;
+  }
+
+  .professional-input {
+    @apply border-amber-200 focus:border-blue-400 focus:ring-blue-400 bg-white/80 backdrop-blur-sm;
+  }
+
+  /* Global button theme override */
+  .btn-primary {
+    @apply bg-gradient-to-r from-amber-500 to-yellow-600 hover:from-amber-600 hover:to-yellow-700 
+           text-white border-amber-500 hover:border-amber-600 shadow-lg hover:shadow-xl 
+           transform hover:scale-105 transition-all duration-200;
+  }
+
+  .btn-secondary {
+    @apply bg-white border-amber-300 text-amber-700 hover:bg-amber-50 hover:border-amber-400 
+           shadow-md hover:shadow-lg transition-all duration-200;
+  }
+
+  .btn-outline {
+    @apply border-amber-400 text-amber-700 hover:bg-amber-50 hover:text-amber-800 
+           shadow-md hover:shadow-lg transition-all duration-200;
+  }
+
+  /* Professional animations */
+  @keyframes sparkle {
+    0%, 100% { opacity: 0; transform: scale(0) rotate(0deg); }
+    50% { opacity: 1; transform: scale(1) rotate(180deg); }
+  }
+
+  .sparkle {
+    animation: sparkle 2s ease-in-out infinite;
+  }
+
+  @keyframes float {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-5px); }
+  }
+
+  .professional-float {
+    animation: float 3s ease-in-out infinite;
+  }
+}
+
+/* Custom scrollbar with gold theme */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(226, 232, 240, 0.5);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(45deg, #f59e0b, #eab308);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(45deg, #d97706, #ca8a04);
+}
