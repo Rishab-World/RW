@@ -12,6 +12,7 @@ import { Users, Plus, Search, History, Edit, Eye } from 'lucide-react';
 import CandidateStatusHistory from './CandidateStatusHistory';
 import FileUpload from './FileUpload';
 import { supabase } from '@/lib/supabaseClient';
+import { formatCurrency } from '@/lib/utils';
 
 interface Candidate {
   id: string;
@@ -595,8 +596,8 @@ const CandidateManagement: React.FC<CandidateManagementProps> = ({
                   <TableCell className="border-r border-gray-200">{candidate.position}</TableCell>
                   <TableCell className="border-r border-gray-200">{toProperCase(candidate.source) || 'N/A'}</TableCell>
                   <TableCell className="border-r border-gray-200">{candidate.experience || 'N/A'}</TableCell>
-                  <TableCell className="border-r border-gray-200">₹{candidate.currentSalary?.toLocaleString() || 'N/A'}</TableCell>
-                  <TableCell className="border-r border-gray-200">₹{candidate.expectedSalary.toLocaleString()}</TableCell>
+                  <TableCell className="border-r border-gray-200">{formatCurrency(candidate.currentSalary) || 'N/A'}</TableCell>
+                  <TableCell className="border-r border-gray-200">{formatCurrency(candidate.expectedSalary)}</TableCell>
                   <TableCell className="border-r border-gray-200 capitalize">{candidate.noticePeriod || 'N/A'}</TableCell>
                   <TableCell className="border-r border-gray-200">
                     <span className={`status-badge ${

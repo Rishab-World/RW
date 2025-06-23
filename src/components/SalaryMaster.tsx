@@ -12,6 +12,7 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/lib/supabaseClient';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { formatCurrency } from '@/lib/utils';
 
 interface SalaryData {
   id: string;
@@ -119,14 +120,6 @@ const SalaryMaster: React.FC<SalaryMasterProps> = ({ isManagement = false }) => 
   const departmentTotalEmployees = filteredDepartments.reduce((sum, dept) => sum + dept.count, 0);
   const departmentCount = filteredDepartments.length;
   const avgDepartmentSalary = departmentCount ? departmentTotalSalary / departmentCount : 0;
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-IN', {
-      style: 'currency',
-      currency: 'INR',
-      maximumFractionDigits: 0
-    }).format(amount);
-  };
 
   const exportToExcel = () => {
     const exportData = salaryData.map(emp => ({

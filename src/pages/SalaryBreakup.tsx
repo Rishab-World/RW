@@ -6,6 +6,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Eye } from 'lucide-react';
 import { supabase } from '@/lib/supabaseClient';
+import { formatCurrency } from '@/lib/utils';
 
 const SalaryBreakup: React.FC = () => {
   const [employees, setEmployees] = useState<any[]>([]);
@@ -281,15 +282,15 @@ const SalaryBreakup: React.FC = () => {
                               .filter(Boolean);
                             const rest = selectedScale.components.filter((c: any) => !order.includes(c.key.toLowerCase()));
                             return [...ordered, ...rest].map((comp: any) => (
-                              <TableCell key={comp.key}>{typeof breakup.components[comp.key] === 'number' ? breakup.components[comp.key].toLocaleString(undefined, { maximumFractionDigits: 2 }) : '-'}</TableCell>
+                              <TableCell key={comp.key}>{typeof breakup.components[comp.key] === 'number' ? formatCurrency(breakup.components[comp.key]) : '-'}</TableCell>
                             ));
                           })()}
-                          <TableCell>{breakup.gross_salary?.toLocaleString(undefined, { maximumFractionDigits: 2 })}</TableCell>
-                          <TableCell>{breakup.deductions.PF?.toLocaleString(undefined, { maximumFractionDigits: 2 })}</TableCell>
-                          <TableCell>{breakup.deductions.PT?.toLocaleString(undefined, { maximumFractionDigits: 2 })}</TableCell>
-                          <TableCell>{breakup.net_pay?.toLocaleString(undefined, { maximumFractionDigits: 2 })}</TableCell>
-                          <TableCell>{breakup.employer_contribution_pf?.toLocaleString(undefined, { maximumFractionDigits: 2 })}</TableCell>
-                          <TableCell>{breakup.ctc?.toLocaleString(undefined, { maximumFractionDigits: 2 })}</TableCell>
+                          <TableCell>{formatCurrency(breakup.gross_salary)}</TableCell>
+                          <TableCell>{formatCurrency(breakup.deductions.PF)}</TableCell>
+                          <TableCell>{formatCurrency(breakup.deductions.PT)}</TableCell>
+                          <TableCell>{formatCurrency(breakup.net_pay)}</TableCell>
+                          <TableCell>{formatCurrency(breakup.employer_contribution_pf)}</TableCell>
+                          <TableCell>{formatCurrency(breakup.ctc)}</TableCell>
                         </TableRow>
                       </TableBody>
                     </Table>
@@ -335,23 +336,23 @@ const SalaryBreakup: React.FC = () => {
                       <TableCell className="border-r border-gray-200 whitespace-nowrap">{entry.name}</TableCell>
                       <TableCell className="border-r border-gray-200">{entry.designation}</TableCell>
                       <TableCell className="border-r border-gray-200">{entry.date_of_joining ? new Date(entry.date_of_joining).toLocaleDateString() : '-'}</TableCell>
-                      <TableCell className="border-r border-gray-200">{entry.salary_input?.toLocaleString(undefined, { maximumFractionDigits: 2 })}</TableCell>
+                      <TableCell className="border-r border-gray-200">{formatCurrency(entry.salary_input)}</TableCell>
                       {/* Show all component columns, align by key, blank if missing */}
                       {allComponentKeys.map((key: string) => (
                         <TableCell className="border-r border-gray-200">
                           {entry.breakup && entry.breakup.components && typeof entry.breakup.components[key] === 'number'
-                            ? entry.breakup.components[key].toLocaleString(undefined, { maximumFractionDigits: 2 })
+                            ? formatCurrency(entry.breakup.components[key])
                             : (entry.breakup && entry.breakup.components && typeof entry.breakup.components[key] === 'string')
                               ? entry.breakup.components[key]
                               : ''}
                         </TableCell>
                       ))}
-                      <TableCell className="border-r border-gray-200">{entry.breakup?.gross_salary?.toLocaleString(undefined, { maximumFractionDigits: 2 })}</TableCell>
-                      <TableCell className="border-r border-gray-200">{entry.breakup?.deductions?.PF?.toLocaleString(undefined, { maximumFractionDigits: 2 })}</TableCell>
-                      <TableCell className="border-r border-gray-200">{entry.breakup?.deductions?.PT?.toLocaleString(undefined, { maximumFractionDigits: 2 })}</TableCell>
-                      <TableCell className="border-r border-gray-200">{entry.breakup?.net_pay?.toLocaleString(undefined, { maximumFractionDigits: 2 })}</TableCell>
-                      <TableCell className="border-r border-gray-200">{entry.breakup?.employer_contribution_pf?.toLocaleString(undefined, { maximumFractionDigits: 2 })}</TableCell>
-                      <TableCell className="border-r border-gray-200">{(entry.breakup?.gross_salary && entry.breakup?.employer_contribution_pf) ? (entry.breakup.gross_salary + entry.breakup.employer_contribution_pf).toLocaleString(undefined, { maximumFractionDigits: 2 }) : ''}</TableCell>
+                      <TableCell className="border-r border-gray-200">{formatCurrency(entry.breakup?.gross_salary)}</TableCell>
+                      <TableCell className="border-r border-gray-200">{formatCurrency(entry.breakup?.deductions?.PF)}</TableCell>
+                      <TableCell className="border-r border-gray-200">{formatCurrency(entry.breakup?.deductions?.PT)}</TableCell>
+                      <TableCell className="border-r border-gray-200">{formatCurrency(entry.breakup?.net_pay)}</TableCell>
+                      <TableCell className="border-r border-gray-200">{formatCurrency(entry.breakup?.employer_contribution_pf)}</TableCell>
+                      <TableCell className="border-r border-gray-200">{(entry.breakup?.gross_salary && entry.breakup?.employer_contribution_pf) ? formatCurrency(entry.breakup.gross_salary + entry.breakup.employer_contribution_pf) : ''}</TableCell>
                       <TableCell className="border-r border-gray-200">
                         <Button variant="ghost" onClick={() => setViewBreakup(entry)}><Eye className="w-5 h-5" /></Button>
                       </TableCell>
@@ -413,15 +414,15 @@ const SalaryBreakup: React.FC = () => {
                       return [...ordered, ...rest].map((comp: any) => (
                         <tr key={comp.key}>
                           <td style={{ padding: '4px 8px', border: '1px solid #000', verticalAlign: 'middle' }}>{formatHeader(comp.key)}</td>
-                          <td style={{ textAlign: 'right', padding: '4px 8px', border: '1px solid #000', verticalAlign: 'middle' }}>{typeof breakup.components[comp.key] === 'number' ? `₹${breakup.components[comp.key].toLocaleString('en-IN')}` : '-'}</td>
-                          <td style={{ textAlign: 'right', padding: '4px 8px', border: '1px solid #000', verticalAlign: 'middle' }}>{typeof breakup.components[comp.key] === 'number' ? `₹${(breakup.components[comp.key] * 12).toLocaleString('en-IN')}` : '-'}</td>
+                          <td style={{ textAlign: 'right', padding: '4px 8px', border: '1px solid #000', verticalAlign: 'middle' }}>{typeof breakup.components[comp.key] === 'number' ? formatCurrency(breakup.components[comp.key]) : '-'}</td>
+                          <td style={{ textAlign: 'right', padding: '4px 8px', border: '1px solid #000', verticalAlign: 'middle' }}>{typeof breakup.components[comp.key] === 'number' ? formatCurrency(breakup.components[comp.key] * 12) : '-'}</td>
                         </tr>
                       ));
                     })()}
                     <tr style={{ borderTop: '2px solid #000', fontWeight: 600 }}>
                       <td style={{ padding: '4px 8px', border: '1px solid #000', verticalAlign: 'middle' }}>Gross Salary</td>
-                      <td style={{ textAlign: 'right', padding: '4px 8px', border: '1px solid #000', verticalAlign: 'middle' }}>{`₹${breakup.gross_salary?.toLocaleString('en-IN')}`}</td>
-                      <td style={{ textAlign: 'right', padding: '4px 8px', border: '1px solid #000', verticalAlign: 'middle' }}>{`₹${(breakup.gross_salary * 12)?.toLocaleString('en-IN')}`}</td>
+                      <td style={{ textAlign: 'right', padding: '4px 8px', border: '1px solid #000', verticalAlign: 'middle' }}>{formatCurrency(breakup.gross_salary)}</td>
+                      <td style={{ textAlign: 'right', padding: '4px 8px', border: '1px solid #000', verticalAlign: 'middle' }}>{formatCurrency(breakup.gross_salary * 12)}</td>
                     </tr>
                     {/* Deduction Section */}
                     <tr>
@@ -429,18 +430,18 @@ const SalaryBreakup: React.FC = () => {
                     </tr>
                     <tr>
                       <td style={{ padding: '4px 8px', border: '1px solid #000' }}>PF</td>
-                      <td style={{ textAlign: 'right', padding: '4px 8px', border: '1px solid #000' }}>{`₹${breakup.deductions.PF?.toLocaleString('en-IN')}`}</td>
-                      <td style={{ textAlign: 'right', padding: '4px 8px', border: '1px solid #000' }}>{`₹${(breakup.deductions.PF * 12)?.toLocaleString('en-IN')}`}</td>
+                      <td style={{ textAlign: 'right', padding: '4px 8px', border: '1px solid #000' }}>{formatCurrency(breakup.deductions.PF)}</td>
+                      <td style={{ textAlign: 'right', padding: '4px 8px', border: '1px solid #000' }}>{formatCurrency(breakup.deductions.PF * 12)}</td>
                     </tr>
                     <tr>
                       <td style={{ padding: '4px 8px', border: '1px solid #000' }}>PT</td>
-                      <td style={{ textAlign: 'right', padding: '4px 8px', border: '1px solid #000' }}>{`₹${breakup.deductions.PT?.toLocaleString('en-IN')}`}</td>
-                      <td style={{ textAlign: 'right', padding: '4px 8px', border: '1px solid #000' }}>{`₹${(breakup.deductions.PT * 12)?.toLocaleString('en-IN')}`}</td>
+                      <td style={{ textAlign: 'right', padding: '4px 8px', border: '1px solid #000' }}>{formatCurrency(breakup.deductions.PT)}</td>
+                      <td style={{ textAlign: 'right', padding: '4px 8px', border: '1px solid #000' }}>{formatCurrency(breakup.deductions.PT * 12)}</td>
                     </tr>
                     <tr style={{ fontWeight: 600 }}>
                       <td style={{ padding: '4px 8px', border: '1px solid #000' }}>Net Pay</td>
-                      <td style={{ textAlign: 'right', padding: '4px 8px', border: '1px solid #000' }}>{`₹${breakup.net_pay?.toLocaleString('en-IN')}`}</td>
-                      <td style={{ textAlign: 'right', padding: '4px 8px', border: '1px solid #000' }}>{`₹${(breakup.net_pay * 12)?.toLocaleString('en-IN')}`}</td>
+                      <td style={{ textAlign: 'right', padding: '4px 8px', border: '1px solid #000' }}>{formatCurrency(breakup.net_pay)}</td>
+                      <td style={{ textAlign: 'right', padding: '4px 8px', border: '1px solid #000' }}>{formatCurrency(breakup.net_pay * 12)}</td>
                     </tr>
                     {/* Summary Section */}
                     <tr>
@@ -448,13 +449,13 @@ const SalaryBreakup: React.FC = () => {
                     </tr>
                     <tr>
                       <td style={{ padding: '4px 8px', border: '1px solid #000', fontWeight: 600 }}>Employer Contribution PF</td>
-                      <td style={{ textAlign: 'right', padding: '4px 8px', border: '1px solid #000' }}>{`₹${breakup.employer_contribution_pf?.toLocaleString('en-IN')}`}</td>
-                      <td style={{ textAlign: 'right', padding: '4px 8px', border: '1px solid #000' }}>{`₹${(breakup.employer_contribution_pf * 12)?.toLocaleString('en-IN')}`}</td>
+                      <td style={{ textAlign: 'right', padding: '4px 8px', border: '1px solid #000' }}>{formatCurrency(breakup.employer_contribution_pf)}</td>
+                      <td style={{ textAlign: 'right', padding: '4px 8px', border: '1px solid #000' }}>{formatCurrency(breakup.employer_contribution_pf * 12)}</td>
                     </tr>
                     <tr>
                       <td style={{ padding: '4px 8px', border: '1px solid #000', fontWeight: 600 }}>Bonus</td>
                       <td style={{ textAlign: 'right', padding: '4px 8px', border: '1px solid #000' }}></td>
-                      <td style={{ textAlign: 'right', padding: '4px 8px', border: '1px solid #000' }}>{`₹${breakup.bonus?.toLocaleString('en-IN')}`}</td>
+                      <td style={{ textAlign: 'right', padding: '4px 8px', border: '1px solid #000' }}>{formatCurrency(breakup.bonus)}</td>
                     </tr>
                     <tr>
                       <td style={{ padding: '4px 8px', border: '1px solid #000', fontWeight: 600 }}>PLI</td>
@@ -463,8 +464,8 @@ const SalaryBreakup: React.FC = () => {
                     </tr>
                     <tr style={{ fontWeight: 700 }}>
                       <td style={{ padding: '4px 8px', border: '1px solid #000' }}>CTC</td>
-                      <td style={{ textAlign: 'right', padding: '4px 8px', border: '1px solid #000' }}>{`₹${(breakup.gross_salary + breakup.employer_contribution_pf).toLocaleString('en-IN')}`}</td>
-                      <td style={{ textAlign: 'right', padding: '4px 8px', border: '1px solid #000' }}>{`₹${(breakup.gross_salary * 12 + breakup.employer_contribution_pf * 12 + breakup.bonus).toLocaleString('en-IN')}`}</td>
+                      <td style={{ textAlign: 'right', padding: '4px 8px', border: '1px solid #000' }}>{formatCurrency(breakup.gross_salary + breakup.employer_contribution_pf)}</td>
+                      <td style={{ textAlign: 'right', padding: '4px 8px', border: '1px solid #000' }}>{formatCurrency(breakup.gross_salary * 12 + breakup.employer_contribution_pf * 12 + breakup.bonus)}</td>
                     </tr>
                   </tbody>
                 </table>
@@ -503,14 +504,14 @@ const SalaryBreakup: React.FC = () => {
                     {Object.entries(viewBreakup.breakup.components).map(([key, value]: [string, any]) => (
                       <tr key={key}>
                         <td style={{ padding: '4px 8px', border: '1px solid #000', verticalAlign: 'middle' }}>{formatHeader(key)}</td>
-                        <td style={{ textAlign: 'right', padding: '4px 8px', border: '1px solid #000', verticalAlign: 'middle' }}>{typeof value === 'number' ? `₹${value.toLocaleString('en-IN')}` : value}</td>
-                        <td style={{ textAlign: 'right', padding: '4px 8px', border: '1px solid #000', verticalAlign: 'middle' }}>{typeof value === 'number' ? `₹${(value * 12).toLocaleString('en-IN')}` : value}</td>
+                        <td style={{ textAlign: 'right', padding: '4px 8px', border: '1px solid #000', verticalAlign: 'middle' }}>{typeof value === 'number' ? formatCurrency(value) : value}</td>
+                        <td style={{ textAlign: 'right', padding: '4px 8px', border: '1px solid #000', verticalAlign: 'middle' }}>{typeof value === 'number' ? formatCurrency(value * 12) : value}</td>
                       </tr>
                     ))}
                     <tr style={{ borderTop: '2px solid #000', fontWeight: 600 }}>
                       <td style={{ padding: '4px 8px', border: '1px solid #000', verticalAlign: 'middle' }}>Gross Salary</td>
-                      <td style={{ textAlign: 'right', padding: '4px 8px', border: '1px solid #000', verticalAlign: 'middle' }}>{`₹${viewBreakup.breakup.gross_salary?.toLocaleString('en-IN')}`}</td>
-                      <td style={{ textAlign: 'right', padding: '4px 8px', border: '1px solid #000', verticalAlign: 'middle' }}>{`₹${(viewBreakup.breakup.gross_salary * 12)?.toLocaleString('en-IN')}`}</td>
+                      <td style={{ textAlign: 'right', padding: '4px 8px', border: '1px solid #000', verticalAlign: 'middle' }}>{formatCurrency(viewBreakup.breakup.gross_salary)}</td>
+                      <td style={{ textAlign: 'right', padding: '4px 8px', border: '1px solid #000', verticalAlign: 'middle' }}>{formatCurrency(viewBreakup.breakup.gross_salary * 12)}</td>
                     </tr>
                     {/* Deduction Section */}
                     <tr>
@@ -518,18 +519,18 @@ const SalaryBreakup: React.FC = () => {
                     </tr>
                     <tr>
                       <td style={{ padding: '4px 8px', border: '1px solid #000' }}>PF</td>
-                      <td style={{ textAlign: 'right', padding: '4px 8px', border: '1px solid #000' }}>{`₹${viewBreakup.breakup.deductions.PF?.toLocaleString('en-IN')}`}</td>
-                      <td style={{ textAlign: 'right', padding: '4px 8px', border: '1px solid #000' }}>{`₹${(viewBreakup.breakup.deductions.PF * 12)?.toLocaleString('en-IN')}`}</td>
+                      <td style={{ textAlign: 'right', padding: '4px 8px', border: '1px solid #000' }}>{formatCurrency(viewBreakup.breakup.deductions.PF)}</td>
+                      <td style={{ textAlign: 'right', padding: '4px 8px', border: '1px solid #000' }}>{formatCurrency(viewBreakup.breakup.deductions.PF * 12)}</td>
                     </tr>
                     <tr>
                       <td style={{ padding: '4px 8px', border: '1px solid #000' }}>PT</td>
-                      <td style={{ textAlign: 'right', padding: '4px 8px', border: '1px solid #000' }}>{`₹${viewBreakup.breakup.deductions.PT?.toLocaleString('en-IN')}`}</td>
-                      <td style={{ textAlign: 'right', padding: '4px 8px', border: '1px solid #000' }}>{`₹${(viewBreakup.breakup.deductions.PT * 12)?.toLocaleString('en-IN')}`}</td>
+                      <td style={{ textAlign: 'right', padding: '4px 8px', border: '1px solid #000' }}>{formatCurrency(viewBreakup.breakup.deductions.PT)}</td>
+                      <td style={{ textAlign: 'right', padding: '4px 8px', border: '1px solid #000' }}>{formatCurrency(viewBreakup.breakup.deductions.PT * 12)}</td>
                     </tr>
                     <tr style={{ fontWeight: 600 }}>
                       <td style={{ padding: '4px 8px', border: '1px solid #000' }}>Net Pay</td>
-                      <td style={{ textAlign: 'right', padding: '4px 8px', border: '1px solid #000' }}>{`₹${viewBreakup.breakup.net_pay?.toLocaleString('en-IN')}`}</td>
-                      <td style={{ textAlign: 'right', padding: '4px 8px', border: '1px solid #000' }}>{`₹${(viewBreakup.breakup.net_pay * 12)?.toLocaleString('en-IN')}`}</td>
+                      <td style={{ textAlign: 'right', padding: '4px 8px', border: '1px solid #000' }}>{formatCurrency(viewBreakup.breakup.net_pay)}</td>
+                      <td style={{ textAlign: 'right', padding: '4px 8px', border: '1px solid #000' }}>{formatCurrency(viewBreakup.breakup.net_pay * 12)}</td>
                     </tr>
                     {/* Summary Section */}
                     <tr>
@@ -537,13 +538,13 @@ const SalaryBreakup: React.FC = () => {
                     </tr>
                     <tr>
                       <td style={{ padding: '4px 8px', border: '1px solid #000', fontWeight: 600 }}>Employer Contribution PF</td>
-                      <td style={{ textAlign: 'right', padding: '4px 8px', border: '1px solid #000' }}>{`₹${viewBreakup.breakup.employer_contribution_pf?.toLocaleString('en-IN')}`}</td>
-                      <td style={{ textAlign: 'right', padding: '4px 8px', border: '1px solid #000' }}>{`₹${(viewBreakup.breakup.employer_contribution_pf * 12)?.toLocaleString('en-IN')}`}</td>
+                      <td style={{ textAlign: 'right', padding: '4px 8px', border: '1px solid #000' }}>{formatCurrency(viewBreakup.breakup.employer_contribution_pf)}</td>
+                      <td style={{ textAlign: 'right', padding: '4px 8px', border: '1px solid #000' }}>{formatCurrency(viewBreakup.breakup.employer_contribution_pf * 12)}</td>
                     </tr>
                     <tr>
                       <td style={{ padding: '4px 8px', border: '1px solid #000', fontWeight: 600 }}>Bonus</td>
                       <td style={{ textAlign: 'right', padding: '4px 8px', border: '1px solid #000' }}></td>
-                      <td style={{ textAlign: 'right', padding: '4px 8px', border: '1px solid #000' }}>{`₹${viewBreakup.breakup.bonus?.toLocaleString('en-IN')}`}</td>
+                      <td style={{ textAlign: 'right', padding: '4px 8px', border: '1px solid #000' }}>{formatCurrency(viewBreakup.breakup.bonus)}</td>
                     </tr>
                     <tr>
                       <td style={{ padding: '4px 8px', border: '1px solid #000', fontWeight: 600 }}>PLI</td>
@@ -552,8 +553,8 @@ const SalaryBreakup: React.FC = () => {
                     </tr>
                     <tr style={{ fontWeight: 700 }}>
                       <td style={{ padding: '4px 8px', border: '1px solid #000' }}>CTC</td>
-                      <td style={{ textAlign: 'right', padding: '4px 8px', border: '1px solid #000' }}>{`₹${(viewBreakup.breakup.gross_salary + viewBreakup.breakup.employer_contribution_pf).toLocaleString('en-IN')}`}</td>
-                      <td style={{ textAlign: 'right', padding: '4px 8px', border: '1px solid #000' }}>{`₹${(viewBreakup.breakup.gross_salary * 12 + viewBreakup.breakup.employer_contribution_pf * 12 + viewBreakup.breakup.bonus).toLocaleString('en-IN')}`}</td>
+                      <td style={{ textAlign: 'right', padding: '4px 8px', border: '1px solid #000' }}>{formatCurrency(viewBreakup.breakup.gross_salary + viewBreakup.breakup.employer_contribution_pf)}</td>
+                      <td style={{ textAlign: 'right', padding: '4px 8px', border: '1px solid #000' }}>{formatCurrency(viewBreakup.breakup.gross_salary * 12 + viewBreakup.breakup.employer_contribution_pf * 12 + viewBreakup.breakup.bonus)}</td>
                     </tr>
                   </tbody>
                 </table>
