@@ -1,20 +1,49 @@
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Users, FileText, Calendar, User } from 'lucide-react';
+import { Users, FileText, Calendar, User, Clock } from 'lucide-react';
+import { format } from 'date-fns';
 
 interface DashboardProps {
   jobs: any[];
   candidates: any[];
   employees: any[];
+  interviews: any[];
+  onNavigateToSection: (section: string) => void;
+  onHighlightCandidate: (candidateId: string) => void;
+  onHighlightInterview: (interviewId: string) => void;
 }
 
-const Dashboard: React.FC<DashboardProps> = ({ jobs, candidates, employees }) => {
+const Dashboard: React.FC<DashboardProps> = ({ 
+  jobs, 
+  candidates, 
+  employees, 
+  interviews,
+  onNavigateToSection,
+  onHighlightCandidate,
+  onHighlightInterview
+}) => {
   const activeJobs = jobs.filter(job => job.status === 'active').length;
   const pendingInterviews = candidates.filter(candidate => 
     candidate.interviewStatus === 'shortlisted'
   ).length;
   const totalEmployees = employees.length;
   const newHires = employees.filter(emp => emp.status === 'pre-joining').length;
+
+  // Get candidates with scheduled interviews
+  const candidatesWithInterviews = candidates.filter(candidate => {
+    return interviews.some(interview => 
+      interview.candidate_id === candidate.id && 
+      interview.status !== 'cancelled'
+    );
+  });
+
+  // Create a map of candidate interviews for easy lookup
+  const candidateInterviews = new Map();
+  interviews.forEach(interview => {
+    if (interview.status !== 'cancelled') {
+      candidateInterviews.set(interview.candidate_id, interview);
+    }
+  });
 
   const stats = [
     {
@@ -46,6 +75,16 @@ const Dashboard: React.FC<DashboardProps> = ({ jobs, candidates, employees }) =>
       description: 'In pre-joining',
     },
   ];
+
+  const handleCandidateClick = (candidateId: string) => {
+    onHighlightCandidate(candidateId);
+    onNavigateToSection('candidates');
+  };
+
+  const handleInterviewClick = (interviewId: string) => {
+    onHighlightInterview(interviewId);
+    onNavigateToSection('interviews');
+  };
 
   return (
     <div className="p-6 space-y-6">
@@ -100,24 +139,64 @@ const Dashboard: React.FC<DashboardProps> = ({ jobs, candidates, employees }) =>
         <Card>
           <CardHeader>
             <CardTitle>Interview Pipeline</CardTitle>
-            <CardDescription>Upcoming interviews and status</CardDescription>
+            <CardDescription>Scheduled interviews with date and time</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              {candidates.slice(0, 5).map((candidate, index) => (
-                <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                  <div>
-                    <p className="font-medium text-gray-900">{candidate.name}</p>
-                    <p className="text-sm text-gray-600">{candidate.position}</p>
+              {candidatesWithInterviews.slice(0, 5).map((candidate, index) => {
+                const interview = candidateInterviews.get(candidate.id);
+                return (
+                  <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <div className="flex-1">
+                      <button
+                        onClick={() => handleCandidateClick(candidate.id)}
+                        className="text-left hover:text-blue-600 transition-colors"
+                      >
+                        <p className="font-medium text-gray-900 hover:underline">
+                          {candidate.name}
+                        </p>
+                        <p className="text-sm text-gray-600">{candidate.position}</p>
+                      </button>
+                      {interview && (
+                        <div className="mt-2 flex items-center gap-4 text-xs text-gray-500">
+                          <button
+                            onClick={() => handleInterviewClick(interview.id)}
+                            className="flex items-center gap-1 hover:text-blue-600 transition-colors"
+                          >
+                            <Calendar className="w-3 h-3" />
+                            <span className="hover:underline">
+                              {format(new Date(interview.interview_date), 'MMM dd, yyyy')}
+                            </span>
+                          </button>
+                          <button
+                            onClick={() => handleInterviewClick(interview.id)}
+                            className="flex items-center gap-1 hover:text-blue-600 transition-colors"
+                          >
+                            <Clock className="w-3 h-3" />
+                            <span className="hover:underline">
+                              {interview.interview_time ? 
+                                format(new Date(`2000-01-01T${interview.interview_time}`), 'hh:mm a') : 
+                                'TBD'
+                              }
+                            </span>
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                    <span className={`status-badge ${
+                      candidate.interviewStatus === 'shortlisted' ? 'status-pending' :
+                      candidate.interviewStatus === 'selected' ? 'status-active' : 'status-rejected'
+                    }`}>
+                      {candidate.interviewStatus}
+                    </span>
                   </div>
-                  <span className={`status-badge ${
-                    candidate.interviewStatus === 'shortlisted' ? 'status-pending' :
-                    candidate.interviewStatus === 'selected' ? 'status-active' : 'status-rejected'
-                  }`}>
-                    {candidate.interviewStatus}
-                  </span>
+                );
+              })}
+              {candidatesWithInterviews.length === 0 && (
+                <div className="text-center py-4 text-gray-500">
+                  <p>No scheduled interviews</p>
                 </div>
-              ))}
+              )}
             </div>
           </CardContent>
         </Card>

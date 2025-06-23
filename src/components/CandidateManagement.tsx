@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -50,6 +50,8 @@ interface CandidateManagementProps {
   onUpdateCandidateStatus: (candidateId: string, newStatus: string, reason?: string) => void;
   statusHistory: StatusChange[];
   userEmail: string;
+  highlightedCandidate?: string | null;
+  onClearHighlight?: () => void;
 }
 
 const CandidateManagement: React.FC<CandidateManagementProps> = ({ 
@@ -58,7 +60,9 @@ const CandidateManagement: React.FC<CandidateManagementProps> = ({
   onAddCandidate,
   onUpdateCandidateStatus,
   statusHistory: _statusHistory,
-  userEmail
+  userEmail,
+  highlightedCandidate,
+  onClearHighlight
 }) => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isStatusDialogOpen, setIsStatusDialogOpen] = useState(false);
@@ -92,6 +96,27 @@ const CandidateManagement: React.FC<CandidateManagementProps> = ({
   const [resumeFileType, setResumeFileType] = useState<string | null>(null);
   const [agencyName, setAgencyName] = useState('');
   const [otherSource, setOtherSource] = useState('');
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  // Clear highlight when component mounts or highlighted candidate changes
+  useEffect(() => {
+    if (highlightedCandidate && onClearHighlight) {
+      // Scroll to the highlighted row
+      const highlightedRow = document.querySelector(`[data-candidate-id="${highlightedCandidate}"]`);
+      if (highlightedRow && scrollRef.current) {
+        highlightedRow.scrollIntoView({ 
+          behavior: 'smooth', 
+          block: 'center' 
+        });
+      }
+      
+      // Clear the highlight after the animation completes
+      const timer = setTimeout(() => {
+        onClearHighlight();
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [highlightedCandidate, onClearHighlight]);
 
   useEffect(() => {
     if (isDialogOpen) {
@@ -533,7 +558,7 @@ const CandidateManagement: React.FC<CandidateManagementProps> = ({
             className="w-full"
           />
         </div>
-        <div className="overflow-x-auto overflow-y-auto max-h-[56vh] w-full block" style={{ WebkitOverflowScrolling: 'touch' }}>
+        <div className="overflow-x-auto overflow-y-auto max-h-[56vh] w-full block scroll-to-highlight" ref={scrollRef} style={{ WebkitOverflowScrolling: 'touch' }}>
           <Table className="min-w-[1200px] border border-gray-200">
             <TableHeader className="sticky top-0 z-20 bg-white shadow border-t border-gray-200">
               <TableRow className="border-b border-gray-200">
@@ -551,7 +576,15 @@ const CandidateManagement: React.FC<CandidateManagementProps> = ({
             </TableHeader>
             <TableBody>
               {sortedCandidates.map((candidate) => (
-                <TableRow key={candidate.id} className="border-b border-gray-200">
+                <TableRow 
+                  key={candidate.id} 
+                  data-candidate-id={candidate.id}
+                  className={`border-b border-gray-200 transition-all duration-300 ${
+                    highlightedCandidate === candidate.id 
+                      ? 'highlight-row' 
+                      : ''
+                  }`}
+                >
                   <TableCell className="border-r border-gray-200">
                     <div>
                       <div className="font-medium">{candidate.name}</div>

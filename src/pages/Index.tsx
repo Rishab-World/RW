@@ -12,6 +12,7 @@ import SalaryMaster from '@/components/SalaryMaster';
 import SalaryCalculation from '@/pages/SalaryCalculation';
 import AttendanceAnalysis from '@/components/AttendanceAnalysis';
 import WeeklyAttendanceAnalysis from '@/components/WeeklyAttendanceAnalysis';
+import MonthlyAttendance from '@/components/MonthlyAttendance';
 import SalaryBreakup from '@/pages/SalaryBreakup';
 import { supabase } from '@/lib/supabaseClient';
 
@@ -32,11 +33,16 @@ const Index = () => {
   const [showRegister, setShowRegister] = useState(false);
   const [jobs, setJobs] = useState([]);
   const [candidates, setCandidates] = useState([]);
+  const [interviews, setInterviews] = useState([]);
   
   // Sample data - in a real app, this would come from an API
   const [employees, setEmployees] = useState([]);
 
   const [statusHistory, setStatusHistory] = useState<StatusChange[]>([]);
+  
+  // Navigation state for highlighting
+  const [highlightedCandidate, setHighlightedCandidate] = useState<string | null>(null);
+  const [highlightedInterview, setHighlightedInterview] = useState<string | null>(null);
 
   // Fetch status history from Supabase
   const fetchStatusHistory = async () => {
@@ -169,6 +175,20 @@ const Index = () => {
       supabase.removeChannel(channel);
     };
   }, []);
+
+  // Fetch interviews from Supabase
+  const fetchInterviews = async () => {
+    const { data, error } = await supabase
+      .from('interviews')
+      .select('*')
+      .order('interview_date', { ascending: true });
+    if (!error && data) {
+      setInterviews(data || []);
+    }
+  };
+
+  // Fetch interviews on mount
+  useEffect(() => { fetchInterviews(); }, []);
 
   const handleLogin = async (email: string, password: string) => {
     // After successful login, fetch the username from the users table
@@ -407,7 +427,15 @@ const Index = () => {
   const renderActiveSection = () => {
     switch (activeSection) {
       case 'dashboard':
-        return <Dashboard jobs={jobs} candidates={candidates} employees={employees} />;
+        return <Dashboard 
+          jobs={jobs} 
+          candidates={candidates} 
+          employees={employees} 
+          interviews={interviews}
+          onNavigateToSection={setActiveSection}
+          onHighlightCandidate={setHighlightedCandidate}
+          onHighlightInterview={setHighlightedInterview}
+        />;
       case 'jobs':
         return <JobManagement jobs={jobs} onAddJob={handleAddJob} onJobUpdated={handleJobUpdated} />;
       case 'candidates':
@@ -418,9 +446,16 @@ const Index = () => {
           onUpdateCandidateStatus={handleUpdateCandidateStatus}
           statusHistory={statusHistory}
           userEmail={userEmail}
+          highlightedCandidate={highlightedCandidate}
+          onClearHighlight={() => setHighlightedCandidate(null)}
         />;
       case 'interviews':
-        return <InterviewScheduling candidates={candidates} refreshCandidates={fetchCandidates} />;
+        return <InterviewScheduling 
+          candidates={candidates} 
+          refreshCandidates={fetchCandidates}
+          highlightedInterview={highlightedInterview}
+          onClearHighlight={() => setHighlightedInterview(null)}
+        />;
       case 'employees':
         return <EmployeeManagement employees={employees} refreshEmployees={fetchEmployees} />;
       case 'salary':
@@ -437,10 +472,20 @@ const Index = () => {
         return <AttendanceAnalysis />;
       case 'attendance-weekly':
         return <WeeklyAttendanceAnalysis />;
+      case 'attendance-monthly':
+        return <MonthlyAttendance />;
       case 'salarybreakup':
         return <SalaryBreakup />;
       default:
-        return <Dashboard jobs={jobs} candidates={candidates} employees={employees} />;
+        return <Dashboard 
+          jobs={jobs} 
+          candidates={candidates} 
+          employees={employees} 
+          interviews={interviews}
+          onNavigateToSection={setActiveSection}
+          onHighlightCandidate={setHighlightedCandidate}
+          onHighlightInterview={setHighlightedInterview}
+        />;
     }
   };
 

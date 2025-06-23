@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -44,11 +44,15 @@ interface InterviewType {
 interface InterviewSchedulingProps {
   candidates: any[];
   refreshCandidates: () => void;
+  highlightedInterview?: string | null;
+  onClearHighlight?: () => void;
 }
 
 const InterviewScheduling: React.FC<InterviewSchedulingProps> = ({
   candidates,
-  refreshCandidates
+  refreshCandidates,
+  highlightedInterview,
+  onClearHighlight
 }) => {
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -69,6 +73,39 @@ const InterviewScheduling: React.FC<InterviewSchedulingProps> = ({
   const [cancelReason, setCancelReason] = useState('');
   const [interviewToCancel, setInterviewToCancel] = useState<Interview | null>(null);
   const userEmail = typeof window !== 'undefined' ? localStorage.getItem('userEmail') || 'system' : 'system';
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  // Clear highlight when component mounts or highlighted interview changes
+  useEffect(() => {
+    if (highlightedInterview && onClearHighlight) {
+      console.log('InterviewScheduling: Highlighting interview with ID:', highlightedInterview);
+      console.log('InterviewScheduling: All interviews:', interviews);
+      console.log('InterviewScheduling: Filtered interviews:', interviews.filter(interview => interview.status !== 'cancelled'));
+      
+      // Add a small delay to ensure DOM is ready
+      setTimeout(() => {
+        // Scroll to the highlighted row
+        const highlightedRow = document.querySelector(`[data-interview-id="${highlightedInterview}"]`);
+        console.log('InterviewScheduling: Found highlighted row:', highlightedRow);
+        
+        if (highlightedRow && scrollRef.current) {
+          console.log('InterviewScheduling: Scrolling to highlighted row');
+          highlightedRow.scrollIntoView({ 
+            behavior: 'smooth', 
+            block: 'center' 
+          });
+        } else {
+          console.log('InterviewScheduling: Row not found or scrollRef not available');
+        }
+      }, 100);
+      
+      // Clear the highlight after the animation completes
+      const timer = setTimeout(() => {
+        onClearHighlight();
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [highlightedInterview, onClearHighlight, interviews]);
 
   // Fetch interviews, interviewers, and interview types on component mount
   useEffect(() => {
@@ -518,53 +555,63 @@ const InterviewScheduling: React.FC<InterviewSchedulingProps> = ({
           <CardTitle>All Scheduled Interviews</CardTitle>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Candidate</TableHead>
-                <TableHead>Position</TableHead>
-                <TableHead>Date & Time</TableHead>
-                <TableHead>Interviewer</TableHead>
-                <TableHead>Type</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Action</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {interviews.filter(interview => interview.status !== 'cancelled').map((interview) => (
-                <TableRow key={interview.id}>
-                  <TableCell className="font-medium">{interview.candidate_name}</TableCell>
-                  <TableCell>{interview.job_title}</TableCell>
-                  <TableCell>
-                    <div className="flex items-center space-x-1 text-sm">
-                      <CalendarIcon className="w-3 h-3" />
-                      <span>{format(new Date(interview.interview_date), 'MMM dd, yyyy')}</span>
-                      <Clock className="w-3 h-3 ml-2" />
-                      <span>{interview.interview_time}</span>
-                    </div>
-                  </TableCell>
-                  <TableCell>{interview.interviewer}</TableCell>
-                  <TableCell className="capitalize">{interview.interview_type}</TableCell>
-                  <TableCell>
-                    <span className={`status-badge ${
-                      interview.status === 'scheduled' ? 'status-pending' :
-                      interview.status === 'completed' ? 'status-completed' :
-                      interview.status === 'cancelled' ? 'status-rejected' : 'status-active'
-                    }`}>
-                      {interview.status}
-                    </span>
-                  </TableCell>
-                  <TableCell>
-                    {interview.status === 'scheduled' && (
-                      <Button size="sm" variant="destructive" onClick={() => handleCancelInterview(interview)}>
-                        Cancel
-                      </Button>
-                    )}
-                  </TableCell>
+          <div className="overflow-x-auto overflow-y-auto max-h-[60vh] scroll-to-highlight" ref={scrollRef}>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Candidate</TableHead>
+                  <TableHead>Position</TableHead>
+                  <TableHead>Date & Time</TableHead>
+                  <TableHead>Interviewer</TableHead>
+                  <TableHead>Type</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Action</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {interviews.filter(interview => interview.status !== 'cancelled').map((interview) => (
+                  <TableRow 
+                    key={interview.id}
+                    data-interview-id={interview.id}
+                    className={`transition-all duration-300 ${
+                      highlightedInterview === interview.id 
+                        ? 'highlight-row' 
+                        : ''
+                    }`}
+                  >
+                    <TableCell className="font-medium">{interview.candidate_name}</TableCell>
+                    <TableCell>{interview.job_title}</TableCell>
+                    <TableCell>
+                      <div className="flex items-center space-x-1 text-sm">
+                        <CalendarIcon className="w-3 h-3" />
+                        <span>{format(new Date(interview.interview_date), 'MMM dd, yyyy')}</span>
+                        <Clock className="w-3 h-3 ml-2" />
+                        <span>{interview.interview_time}</span>
+                      </div>
+                    </TableCell>
+                    <TableCell>{interview.interviewer}</TableCell>
+                    <TableCell className="capitalize">{interview.interview_type}</TableCell>
+                    <TableCell>
+                      <span className={`status-badge ${
+                        interview.status === 'scheduled' ? 'status-pending' :
+                        interview.status === 'completed' ? 'status-completed' :
+                        interview.status === 'cancelled' ? 'status-rejected' : 'status-active'
+                      }`}>
+                        {interview.status}
+                      </span>
+                    </TableCell>
+                    <TableCell>
+                      {interview.status === 'scheduled' && (
+                        <Button size="sm" variant="destructive" onClick={() => handleCancelInterview(interview)}>
+                          Cancel
+                        </Button>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
           
           {interviews.length === 0 && (
             <div className="text-center py-8">
