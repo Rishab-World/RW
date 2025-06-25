@@ -12,6 +12,8 @@ const SalaryBreakup: React.FC = () => {
   const [employees, setEmployees] = useState<any[]>([]);
   const [search, setSearch] = useState('');
   const [selectedEmployee, setSelectedEmployee] = useState<any>(null);
+  const [customPersonName, setCustomPersonName] = useState('');
+  const [showCustomPersonInput, setShowCustomPersonInput] = useState(false);
   const [salary, setSalary] = useState<number | ''>('');
   const [breakup, setBreakup] = useState<any>(null);
   const [showModal, setShowModal] = useState(false);
@@ -59,7 +61,7 @@ const SalaryBreakup: React.FC = () => {
   };
 
   const handleCalculate = () => {
-    if (!selectedEmployee || !salary || typeof salary !== 'number') return;
+    if ((!selectedEmployee && !customPersonName) || !salary || typeof salary !== 'number') return;
     const scale = getScale(salary);
     setSelectedScale(scale);
     if (scale && Array.isArray(scale.components)) {
@@ -147,25 +149,41 @@ const SalaryBreakup: React.FC = () => {
   };
 
   const handleSave = async () => {
-    if (!selectedEmployee || !salary || !breakup) return;
+    if ((!selectedEmployee && !customPersonName) || !salary || !breakup) return;
     setSaving(true);
-    await supabase.from('employee_salary_breakups').insert([
-      {
-        employee_id: selectedEmployee.id,
-        name: selectedEmployee.name,
-        designation: selectedEmployee.position,
-        date_of_joining: selectedEmployee.join_date,
-        salary_input: salary,
-        breakup,
-      },
-    ]);
+    
+    const personData = {
+      employee_id: selectedEmployee?.id || null,
+      name: selectedEmployee?.name || customPersonName,
+      designation: selectedEmployee?.position || 'Custom Person',
+      date_of_joining: selectedEmployee?.join_date || null,
+      salary_input: salary,
+      breakup,
+    };
+    
+    await supabase.from('employee_salary_breakups').insert([personData]);
     setSaving(false);
     fetchSavedBreakups();
     // Reset fields for next entry
     setSelectedEmployee(null);
+    setCustomPersonName('');
+    setShowCustomPersonInput(false);
     setSalary('');
     setBreakup(null);
     setSearch('');
+  };
+
+  const handleCustomPersonSelect = () => {
+    setShowCustomPersonInput(true);
+    setSelectedEmployee(null);
+    setDropdownOpen(false);
+  };
+
+  const handleCustomPersonSubmit = () => {
+    if (customPersonName.trim()) {
+      setShowCustomPersonInput(false);
+      setSearch(customPersonName);
+    }
   };
 
   const filteredEmployees = employees.filter(emp =>
@@ -194,7 +212,7 @@ const SalaryBreakup: React.FC = () => {
         </CardHeader> */}
         <CardContent>
           {/* Searchable Dropdown */}
-          <div className="mb-2 flex flex-col md:flex-row md:items-end md:space-x-6" style={{ minHeight: 'unset', paddingTop: '10px', paddingBottom: 0 }}>
+          <div className="mb-1 flex flex-col md:flex-row md:items-end md:space-x-6" style={{ minHeight: 'unset', paddingTop: '6px', paddingBottom: 0 }}>
             <div className="flex-1 mb-2 md:mb-0" style={{ position: 'relative' }}>
               <label className="block mb-1 font-medium">Select Employee</label>
               <Input
@@ -207,6 +225,13 @@ const SalaryBreakup: React.FC = () => {
               />
               {dropdownOpen && (
                 <div className="border rounded bg-white max-h-40 overflow-y-auto mt-1 shadow" style={{ position: 'absolute', width: '100%', top: '100%', left: 0, zIndex: 50 }}>
+                  {/* Custom Person Option */}
+                  <div
+                    className="px-3 py-2 cursor-pointer hover:bg-amber-100 border-b border-gray-200 font-semibold text-amber-600"
+                    onMouseDown={handleCustomPersonSelect}
+                  >
+                    + Add Custom Person
+                  </div>
                   {filteredEmployees.map(emp => (
                     <div
                       key={emp.id}
@@ -219,8 +244,37 @@ const SalaryBreakup: React.FC = () => {
                   {filteredEmployees.length === 0 && <div className="px-3 py-2 text-slate-400">No employees found</div>}
                 </div>
               )}
+              
+              {/* Custom Person Name Input */}
+              {showCustomPersonInput && (
+                <div className="mt-2 p-3 border rounded bg-amber-50">
+                  <label className="block mb-1 font-medium text-sm">Enter Person Name</label>
+                  <div className="flex space-x-2">
+                    <Input
+                      type="text"
+                      value={customPersonName}
+                      onChange={e => setCustomPersonName(e.target.value)}
+                      placeholder="Enter person name"
+                      onKeyPress={e => e.key === 'Enter' && handleCustomPersonSubmit()}
+                    />
+                    <Button 
+                      onClick={handleCustomPersonSubmit}
+                      disabled={!customPersonName.trim()}
+                      className="bg-amber-500 hover:bg-amber-600"
+                    >
+                      Add
+                    </Button>
+                    <Button 
+                      onClick={() => { setShowCustomPersonInput(false); setCustomPersonName(''); }}
+                      variant="outline"
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                </div>
+              )}
             </div>
-            {selectedEmployee && (
+            {(selectedEmployee || customPersonName) && (
               <div className="flex-1">
                 <label className="block mb-1 font-medium">Enter Gross Monthly Salary</label>
                 <Input
@@ -231,27 +285,27 @@ const SalaryBreakup: React.FC = () => {
                 />
               </div>
             )}
-            {selectedEmployee && (
+            {(selectedEmployee || customPersonName) && (
               <div className="flex-1 flex items-end space-x-2">
-                <Button onClick={handleCalculate} disabled={!salary || !selectedEmployee} className="bg-amber-500 hover:bg-amber-600">Calculate</Button>
+                <Button onClick={handleCalculate} disabled={!salary || (!selectedEmployee && !customPersonName)} className="bg-amber-500 hover:bg-amber-600">Calculate</Button>
                 {breakup && (
                   <Button onClick={handleSave} className="bg-amber-500 hover:bg-amber-600" disabled={saving}>{saving ? 'Saving...' : 'Save'}</Button>
                 )}
-                <Button onClick={() => { setSelectedEmployee(null); setSalary(''); setBreakup(null); setSearch(''); }} className="bg-amber-500 hover:bg-amber-600 text-white">Clear</Button>
+                <Button onClick={() => { setSelectedEmployee(null); setCustomPersonName(''); setShowCustomPersonInput(false); setSalary(''); setBreakup(null); setSearch(''); }} className="bg-amber-500 hover:bg-amber-600 text-white">Clear</Button>
               </div>
             )}
           </div>
 
           {/* Show Employee Details and Breakup */}
-          {selectedEmployee && breakup && (
+          {(selectedEmployee || customPersonName) && breakup && (
             <div className="mt-8">
               <Card className="shadow-md max-w-full" style={{ width: '100%' }}>
                 <CardHeader>
                   <div className="flex items-center justify-between">
                     <div>
-                      <div className="font-semibold text-lg">{selectedEmployee.name}</div>
-                      <div className="text-slate-600 text-sm">{selectedEmployee.position}</div>
-                      <div className="text-slate-500 text-xs">DOJ: {selectedEmployee.join_date ? new Date(selectedEmployee.join_date).toLocaleDateString() : '-'}</div>
+                      <div className="font-semibold text-lg">{selectedEmployee?.name || customPersonName}</div>
+                      <div className="text-slate-600 text-sm">{selectedEmployee?.position || 'Custom Person'}</div>
+                      <div className="text-slate-500 text-xs">DOJ: {selectedEmployee?.join_date ? new Date(selectedEmployee.join_date).toLocaleDateString() : '-'}</div>
                     </div>
                     <Button variant="ghost" onClick={() => setShowModal(true)}><Eye className="w-5 h-5" /></Button>
                   </div>
@@ -303,13 +357,13 @@ const SalaryBreakup: React.FC = () => {
       </Card>
 
       {/* List of all saved breakups */}
-      <div className="mt-4">
+      <div className="mt-2">
         <Card className="max-w-full" style={{ width: '100%' }}>
           {/* <CardHeader>
             <CardTitle>All Saved Salary Breakups</CardTitle>
           </CardHeader> */}
           <CardContent style={{ paddingTop: '10px' }}>
-            <div className="overflow-x-auto" style={{ maxWidth: '100%', maxHeight: '400px', overflowY: 'auto' }}>
+            <div className="overflow-x-auto" style={{ maxWidth: '100%', maxHeight: '380px', overflowY: 'auto' }}>
               <Table className="w-full min-w-full border border-gray-200">
                 <TableHeader className="sticky top-0 z-20 bg-white shadow border-t border-gray-200">
                   <TableRow className="border-b border-gray-200">
@@ -376,19 +430,19 @@ const SalaryBreakup: React.FC = () => {
           <DialogHeader className="px-6 pt-6">
             <DialogTitle>Salary Breakup Format</DialogTitle>
           </DialogHeader>
-          {(selectedEmployee && breakup && showModal) && (
+          {(selectedEmployee || customPersonName) && breakup && showModal && (
             <div style={{ fontFamily: 'inherit', fontSize: '15px', maxHeight: '80vh', overflowY: 'auto', padding: 24, minWidth: 600 }}>
               <div style={{ display: 'flex', borderBottom: '2px solid #000', fontWeight: 600 }}>
                 <div style={{ width: '40%', padding: '4px 8px' }}>Name</div>
-                <div style={{ width: '60%', padding: '4px 8px' }}>{selectedEmployee.name}</div>
+                <div style={{ width: '60%', padding: '4px 8px' }}>{selectedEmployee?.name || customPersonName}</div>
               </div>
               <div style={{ display: 'flex', borderBottom: '2px solid #000' }}>
                 <div style={{ width: '40%', padding: '4px 8px', fontWeight: 600 }}>Designation</div>
-                <div style={{ width: '60%', padding: '4px 8px' }}>{selectedEmployee.position}</div>
+                <div style={{ width: '60%', padding: '4px 8px' }}>{selectedEmployee?.position || 'Custom Person'}</div>
               </div>
               <div style={{ display: 'flex', borderBottom: '2px solid #000' }}>
                 <div style={{ width: '40%', padding: '4px 8px', fontWeight: 600 }}>Date of Joining</div>
-                <div style={{ width: '60%', padding: '4px 8px' }}>{selectedEmployee.join_date ? new Date(selectedEmployee.join_date).toLocaleDateString() : '-'}</div>
+                <div style={{ width: '60%', padding: '4px 8px' }}>{selectedEmployee?.join_date ? new Date(selectedEmployee.join_date).toLocaleDateString() : '-'}</div>
               </div>
               <div style={{ overflowX: 'auto', marginTop: 16 }}>
                 <table style={{ width: '100%', minWidth: 500, borderCollapse: 'collapse', tableLayout: 'fixed' }}>
