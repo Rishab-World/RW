@@ -11,7 +11,7 @@ import {
   SidebarHeader,
   SidebarFooter,
 } from '@/components/ui/sidebar';
-import { Users, FileText, Calendar, User, LogOut, Coins, Clock } from 'lucide-react';
+import { Users, FileText, Calendar, User, LogOut, Coins, Clock, Target } from 'lucide-react';
 import { useState } from 'react';
 
 interface HRSidebarProps {
@@ -28,29 +28,9 @@ const menuItems = [
     id: 'dashboard',
   },
   {
-    title: 'Job Management',
-    icon: FileText,
-    id: 'jobs',
-  },
-  {
-    title: 'Candidates',
-    icon: Users,
-    id: 'candidates',
-  },
-  {
-    title: 'Interviews',
-    icon: Calendar,
-    id: 'interviews',
-  },
-  {
     title: 'Employees',
     icon: User,
     id: 'employees',
-  },
-  {
-    title: 'FNF Settlement',
-    icon: FileText,
-    id: 'fnf',
   },
 ];
 
@@ -62,6 +42,8 @@ const HRSidebar: React.FC<HRSidebarProps> = ({
 }) => {
   const [attendanceOpen, setAttendanceOpen] = useState(false);
   const [salaryOpen, setSalaryOpen] = useState(false);
+  const [pmsOpen, setPmsOpen] = useState(false);
+  const [recruitmentOpen, setRecruitmentOpen] = useState(false);
   return (
     <Sidebar className="border-r border-amber-200 bg-gradient-to-b from-slate-50 to-blue-50">
       <SidebarHeader className="p-3 sticky top-0 z-30 bg-gradient-to-b from-slate-50 to-blue-50 border-b border-amber-200">
@@ -96,6 +78,85 @@ const HRSidebar: React.FC<HRSidebarProps> = ({
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
+              {/* Recruitment expandable menu */}
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  onClick={() => setRecruitmentOpen((open) => !open)}
+                  isActive={['jobs', 'candidates', 'interviews'].includes(activeSection)}
+                  className={`w-full justify-start transition-all duration-200 ${
+                    ['jobs', 'candidates', 'interviews'].includes(activeSection)
+                      ? 'bg-gradient-to-r from-amber-100 to-yellow-100 text-amber-800 border-r-2 border-amber-400'
+                      : 'text-slate-700 hover:bg-slate-100 hover:text-slate-900'
+                  }`}
+                >
+                  <Users className="w-4 h-4" />
+                  <span>Recruitment</span>
+                  <span className="ml-auto">{recruitmentOpen ? '▾' : '▸'}</span>
+                </SidebarMenuButton>
+                {recruitmentOpen && (
+                  <div className="ml-7 mt-1 space-y-1 relative">
+                    {/* Vertical connective line for Recruitment */}
+                    <div className="absolute left-[-12px] top-[-4px] bottom-[-4px] h-[calc(100%+8px)] w-0.5 bg-amber-400 rounded" style={{ zIndex: 0 }} />
+                    <button
+                      className={`relative block w-full text-left px-2 pl-3 py-1 hover:bg-amber-50 ${activeSection === 'jobs' ? 'bg-amber-100 text-amber-800 font-semibold' : 'text-slate-700'}`}
+                      style={{ zIndex: 1, borderRadius: 0 }}
+                      onClick={() => onSectionChange('jobs')}
+                    >
+                      Job Management
+                    </button>
+                    <button
+                      className={`relative block w-full text-left px-2 pl-3 py-1 hover:bg-amber-50 ${activeSection === 'candidates' ? 'bg-amber-100 text-amber-800 font-semibold' : 'text-slate-700'}`}
+                      style={{ zIndex: 1, borderRadius: 0 }}
+                      onClick={() => onSectionChange('candidates')}
+                    >
+                      Candidates
+                    </button>
+                    <button
+                      className={`relative block w-full text-left px-2 pl-3 py-1 hover:bg-amber-50 ${activeSection === 'interviews' ? 'bg-amber-100 text-amber-800 font-semibold' : 'text-slate-700'}`}
+                      style={{ zIndex: 1, borderRadius: 0 }}
+                      onClick={() => onSectionChange('interviews')}
+                    >
+                      Interviews
+                    </button>
+                  </div>
+                )}
+              </SidebarMenuItem>
+              {/* PMS expandable menu */}
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  onClick={() => setPmsOpen((open) => !open)}
+                  isActive={activeSection.startsWith('pms-')}
+                  className={`w-full justify-start transition-all duration-200 ${
+                    activeSection.startsWith('pms-')
+                      ? 'bg-gradient-to-r from-amber-100 to-yellow-100 text-amber-800 border-r-2 border-amber-400'
+                      : 'text-slate-700 hover:bg-slate-100 hover:text-slate-900'
+                  }`}
+                >
+                  <Target className="w-4 h-4" />
+                  <span>PMS</span>
+                  <span className="ml-auto">{pmsOpen ? '▾' : '▸'}</span>
+                </SidebarMenuButton>
+                {pmsOpen && (
+                  <div className="ml-7 mt-1 space-y-1 relative">
+                    {/* Vertical connective line for PMS */}
+                    <div className="absolute left-[-12px] top-[-4px] bottom-[-4px] h-[calc(100%+8px)] w-0.5 bg-amber-400 rounded" style={{ zIndex: 0 }} />
+                    <button
+                      className={`relative block w-full text-left px-2 pl-3 py-1 hover:bg-amber-50 ${activeSection === 'pms-quarterly' ? 'bg-amber-100 text-amber-800 font-semibold' : 'text-slate-700'}`}
+                      style={{ zIndex: 1, borderRadius: 0 }}
+                      onClick={() => onSectionChange('pms-quarterly')}
+                    >
+                      Quarterly Report
+                    </button>
+                    <button
+                      className={`relative block w-full text-left px-2 pl-3 py-1 hover:bg-amber-50 ${activeSection === 'pms-yearly' ? 'bg-amber-100 text-amber-800 font-semibold' : 'text-slate-700'}`}
+                      style={{ zIndex: 1, borderRadius: 0 }}
+                      onClick={() => onSectionChange('pms-yearly')}
+                    >
+                      Yearly Report
+                    </button>
+                  </div>
+                )}
+              </SidebarMenuItem>
               {/* Attendance expandable menu */}
               <SidebarMenuItem>
                 <SidebarMenuButton
@@ -181,6 +242,21 @@ const HRSidebar: React.FC<HRSidebarProps> = ({
                     </button>
                   </div>
                 )}
+              </SidebarMenuItem>
+              {/* FNF Settlement menu item after Salary */}
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  onClick={() => onSectionChange('fnf')}
+                  isActive={activeSection === 'fnf'}
+                  className={`w-full justify-start transition-all duration-200 ${
+                    activeSection === 'fnf'
+                      ? 'bg-gradient-to-r from-amber-100 to-yellow-100 text-amber-800 border-r-2 border-amber-400'
+                      : 'text-slate-700 hover:bg-slate-100 hover:text-slate-900'
+                  }`}
+                >
+                  <FileText className="w-4 h-4" />
+                  <span>FNF Settlement</span>
+                </SidebarMenuButton>
               </SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroupContent>

@@ -14,6 +14,7 @@ import AttendanceAnalysis from '@/components/AttendanceAnalysis';
 import WeeklyAttendanceAnalysis from '@/components/WeeklyAttendanceAnalysis';
 import MonthlyAttendance from '@/components/MonthlyAttendance';
 import SalaryBreakup from '@/pages/SalaryBreakup';
+import PMSQuarterlyReport from '@/components/PMSQuarterlyReport';
 import { supabase } from '@/lib/supabaseClient';
 
 interface StatusChange {
@@ -476,6 +477,8 @@ const Index = () => {
         return <MonthlyAttendance />;
       case 'salarybreakup':
         return <SalaryBreakup />;
+      case 'pms-quarterly':
+        return <PMSQuarterlyReport />;
       default:
         return <Dashboard 
           jobs={jobs} 
@@ -503,6 +506,7 @@ const Index = () => {
     'attendance-weekly': 'Weekly Attendance',
     'attendance-monthly': 'Monthly Attendance',
     salarybreakup: 'Salary Breakup',
+    'pms-quarterly': 'Quarterly PMS Report',
   };
 
   return (
