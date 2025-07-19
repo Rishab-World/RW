@@ -28,6 +28,9 @@ CREATE TABLE IF NOT EXISTS pms_quarterly_details (
     name VARCHAR(500) NOT NULL,
     score DECIMAL(5,2) NOT NULL,
     max_score DECIMAL(5,2) NOT NULL,
+    self_comment TEXT,
+    pms1_comment TEXT,
+    hr_comment TEXT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 

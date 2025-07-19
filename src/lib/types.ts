@@ -47,6 +47,6 @@ export interface ParsedPMSData {
   maxTotal: number;
   percentageOutOf10: number;
   remark?: string;
-  kraDetails: Array<{ name: string; score: number; maxScore: number }>;
-  goalDetails: Array<{ name: string; score: number; maxScore: number }>;
+  kraDetails: Array<{ name: string; score: number; maxScore: number; selfComment?: string; pms1Comment?: string; hrComment?: string }>;
+  goalDetails: Array<{ name: string; score: number; maxScore: number; selfComment?: string; pms1Comment?: string; hrComment?: string }>;
 } 

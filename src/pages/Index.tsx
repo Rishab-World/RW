@@ -145,6 +145,7 @@ const Index = () => {
         reportingManager: emp.reporting_manager,
         employeeId: emp.employee_id,
         salary: emp.salary,
+        costToHire: emp.cost_to_hire,
         probationStatus: emp.probation_status,
         availableDays: emp.available_days,
         pendingRequests: emp.pending_requests,
@@ -459,6 +460,17 @@ const Index = () => {
         />;
       case 'employees':
         return <EmployeeManagement employees={employees} refreshEmployees={fetchEmployees} />;
+      case 'leave':
+        return (
+          <div className="p-6 bg-gradient-to-br from-slate-50 to-blue-50 min-h-screen">
+            <div className="max-w-7xl mx-auto">
+              <div className="bg-white rounded-lg shadow-lg p-6">
+                <h2 className="text-2xl font-bold text-slate-800 mb-6">Leave Management</h2>
+                <p className="text-slate-600">Leave management functionality will be implemented here.</p>
+              </div>
+            </div>
+          </div>
+        );
       case 'salary':
         return <SalaryMaster isManagement={true} />;
       case 'salarycalc':
@@ -479,6 +491,17 @@ const Index = () => {
         return <SalaryBreakup />;
       case 'pms-quarterly':
         return <PMSQuarterlyReport />;
+      case 'pms-yearly':
+        return (
+          <div className="p-6 bg-gradient-to-br from-slate-50 to-blue-50 min-h-screen">
+            <div className="max-w-7xl mx-auto">
+              <div className="bg-white rounded-lg shadow-lg p-6">
+                <h2 className="text-2xl font-bold text-slate-800 mb-6">Yearly PMS Report</h2>
+                <p className="text-slate-600">Yearly PMS report functionality will be implemented here.</p>
+              </div>
+            </div>
+          </div>
+        );
       default:
         return <Dashboard 
           jobs={jobs} 
@@ -499,6 +522,7 @@ const Index = () => {
     candidates: 'Candidate Management',
     interviews: 'Interview Scheduling',
     employees: 'All Employees',
+    leave: 'Leave Management',
     salary: 'Salary Master',
     fnf: 'FNF Settlement',
     salarycalc: 'Salary Calculation',
@@ -507,6 +531,7 @@ const Index = () => {
     'attendance-monthly': 'Monthly Attendance',
     salarybreakup: 'Salary Breakup',
     'pms-quarterly': 'Quarterly PMS Report',
+    'pms-yearly': 'Yearly PMS Report',
   };
 
   return (

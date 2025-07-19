@@ -26,8 +26,8 @@ interface EmployeeReport {
   maxTotal: number;
   percentage: number;
   percentageOutOf10: number;
-  kraDetails: { name: string; score: number }[];
-  goalDetails: { name: string; score: number }[];
+  kraDetails: { name: string; score: number; selfComment?: string; pms1Comment?: string; hrComment?: string }[];
+  goalDetails: { name: string; score: number; selfComment?: string; pms1Comment?: string; hrComment?: string }[];
   quarter: string;
   department: string;
   remark?: string;
@@ -66,6 +66,7 @@ const PMSQuarterlyReport: React.FC = () => {
   const [modalData, setModalData] = useState<EmployeeReport | null>(null);
   const [loading, setLoading] = useState(false);
   const [selectedDept, setSelectedDept] = useState('all');
+  const [selectedQuarter, setSelectedQuarter] = useState('all');
   const [showDeptDialog, setShowDeptDialog] = useState(false);
   const [file, setFile] = useState<File | null>(null);
   const [remarks, setRemarks] = useState<{ [key: string]: string }>({});
@@ -96,11 +97,26 @@ const PMSQuarterlyReport: React.FC = () => {
         const convertedReports: EmployeeReport[] = savedReports.map((saved: any) => {
           const kraDetails = saved.details
             .filter((d: any) => d.type === 'KRA')
-            .map((d: any) => ({ name: d.name, score: d.score }));
+            .map((d: any) => ({ 
+              name: d.name, 
+              score: d.score, 
+              selfComment: d.self_comment || null,
+              pms1Comment: d.pms1_comment || null,
+              hrComment: d.hr_comment || null
+            }));
+
+          // Debug: Log what we're loading for KRAs
+          console.log('Loading KRA details from DB:', kraDetails.map(k => ({ name: k.name, pms1Comment: k.pms1Comment })));
           
           const goalDetails = saved.details
             .filter((d: any) => d.type === 'GOAL')
-            .map((d: any) => ({ name: d.name, score: d.score }));
+            .map((d: any) => ({ 
+              name: d.name, 
+              score: d.score, 
+              selfComment: d.self_comment || null,
+              pms1Comment: d.pms1_comment || null,
+              hrComment: d.hr_comment || null
+            }));
 
           return {
             employeeName: saved.employee_name,
@@ -186,7 +202,13 @@ const PMSQuarterlyReport: React.FC = () => {
           name: detail.name,
           score: detail.score,
           max_score: 10, // Assuming each KRA is out of 10
+          self_comment: detail.selfComment || null,
+          pms1_comment: detail.pms1Comment || null,
+          hr_comment: detail.hrComment || null,
         }));
+
+        // Debug: Log what we're saving for KRAs
+        console.log('Saving KRA details:', kraDetails.map(k => ({ name: k.name, pms1_comment: k.pms1_comment })));
 
         if (kraDetails.length > 0) {
           const { error: kraError } = await supabase
@@ -205,7 +227,13 @@ const PMSQuarterlyReport: React.FC = () => {
           name: detail.name,
           score: detail.score,
           max_score: 10, // Assuming each goal is out of 10
+          self_comment: detail.selfComment || null,
+          pms1_comment: detail.pms1Comment || null,
+          hr_comment: detail.hrComment || null,
         }));
+
+        // Debug: Log what we're saving for Goals
+        console.log('Saving Goal details:', goalDetails.map(g => ({ name: g.name, pms1_comment: g.pms1_comment })));
 
         if (goalDetails.length > 0) {
           const { error: goalError } = await supabase
@@ -264,6 +292,10 @@ const PMSQuarterlyReport: React.FC = () => {
       const ws = workbook.Sheets[sheetName];
       const rows: any[][] = XLSX.utils.sheet_to_json(ws, { header: 1, blankrows: false });
       if (rows.length < 6) return;
+      
+      // Debug: Log the first 10 rows to understand file structure
+      console.log('First 10 rows of file:', rows.slice(0, 10));
+      
       const empRaw = (rows[3]?.[0] || '').toString().trim();
       if (!empRaw) return;
       let employeeName = empRaw;
@@ -273,20 +305,238 @@ const PMSQuarterlyReport: React.FC = () => {
         employeeName = parts[0].trim();
         employeeCode = parts[1]?.trim() || '';
       }
-      let kraDetails: { name: string; score: number }[] = [];
-      let goalDetails: { name: string; score: number }[] = [];
+      let kraDetails: { name: string; score: number; selfComment?: string; pms1Comment?: string; hrComment?: string }[] = [];
+      let goalDetails: { name: string; score: number; selfComment?: string; pms1Comment?: string; hrComment?: string }[] = [];
+      
+      // Track the current KRA/Goal being processed
+      let currentKRA: string | null = null;
+      let currentGoal: string | null = null;
+      let pendingPms1Comment: string = '';
+      let pendingHrComment: string = '';
+      
       let i = 5;
       while (i < rows.length) {
         const row = rows[i];
         const goalKraRaw = row[0] || '';
         const goalKra = goalKraRaw.toString().trim().toLowerCase();
-        const score = parseFloat(row[2]) || 0;
-        const isValidName = goalKra && goalKra !== 'default' && !goalKra.startsWith('self') && !goalKra.startsWith('hr') && goalKra.replace(/['"\s]/g, '') !== '' && !goalKra.includes('total');
-        if (isValidName) {
+        
+        // Try different column indices for score - the pms_1 column might be at different index
+        const scoreFromCol1 = parseFloat(row[1]) || 0;
+        const scoreFromCol2 = parseFloat(row[2]) || 0;
+        const scoreFromCol3 = parseFloat(row[3]) || 0;
+        
+        // Use the pms_1 column (column 2 based on the image)
+        const score = scoreFromCol2;
+        
+        // Debug: Log every row being processed
+        console.log(`Row ${i}:`, { 
+          raw: goalKraRaw, 
+          processed: goalKra, 
+          score: score,
+          scoreCol1: scoreFromCol1,
+          scoreCol2: scoreFromCol2,
+          scoreCol3: scoreFromCol3,
+          row: row 
+        });
+        
+        const isValidName = goalKra && 
+                           goalKra !== 'default' && 
+                           !goalKra.startsWith('self') && 
+                           !goalKra.startsWith('hr') && 
+                           !goalKra.startsWith('pms_1') &&
+                           goalKra.replace(/['"\s]/g, '') !== '' && 
+                           !goalKra.includes('total') &&
+                           goalKra.length > 1; // Reduced minimum length requirement
+        
+        // Debug: Log validation result
+        console.log(`Row ${i} isValidName:`, isValidName, 'for:', goalKraRaw);
+        
+        // Debug: Check if this row contains pms_1 content
+        if (goalKraRaw.includes('pms_1 :')) {
+          console.log(`Row ${i} contains pms_1 content:`, goalKraRaw);
+          
+          // Extract pms_1 comment from this row
+          const pms1Match = goalKraRaw.match(/pms_1 : ([^\n]*)/);
+          if (pms1Match && pms1Match[1]) {
+            const extractedComment = pms1Match[1].trim();
+            console.log(`Extracted pms_1 comment: "${extractedComment}" for current KRA: "${currentKRA}" or Goal: "${currentGoal}"`);
+            
+            // Store this comment to be used with the next KRA/Goal
+            pendingPms1Comment = extractedComment;
+          }
+        }
+        
+        // Fallback: If validation fails but we have meaningful content, still capture it
+        const hasMeaningfulContent = goalKraRaw && 
+                                   goalKraRaw.length > 3 && 
+                                   !goalKraRaw.toLowerCase().includes('total') &&
+                                   !goalKraRaw.toLowerCase().startsWith('self') &&
+                                   !goalKraRaw.toLowerCase().startsWith('hr') &&
+                                   !goalKraRaw.toLowerCase().startsWith('pms_1');
+        
+                if (isValidName || hasMeaningfulContent) {
+          // This is a KRA or Goal row - store it as current
           if (KRA_LIST.includes(goalKra)) {
-            kraDetails.push({ name: row[0], score });
+            currentKRA = goalKraRaw;
+            currentGoal = null;
           } else {
-            goalDetails.push({ name: row[0], score });
+            currentGoal = goalKraRaw;
+            currentKRA = null;
+          }
+          
+          // Look for self-appraisal comments in the next rows
+          let selfComment = '';
+          let pms1Comment = '';
+          let hrComment = '';
+          
+          // Check if the current row contains combined data (Self, pms_1, HR in one row)
+          const currentRowText = goalKraRaw;
+          if (currentRowText.includes('Self :') && currentRowText.includes('pms_1 :')) {
+            // Extract Self comment
+            const selfMatch = currentRowText.match(/Self : \[Auto Self Appraisal By HR\]/);
+            if (selfMatch) {
+              selfComment = selfMatch[0];
+            }
+            
+            // Extract pms_1 comment
+            const pms1Match = currentRowText.match(/pms_1 : ([^\n]*)/);
+            if (pms1Match && pms1Match[1]) {
+              pms1Comment = pms1Match[1].trim();
+            }
+            
+            // Extract HR comment
+            const hrMatch = currentRowText.match(/HR : ([^\n]*)/);
+            if (hrMatch && hrMatch[1]) {
+              hrComment = hrMatch[1].trim();
+            }
+            
+            // Debug: Log what we captured from combined row
+            console.log(`Captured from combined row for ${goalKraRaw}:`, {
+              selfComment,
+              pms1Comment,
+              hrComment
+            });
+          } else {
+            // Check next row for Self comment
+            if (i + 1 < rows.length) {
+              const nextRow = rows[i + 1];
+              const nextRowText = (nextRow[0] || '').toString().trim();
+              if (nextRowText.startsWith('Self :') && nextRowText.includes('[Auto Self Appraisal By HR]')) {
+                selfComment = nextRowText;
+              }
+            }
+            
+            // Check next+1 row for pms_1 comment
+            if (i + 2 < rows.length) {
+              const pmsRow = rows[i + 2];
+              const pmsRowText = (pmsRow[0] || '').toString().trim();
+              
+              // Debug: Log the pms row to see its structure
+              console.log(`PMS Row for ${goalKraRaw}:`, pmsRow);
+              
+              if (pmsRowText.startsWith('pms_1 :')) {
+                // Extract the comment text that comes after "pms_1 :"
+                const commentText = pmsRowText.replace('pms_1 :', '').trim();
+                
+                // Also check other columns for additional comment text
+                const additionalComment = (pmsRow[1] || '').toString().trim() || 
+                                        (pmsRow[2] || '').toString().trim() || 
+                                        (pmsRow[3] || '').toString().trim();
+                
+                // Check all columns in the pms row for any comment content
+                let allColumnComments = '';
+                for (let col = 0; col < pmsRow.length; col++) {
+                  const colText = (pmsRow[col] || '').toString().trim();
+                  if (colText && colText !== 'pms_1 :') {
+                    allColumnComments += (allColumnComments ? ' ' : '') + colText;
+                  }
+                }
+                // Remove the "pms_1 :" prefix if it's in the combined text
+                allColumnComments = allColumnComments.replace('pms_1 :', '').trim();
+                
+                // Check if there are additional rows with more comments
+                let extraComments = '';
+                if (i + 3 < rows.length) {
+                  const extraRow = rows[i + 3];
+                  const extraRowText = (extraRow[0] || '').toString().trim();
+                  // If the next row doesn't start with "HR :", it might be additional comment
+                  if (!extraRowText.startsWith('HR :') && extraRowText) {
+                    extraComments = extraRowText;
+                  }
+                }
+                
+                // Also check the next few rows for any additional comment content
+                let additionalRowComments = '';
+                for (let j = i + 3; j < Math.min(i + 6, rows.length); j++) {
+                  const checkRow = rows[j];
+                  const checkRowText = (checkRow[0] || '').toString().trim();
+                  if (checkRowText && !checkRowText.startsWith('HR :') && !checkRowText.startsWith('Self :') && !checkRowText.startsWith('pms_1 :')) {
+                    additionalRowComments += (additionalRowComments ? ' ' : '') + checkRowText;
+                  }
+                }
+                
+                // Combine all possible comment sources
+                const fullComment = commentText || additionalComment || extraComments || additionalRowComments || allColumnComments;
+                pms1Comment = fullComment || '';
+                
+                // Debug: Log what we captured
+                console.log(`Captured pms_1 comment for ${goalKraRaw}:`, {
+                  original: pmsRowText,
+                  extracted: commentText,
+                  additional: additionalComment,
+                  extra: extraComments,
+                  final: pms1Comment
+                });
+              }
+            }
+            
+            // Check next+2 row for HR comment
+            if (i + 3 < rows.length) {
+              const hrRow = rows[i + 3];
+              const hrRowText = (hrRow[0] || '').toString().trim();
+              if (hrRowText.startsWith('HR :')) {
+                // Extract the comment text that comes after "HR :"
+                const commentText = hrRowText.replace('HR :', '').trim();
+                // Also check other columns for additional comment text
+                const additionalComment = (hrRow[1] || '').toString().trim() || 
+                                        (hrRow[2] || '').toString().trim() || 
+                                        (hrRow[3] || '').toString().trim();
+                const fullComment = commentText || additionalComment;
+                hrComment = fullComment || '';
+              }
+            }
+          }
+          
+          // Additional check: Look for pms_1 content in the current row itself
+          if (!pms1Comment && currentRowText.includes('pms_1 :')) {
+            const pms1Match = currentRowText.match(/pms_1 : ([^\n]*)/);
+            if (pms1Match && pms1Match[1]) {
+              pms1Comment = pms1Match[1].trim();
+              console.log(`Found pms_1 in current row for ${goalKraRaw}:`, pms1Comment);
+            }
+          }
+          
+          // Use pending pms_1 comment if we have one and current pms1Comment is empty
+          if (!pms1Comment && pendingPms1Comment) {
+            pms1Comment = pendingPms1Comment;
+            console.log(`Using pending pms_1 comment for ${goalKraRaw}:`, pms1Comment);
+            pendingPms1Comment = ''; // Clear after using
+          }
+          
+          // Debug: Log what we're about to add
+          console.log(`Adding ${KRA_LIST.includes(goalKra) ? 'KRA' : 'Goal'}:`, {
+            name: row[0],
+            score,
+            selfComment,
+            pms1Comment,
+            hrComment
+          });
+
+          if (KRA_LIST.includes(goalKra)) {
+            kraDetails.push({ name: row[0], score, selfComment, pms1Comment, hrComment });
+          } else {
+            // If it's not in KRA_LIST, it's a goal (including DEFAULT section goals)
+            goalDetails.push({ name: row[0], score, selfComment, pms1Comment, hrComment });
           }
         }
         i++;
@@ -299,6 +549,13 @@ const PMSQuarterlyReport: React.FC = () => {
       const totalScore = kraScore + goalScore;
       const percentage = maxTotal ? parseFloat(((totalScore / maxTotal) * 100).toFixed(1)) : 0;
       const percentageOutOf10 = maxTotal ? parseFloat(((totalScore / maxTotal) * 10).toFixed(1)) : 0;
+      
+      // Debug logging
+      console.log(`Employee: ${employeeName}`, {
+        goals: goalDetails.map(g => ({ name: g.name, score: g.score, pms1Comment: g.pms1Comment })),
+        kras: kraDetails.map(k => ({ name: k.name, score: k.score, pms1Comment: k.pms1Comment }))
+      });
+      
       employeeReports.push({
         employeeName,
         employeeCode,
@@ -359,59 +616,185 @@ const PMSQuarterlyReport: React.FC = () => {
 
   // Download single employee data as Excel
   const handleDownloadEmployee = (report: EmployeeReport) => {
+    // Helper function to create combined description cell with proper line breaks
+    const createCombinedDescription = (item: { name: string; score: number; selfComment?: string; pms1Comment?: string; hrComment?: string }) => {
+      const selfText = item.selfComment || 'Self : [Auto Self Appraisal By HR]';
+      const pms1Text = item.pms1Comment ? `pms_1 : ${item.pms1Comment}` : 'pms_1 :';
+      const hrText = item.hrComment ? `HR : ${item.hrComment}` : 'HR :';
+      
+      // Combine all three fields with proper line breaks
+      return `${selfText}\n${pms1Text}\n${hrText}`;
+    };
+
+    // Build sheet data with 3-row structure per KRA/Goal
     const sheetData = [
-      ['Goals/KSA/KRA', 'Score'],
-      ...report.goalDetails.map(g => [g.name, g.score]),
-      ['KRA', 'Score'],
-      ...report.kraDetails.map(k => [k.name, k.score]),
-      [],
-      ['KRA Total', report.kraScore],
-      ['Goal Total', report.goalScore],
-      ['Overall Total', report.totalScore],
-      ['Out Of', report.maxTotal],
-      ['Score (/10)', report.percentageOutOf10],
+      ['Goals/KSA/KRA', 'Out of', 'Manager Rating', '']
     ];
+
+    // Add Goals with 3-row structure
+    report.goalDetails.forEach(g => {
+      // Row 1: Goal name with score
+      sheetData.push([g.name, 10.00, g.score.toFixed(2), '']);
+      // Row 2: Blank row for spacing
+      sheetData.push(['', '', '', '']);
+      // Row 3: Combined Self/pms_1/HR description
+      sheetData.push([createCombinedDescription(g), '', '', '']);
+    });
+
+    // Add KRAs with 3-row structure
+    report.kraDetails.forEach(k => {
+      // Row 1: KRA name with score
+      sheetData.push([k.name, 10.00, k.score.toFixed(2), '']);
+      // Row 2: Blank row for spacing
+      sheetData.push(['', '', '', '']);
+      // Row 3: Combined Self/pms_1/HR description
+      sheetData.push([createCombinedDescription(k), '', '', '']);
+    });
+
+    // Add totals
+    sheetData.push([]);
+    sheetData.push(['Total :', report.maxTotal.toFixed(2), report.totalScore.toFixed(2), '']);
+    sheetData.push(['Total :', '100%', `${((report.totalScore / report.maxTotal) * 100).toFixed(0)}%`, '']);
+    
     const ws = XLSXUtils.aoa_to_sheet(sheetData);
+    
+    // Set cell formatting for description cells (rows with combined content)
+    const range = XLSXUtils.decode_range(ws['!ref'] || 'A1');
+    for (let row = 1; row <= range.e.r; row++) {
+      const cellRef = XLSXUtils.encode_cell({ r: row, c: 0 });
+      if (ws[cellRef] && ws[cellRef].v && typeof ws[cellRef].v === 'string' && ws[cellRef].v.includes('\n')) {
+        // Set text wrapping for cells with line breaks
+        if (!ws[cellRef].s) ws[cellRef].s = {};
+        ws[cellRef].s.alignment = { wrapText: true, vertical: 'top' };
+      }
+    }
+    
     const wb = XLSXUtils.book_new();
     XLSXUtils.book_append_sheet(wb, ws, 'Details');
-    XLSXWriteFile(wb, `${report.employeeName.replace(/\s+/g, '_')}_${report.employeeCode}.xlsx`);
+    // Use employee name for filename
+    const fileName = `${report.employeeName.replace(/\s+/g, '_')}.xlsx`;
+    XLSXWriteFile(wb, fileName);
   };
 
   // Download all/department data as Excel
   const handleDownloadAll = () => {
+    setSelectedQuarter('all'); // Reset quarter selection
     setShowDeptDialog(true);
   };
 
   const handleConfirmDownload = () => {
     let filteredReports = reports;
+    
+    // Filter by department
     if (selectedDept !== 'all') {
-      filteredReports = reports.filter(r => r.department === selectedDept);
+      filteredReports = filteredReports.filter(r => r.department === selectedDept);
     }
+    
+    // Filter by quarter
+    if (selectedQuarter !== 'all') {
+      filteredReports = filteredReports.filter(r => r.quarter === selectedQuarter);
+    }
+
+    if (filteredReports.length === 0) {
+      toast({
+        title: "No data found",
+        description: "No reports match the selected criteria.",
+        variant: "destructive",
+      });
+      setShowDeptDialog(false);
+      return;
+    }
+
     const wb = XLSXUtils.book_new();
+    
     // Summary sheet
     const summarySheet = [
-      ['Department', 'Employee Name', 'Employee Code', 'KRA Score', 'Goal Score', 'Total Score', 'Out Of', 'Score (/10)'],
-      ...filteredReports.map(r => [r.department, r.employeeName, r.employeeCode, r.kraScore, r.goalScore, r.totalScore, r.maxTotal, r.percentageOutOf10])
+      ['Quarter', 'Department', 'Employee Name', 'Employee Code', 'KRA Score', 'Goal Score', 'Total Score', 'Out Of', 'Score (/10)'],
+      ...filteredReports.map(r => [r.quarter, r.department, r.employeeName, r.employeeCode, r.kraScore, r.goalScore, r.totalScore, r.maxTotal, r.percentageOutOf10])
     ];
     XLSXUtils.book_append_sheet(wb, XLSXUtils.aoa_to_sheet(summarySheet), 'Summary');
-    // Employee sheets
-    filteredReports.forEach(r => {
+    
+    // Employee sheets - use employee name only for worksheet name
+    filteredReports.forEach((r, index) => {
+      // Helper function to create combined description cell with proper line breaks
+      const createCombinedDescription = (item: { name: string; score: number; selfComment?: string; pms1Comment?: string; hrComment?: string }) => {
+        const selfText = item.selfComment || 'Self : [Auto Self Appraisal By HR]';
+        const pms1Text = item.pms1Comment ? `pms_1 : ${item.pms1Comment}` : 'pms_1 :';
+        const hrText = item.hrComment ? `HR : ${item.hrComment}` : 'HR :';
+        
+        // Combine all three fields with proper line breaks
+        return `${selfText}\n${pms1Text}\n${hrText}`;
+      };
+
+      // Build sheet data with 3-row structure per KRA/Goal
       const sheetData = [
-        ['Goals/KSA/KRA', 'Score'],
-        ...r.goalDetails.map(g => [g.name, g.score]),
-        ['KRA', 'Score'],
-        ...r.kraDetails.map(k => [k.name, k.score]),
-        [],
-        ['KRA Total', r.kraScore],
-        ['Goal Total', r.goalScore],
-        ['Overall Total', r.totalScore],
-        ['Out Of', r.maxTotal],
-        ['Score (/10)', r.percentageOutOf10],
+        ['Goals/KSA/KRA', 'Out of', 'Manager Rating', '']
       ];
-      XLSXUtils.book_append_sheet(wb, XLSXUtils.aoa_to_sheet(sheetData), `${r.employeeName.replace(/\s+/g, '_')}_${r.employeeCode}`);
+
+      // Add Goals with 3-row structure
+      r.goalDetails.forEach(g => {
+        // Row 1: Goal name with score
+        sheetData.push([g.name, 10.00, g.score.toFixed(2), '']);
+        // Row 2: Blank row for spacing
+        sheetData.push(['', '', '', '']);
+        // Row 3: Combined Self/pms_1/HR description
+        sheetData.push([createCombinedDescription(g), '', '', '']);
+      });
+
+      // Add KRAs with 3-row structure
+      r.kraDetails.forEach(k => {
+        // Row 1: KRA name with score
+        sheetData.push([k.name, 10.00, k.score.toFixed(2), '']);
+        // Row 2: Blank row for spacing
+        sheetData.push(['', '', '', '']);
+        // Row 3: Combined Self/pms_1/HR description
+        sheetData.push([createCombinedDescription(k), '', '', '']);
+      });
+
+      // Add totals
+      sheetData.push([]);
+      sheetData.push(['Total :', r.maxTotal.toFixed(2), r.totalScore.toFixed(2), '']);
+      sheetData.push(['Total :', '100%', `${((r.totalScore / r.maxTotal) * 100).toFixed(0)}%`, '']);
+      
+      const ws = XLSXUtils.aoa_to_sheet(sheetData);
+      
+      // Set cell formatting for description cells (rows with combined content)
+      const range = XLSXUtils.decode_range(ws['!ref'] || 'A1');
+      for (let row = 1; row <= range.e.r; row++) {
+        const cellRef = XLSXUtils.encode_cell({ r: row, c: 0 });
+        if (ws[cellRef] && ws[cellRef].v && typeof ws[cellRef].v === 'string' && ws[cellRef].v.includes('\n')) {
+          // Set text wrapping for cells with line breaks
+          if (!ws[cellRef].s) ws[cellRef].s = {};
+          ws[cellRef].s.alignment = { wrapText: true, vertical: 'top' };
+          // Set row height to accommodate multiple lines
+          if (!ws['!rows']) ws['!rows'] = [];
+          ws['!rows'][row] = { hpt: '60' }; // Set row height to 60 points
+        }
+      }
+      
+      // Use employee name only for worksheet name
+      const worksheetName = r.employeeName.replace(/\s+/g, '_');
+      
+      XLSXUtils.book_append_sheet(wb, ws, worksheetName);
     });
-    XLSXWriteFile(wb, selectedDept === 'all' ? 'All_Departments_PMS_Report.xlsx' : `${selectedDept}_PMS_Report.xlsx`);
+
+    // Generate filename based on quarter name
+    let filename = 'PMS_Report';
+    if (selectedQuarter !== 'all') {
+      filename = `${selectedQuarter.replace(/\s+/g, '_')}_PMS_Report`;
+    }
+    if (selectedDept !== 'all') {
+      filename += `_${selectedDept}`;
+    }
+    filename += '.xlsx';
+
+    XLSXWriteFile(wb, filename);
     setShowDeptDialog(false);
+    
+    toast({
+      title: "Download successful",
+      description: `Report downloaded with ${filteredReports.length} employee(s).`,
+    });
   };
 
   // Edit remark handlers
@@ -692,9 +1075,11 @@ const PMSQuarterlyReport: React.FC = () => {
         <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-md relative">
             <h3 className="text-lg font-bold mb-4">Download PMS Report</h3>
+            
+            <div className="mb-4">
             <label className="block mb-2 font-semibold">Select Department</label>
             <select
-              className="border p-2 rounded w-full mb-4"
+                className="border p-2 rounded w-full"
               value={selectedDept}
               onChange={e => setSelectedDept(e.target.value)}
             >
@@ -703,9 +1088,39 @@ const PMSQuarterlyReport: React.FC = () => {
                 <option key={dept} value={dept}>{dept}</option>
               ))}
             </select>
+            </div>
+
+            <div className="mb-4">
+              <label className="block mb-2 font-semibold">Select Quarter</label>
+              <select
+                className="border p-2 rounded w-full"
+                value={selectedQuarter}
+                onChange={e => setSelectedQuarter(e.target.value)}
+              >
+                <option value="all">All Quarters</option>
+                {Array.from(new Set(reports.map(r => r.quarter))).sort().map(quarter => (
+                  <option key={quarter} value={quarter}>{quarter}</option>
+                ))}
+              </select>
+            </div>
+
+            <div className="text-sm text-gray-600 mb-4 p-3 bg-gray-50 rounded">
+              <strong>Tip:</strong> Select a specific quarter to avoid worksheet name conflicts and get a more focused report.
+            </div>
+
             <div className="flex justify-end gap-2">
-              <button className="px-4 py-2 bg-gray-200 rounded" onClick={() => setShowDeptDialog(false)}>Cancel</button>
-              <button className="px-4 py-2 bg-amber-500 text-white rounded" onClick={handleConfirmDownload}>Download</button>
+              <button 
+                className="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300" 
+                onClick={() => setShowDeptDialog(false)}
+              >
+                Cancel
+              </button>
+              <button 
+                className="px-4 py-2 bg-amber-500 text-white rounded hover:bg-amber-600" 
+                onClick={handleConfirmDownload}
+              >
+                Download
+              </button>
             </div>
           </div>
         </div>

@@ -1,0 +1,6 @@
+name,email,phone,department,position,join_date,status,reporting_manager,employee_id,salary,cost_to_hire,probation_status,source
+John Doe,,,,,,,,,,,,
+Jane Smith,jane@example.com,,,,,,,,,,,
+Mike Johnson,,+91-9876543210,,,,,,,,,,
+Sarah Wilson,,,,Engineering,,,,,,,,
+David Brown,,,,,Software Engineer,,,,,,, 

@@ -1,0 +1,38 @@
+This is a placeholder for the Excel template file.
+
+To create the employee import template:
+
+1. Open Excel or Google Sheets
+2. Create a new spreadsheet with the following columns in the first row:
+   - name
+   - email
+   - phone
+   - department
+   - position
+   - join_date
+   - status
+   - reporting_manager
+   - employee_id
+   - salary
+   - cost_to_hire
+   - probation_status
+   - source
+
+3. Add sample data in the second row:
+   - John Doe
+   - john.doe@example.com
+   - +91-9876543210
+   - Engineering
+   - Software Engineer
+   - 2024-01-15
+   - active
+   - Jane Smith
+   - EMP001
+   - 75000
+   - 50000
+   - ongoing
+   - LinkedIn
+
+4. Save the file as "employee_import_template.xlsx"
+
+The application will automatically generate this template when users click the "Template" button. 

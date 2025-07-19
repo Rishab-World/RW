@@ -1,0 +1,6 @@
+name,email,phone,department,position,join_date,status,reporting_manager,employee_id,salary,cost_to_hire,probation_status,source
+John Doe,john@example.com,+91-9876543210,Engineering,Software Engineer,45300,active,Jane Smith,EMP001,75000,50000,ongoing,LinkedIn
+Jane Smith,jane@example.com,+91-9876543211,Engineering,Senior Engineer,45000,active,Mike Johnson,EMP002,95000,60000,completed,Referral
+Mike Johnson,mike@example.com,+91-9876543212,Sales,Sales Manager,44000,active,Sarah Wilson,EMP003,85000,45000,completed,Website
+Sarah Wilson,sarah@example.com,+91-9876543213,HR,HR Manager,43000,active,David Brown,EMP004,110000,70000,completed,Agency
+David Brown,david@example.com,+91-9876543214,Finance,Finance Director,42000,active,CEO,EMP005,120000,80000,completed,Job Fair 

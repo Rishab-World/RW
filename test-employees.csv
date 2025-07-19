@@ -1,0 +1,6 @@
+name,email,phone,department,position,join_date,status,reporting_manager,employee_id,salary,cost_to_hire,probation_status,source
+John Doe,john.doe@example.com,+91-9876543210,Engineering,Software Engineer,2024-01-15,active,Jane Smith,EMP001,75000,50000,ongoing,LinkedIn
+Jane Smith,jane.smith@example.com,+91-9876543211,Engineering,Senior Software Engineer,2023-06-01,active,Mike Johnson,EMP002,95000,60000,completed,Employee Referral
+Mike Johnson,mike.johnson@example.com,+91-9876543212,Product Management,Product Manager,2023-03-15,active,Sarah Wilson,EMP003,85000,45000,completed,Company Website
+Sarah Wilson,sarah.wilson@example.com,+91-9876543213,Product Management,Senior Product Manager,2022-09-01,active,David Brown,EMP004,110000,70000,completed,Recruitment Agency
+David Brown,david.brown@example.com,+91-9876543214,Sales,Sales Director,2022-01-15,active,CEO,EMP005,120000,80000,completed,Job Fair 

@@ -11,7 +11,7 @@ import {
   SidebarHeader,
   SidebarFooter,
 } from '@/components/ui/sidebar';
-import { Users, FileText, Calendar, User, LogOut, Coins, Clock, Target } from 'lucide-react';
+import { Users, FileText, Calendar, User, LogOut, Coins, Clock, Target, CalendarDays } from 'lucide-react';
 import { useState } from 'react';
 
 interface HRSidebarProps {
@@ -26,11 +26,6 @@ const menuItems = [
     title: 'Dashboard',
     icon: FileText,
     id: 'dashboard',
-  },
-  {
-    title: 'Employees',
-    icon: User,
-    id: 'employees',
   },
 ];
 
@@ -121,6 +116,21 @@ const HRSidebar: React.FC<HRSidebarProps> = ({
                   </div>
                 )}
               </SidebarMenuItem>
+              {/* Employees menu item */}
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  onClick={() => onSectionChange('employees')}
+                  isActive={activeSection === 'employees'}
+                  className={`w-full justify-start transition-all duration-200 ${
+                    activeSection === 'employees'
+                      ? 'bg-gradient-to-r from-amber-100 to-yellow-100 text-amber-800 border-r-2 border-amber-400'
+                      : 'text-slate-700 hover:bg-slate-100 hover:text-slate-900'
+                  }`}
+                >
+                  <User className="w-4 h-4" />
+                  <span>Employees</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
               {/* PMS expandable menu */}
               <SidebarMenuItem>
                 <SidebarMenuButton
@@ -199,6 +209,21 @@ const HRSidebar: React.FC<HRSidebarProps> = ({
                     </button>
                   </div>
                 )}
+              </SidebarMenuItem>
+              {/* Leave menu item */}
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  onClick={() => onSectionChange('leave')}
+                  isActive={activeSection === 'leave'}
+                  className={`w-full justify-start transition-all duration-200 ${
+                    activeSection === 'leave'
+                      ? 'bg-gradient-to-r from-amber-100 to-yellow-100 text-amber-800 border-r-2 border-amber-400'
+                      : 'text-slate-700 hover:bg-slate-100 hover:text-slate-900'
+                  }`}
+                >
+                  <CalendarDays className="w-4 h-4" />
+                  <span>Leave</span>
+                </SidebarMenuButton>
               </SidebarMenuItem>
               {/* Salary expandable menu */}
               <SidebarMenuItem>
