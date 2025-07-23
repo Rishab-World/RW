@@ -108,10 +108,10 @@ const KYCDataForm: React.FC = () => {
   };
 
   return (
-    <div className="p-4 space-y-4 bg-gradient-to-br from-slate-50 to-blue-50 min-h-screen">
-      <Card className="professional-card">
+    <div className="p-4 space-y-4 bg-slate-50 dark:bg-slate-900 min-h-screen">
+      <Card className="professional-card bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700">
         <CardHeader>
-          <CardTitle className="flex items-center space-x-2 text-amber-800">
+          <CardTitle className="flex items-center space-x-2 text-amber-800 dark:text-amber-300">
             <User className="w-5 h-5" />
             <span>KYC Data Form</span>
           </CardTitle>
@@ -120,36 +120,36 @@ const KYCDataForm: React.FC = () => {
           {/* Personal Information */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
-              <Label>Employee Name *</Label>
+              <Label className="text-slate-700 dark:text-slate-200">Employee Name *</Label>
               <Input
                 value={kycData.employeeName}
                 onChange={(e) => handleInputChange('employeeName', e.target.value)}
-                className="professional-input"
+                className="border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500"
               />
             </div>
             <div>
-              <Label>Father's Name</Label>
+              <Label className="text-slate-700 dark:text-slate-200">Father's Name</Label>
               <Input
                 value={kycData.fatherName}
                 onChange={(e) => handleInputChange('fatherName', e.target.value)}
-                className="professional-input"
+                className="border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500"
               />
             </div>
             <div>
-              <Label>Husband's Name (if married)</Label>
+              <Label className="text-slate-700 dark:text-slate-200">Husband's Name (if married)</Label>
               <Input
                 value={kycData.husbandName}
                 onChange={(e) => handleInputChange('husbandName', e.target.value)}
-                className="professional-input"
+                className="border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500"
               />
             </div>
             <div>
-              <Label>Gender</Label>
+              <Label className="text-slate-700 dark:text-slate-200">Gender</Label>
               <Select value={kycData.gender} onValueChange={(value) => handleInputChange('gender', value)}>
-                <SelectTrigger className="professional-input">
+                <SelectTrigger className="border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
                   <SelectValue placeholder="Select Gender" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="bg-white dark:bg-slate-700 border-slate-200 dark:border-slate-600">
                   <SelectItem value="male">Male</SelectItem>
                   <SelectItem value="female">Female</SelectItem>
                   <SelectItem value="other">Other</SelectItem>
@@ -157,12 +157,12 @@ const KYCDataForm: React.FC = () => {
               </Select>
             </div>
             <div>
-              <Label>Marital Status</Label>
+              <Label className="text-slate-700 dark:text-slate-200">Marital Status</Label>
               <Select value={kycData.maritalStatus} onValueChange={(value) => handleInputChange('maritalStatus', value)}>
-                <SelectTrigger className="professional-input">
+                <SelectTrigger className="border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
                   <SelectValue placeholder="Select Status" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="bg-white dark:bg-slate-700 border-slate-200 dark:border-slate-600">
                   <SelectItem value="single">Single</SelectItem>
                   <SelectItem value="married">Married</SelectItem>
                   <SelectItem value="divorced">Divorced</SelectItem>
@@ -171,12 +171,12 @@ const KYCDataForm: React.FC = () => {
               </Select>
             </div>
             <div>
-              <Label>DOB (As per Aadhar)</Label>
+              <Label className="text-slate-700 dark:text-slate-200">DOB (As per Aadhar)</Label>
               <Input
                 type="date"
                 value={kycData.dobAadhar}
                 onChange={(e) => handleInputChange('dobAadhar', e.target.value)}
-                className="professional-input"
+                className="border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500"
               />
             </div>
           </div>
@@ -184,20 +184,20 @@ const KYCDataForm: React.FC = () => {
           {/* Employment Information */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
-              <Label>Designation</Label>
+              <Label className="text-slate-700 dark:text-slate-200">Designation</Label>
               <Input
                 value={kycData.designation}
                 onChange={(e) => handleInputChange('designation', e.target.value)}
-                className="professional-input"
+                className="border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500"
               />
             </div>
             <div>
-              <Label>Grade</Label>
+              <Label className="text-slate-700 dark:text-slate-200">Grade</Label>
               <Select value={kycData.grade} onValueChange={(value) => handleInputChange('grade', value)}>
-                <SelectTrigger className="professional-input">
+                <SelectTrigger className="border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
                   <SelectValue placeholder="Select Grade" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="bg-white dark:bg-slate-700 border-slate-200 dark:border-slate-600">
                   <SelectItem value="M1">M1</SelectItem>
                   <SelectItem value="M2">M2</SelectItem>
                   <SelectItem value="M3">M3</SelectItem>
@@ -210,12 +210,12 @@ const KYCDataForm: React.FC = () => {
               </Select>
             </div>
             <div>
-              <Label>Date of Appointment</Label>
+              <Label className="text-slate-700 dark:text-slate-200">Date of Appointment</Label>
               <Input
                 type="date"
                 value={kycData.dateOfAppointment}
                 onChange={(e) => handleInputChange('dateOfAppointment', e.target.value)}
-                className="professional-input"
+                className="border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500"
               />
             </div>
           </div>
@@ -223,152 +223,148 @@ const KYCDataForm: React.FC = () => {
           {/* Salary Information */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div>
-              <Label>Basic Salary</Label>
+              <Label className="text-slate-700 dark:text-slate-200">Basic Salary</Label>
               <Input
                 type="number"
                 value={kycData.basicSalary}
                 onChange={(e) => handleInputChange('basicSalary', e.target.value)}
-                className="professional-input"
+                className="border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500"
               />
             </div>
             <div>
-              <Label>Special Allowance</Label>
+              <Label className="text-slate-700 dark:text-slate-200">Special Allowance</Label>
               <Input
                 type="number"
                 value={kycData.specialAllowance}
                 onChange={(e) => handleInputChange('specialAllowance', e.target.value)}
-                className="professional-input"
+                className="border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500"
               />
             </div>
             <div>
-              <Label>Conveyance</Label>
+              <Label className="text-slate-700 dark:text-slate-200">Conveyance</Label>
               <Input
                 type="number"
                 value={kycData.conveyance}
                 onChange={(e) => handleInputChange('conveyance', e.target.value)}
-                className="professional-input"
+                className="border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500"
               />
             </div>
             <div>
-              <Label>HRA</Label>
+              <Label className="text-slate-700 dark:text-slate-200">HRA</Label>
               <Input
                 type="number"
                 value={kycData.hra}
                 onChange={(e) => handleInputChange('hra', e.target.value)}
-                className="professional-input"
+                className="border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500"
               />
             </div>
             <div>
-              <Label>CEA</Label>
+              <Label className="text-slate-700 dark:text-slate-200">CEA</Label>
               <Input
                 type="number"
                 value={kycData.cea}
                 onChange={(e) => handleInputChange('cea', e.target.value)}
-                className="professional-input"
+                className="border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500"
               />
             </div>
             <div>
-              <Label>Books & Perks</Label>
+              <Label className="text-slate-700 dark:text-slate-200">Books & Perks</Label>
               <Input
                 type="number"
                 value={kycData.booksPerks}
                 onChange={(e) => handleInputChange('booksPerks', e.target.value)}
-                className="professional-input"
+                className="border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500"
               />
             </div>
             <div>
-              <Label>Telephonic</Label>
+              <Label className="text-slate-700 dark:text-slate-200">Telephonic</Label>
               <Input
                 type="number"
                 value={kycData.telephonic}
                 onChange={(e) => handleInputChange('telephonic', e.target.value)}
-                className="professional-input"
+                className="border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500"
               />
             </div>
             <div>
-              <Label>Gross Salary</Label>
+              <Label className="text-slate-700 dark:text-slate-200">Gross Salary</Label>
               <Input
                 type="number"
                 value={kycData.grossSalary}
                 onChange={(e) => handleInputChange('grossSalary', e.target.value)}
-                className="professional-input"
+                className="border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500"
               />
             </div>
           </div>
 
-          {/* Contact Information */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Contact and Document Information */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div>
-              <Label>Mobile No.</Label>
+              <Label className="text-slate-700 dark:text-slate-200">Mobile No.</Label>
               <Input
                 value={kycData.mobileNo}
                 onChange={(e) => handleInputChange('mobileNo', e.target.value)}
-                className="professional-input"
+                className="border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500"
               />
             </div>
             <div>
-              <Label>Email ID *</Label>
+              <Label className="text-slate-700 dark:text-slate-200">Email ID *</Label>
               <Input
                 type="email"
                 value={kycData.emailId}
                 onChange={(e) => handleInputChange('emailId', e.target.value)}
-                className="professional-input"
+                className="border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500"
               />
             </div>
-          </div>
-
-          {/* Document Information */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <Label>Aadhar No.</Label>
+              <Label className="text-slate-700 dark:text-slate-200">Aadhar No.</Label>
               <Input
                 value={kycData.aadharNo}
                 onChange={(e) => handleInputChange('aadharNo', e.target.value)}
-                className="professional-input"
+                className="border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500"
               />
             </div>
             <div>
-              <Label>Name as per Aadhar</Label>
+              <Label className="text-slate-700 dark:text-slate-200">Name as per Aadhar</Label>
               <Input
                 value={kycData.namePerAadhar}
                 onChange={(e) => handleInputChange('namePerAadhar', e.target.value)}
-                className="professional-input"
-              />
-            </div>
-            <div>
-              <Label>PAN No.</Label>
-              <Input
-                value={kycData.panNo}
-                onChange={(e) => handleInputChange('panNo', e.target.value)}
-                className="professional-input"
-              />
-            </div>
-            <div>
-              <Label>Name as per PAN</Label>
-              <Input
-                value={kycData.namePerPan}
-                onChange={(e) => handleInputChange('namePerPan', e.target.value)}
-                className="professional-input"
+                className="border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500"
               />
             </div>
           </div>
 
-          {/* Bank Information */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* PAN and Bank Information */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div>
-              <Label>Bank A/c No.</Label>
+              <Label className="text-slate-700 dark:text-slate-200">PAN No.</Label>
               <Input
-                value={kycData.bankAccountNo}
-                onChange={(e) => handleInputChange('bankAccountNo', e.target.value)}
-                className="professional-input"
+                value={kycData.panNo}
+                onChange={(e) => handleInputChange('panNo', e.target.value)}
+                className="border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500"
               />
             </div>
             <div>
-              <Label>IFSC Code</Label>
+              <Label className="text-slate-700 dark:text-slate-200">Name as per PAN</Label>
+              <Input
+                value={kycData.namePerPan}
+                onChange={(e) => handleInputChange('namePerPan', e.target.value)}
+                className="border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500"
+              />
+            </div>
+            <div>
+              <Label className="text-slate-700 dark:text-slate-200">Bank A/c No.</Label>
+              <Input
+                value={kycData.bankAccountNo}
+                onChange={(e) => handleInputChange('bankAccountNo', e.target.value)}
+                className="border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500"
+              />
+            </div>
+            <div>
+              <Label className="text-slate-700 dark:text-slate-200">IFSC Code</Label>
               <Input
                 value={kycData.ifscCode}
                 onChange={(e) => handleInputChange('ifscCode', e.target.value)}
-                className="professional-input"
+                className="border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500"
               />
             </div>
           </div>
@@ -376,20 +372,20 @@ const KYCDataForm: React.FC = () => {
           {/* Address Information */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <Label>Permanent Address</Label>
+              <Label className="text-slate-700 dark:text-slate-200">Permanent Address</Label>
               <Textarea
                 value={kycData.permanentAddress}
                 onChange={(e) => handleInputChange('permanentAddress', e.target.value)}
-                className="professional-input"
+                className="border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500"
                 rows={3}
               />
             </div>
             <div>
-              <Label>Aadhar Card Address</Label>
+              <Label className="text-slate-700 dark:text-slate-200">Aadhar Card Address</Label>
               <Textarea
                 value={kycData.aadharAddress}
                 onChange={(e) => handleInputChange('aadharAddress', e.target.value)}
-                className="professional-input"
+                className="border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500"
                 rows={3}
               />
             </div>
@@ -397,11 +393,11 @@ const KYCDataForm: React.FC = () => {
 
           {/* Action Buttons */}
           <div className="flex space-x-4 pt-4">
-            <Button onClick={handleSave} className="professional-button">
+            <Button onClick={handleSave} className="bg-amber-600 dark:bg-slate-700 hover:bg-amber-700 dark:hover:bg-slate-600 text-white shadow-lg hover:shadow-xl transition-all duration-200">
               <Save className="w-4 h-4 mr-2" />
               Save KYC Data
             </Button>
-            <Button onClick={handleSendPolicies} variant="outline">
+            <Button onClick={handleSendPolicies} variant="outline" className="border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700">
               <Send className="w-4 h-4 mr-2" />
               Send Policies
             </Button>

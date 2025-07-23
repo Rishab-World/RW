@@ -857,20 +857,22 @@ const PMSQuarterlyReport: React.FC = () => {
   };
 
   return (
-    <div className="p-6 relative">
+    <div className="p-6 relative bg-slate-50 dark:bg-slate-900 h-screen overflow-hidden">
       {/* Full-screen loading overlay */}
       {loading && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-8 flex flex-col items-center space-y-4 shadow-xl">
+          <div className="bg-white dark:bg-slate-900 rounded-lg p-8 flex flex-col items-center space-y-4 shadow-xl border border-slate-200 dark:border-slate-700">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-500"></div>
-            <p className="text-lg font-semibold text-gray-700">Processing...</p>
-            <p className="text-sm text-gray-500">Please wait while we generate your report</p>
+            <p className="text-lg font-semibold text-gray-700 dark:text-slate-200">Processing...</p>
+            <p className="text-sm text-gray-500 dark:text-slate-400">Please wait while we generate your report</p>
           </div>
         </div>
       )}
 
-      {/* Upload and Download Row */}
-      <div className="flex flex-row items-center bg-white px-4 py-3 rounded-lg border border-gray-200 shadow-sm mb-6">
+      {/* Main Content Container */}
+      <div className="flex flex-col h-full">
+        {/* Upload and Download Row */}
+        <div className="flex flex-row items-center bg-white dark:bg-slate-900 px-4 py-3 rounded-lg border border-slate-200 dark:border-slate-700 shadow-sm mb-6 flex-shrink-0">
         <div className="flex flex-row items-center gap-2 flex-1 min-w-0">
           <input
             type="file"
@@ -882,15 +884,15 @@ const PMSQuarterlyReport: React.FC = () => {
           />
           <Button
             type="button"
-            className="professional-button h-10"
+            className="bg-amber-600 dark:bg-slate-700 hover:bg-amber-700 dark:hover:bg-slate-600 text-white h-10"
             onClick={() => fileInputRef.current && fileInputRef.current.click()}
             disabled={loading}
           >
             Choose File
           </Button>
-          {file && <span className="ml-2 truncate">{fileName}</span>}
+          {file && <span className="ml-2 truncate text-slate-800 dark:text-slate-200">{fileName}</span>}
           <Button
-            className="professional-button h-10"
+            className="bg-amber-600 dark:bg-slate-700 hover:bg-amber-700 dark:hover:bg-slate-600 text-white h-10"
             onClick={handleGenerateReport}
             disabled={!file || loading}
           >
@@ -899,11 +901,11 @@ const PMSQuarterlyReport: React.FC = () => {
         </div>
         {reports.length > 0 && (
           <div className="flex flex-row items-center gap-2 ml-4">
-            <span className="inline-block bg-yellow-400 text-white text-xs font-semibold px-2 py-1 rounded-full h-7 flex items-center">
+            <span className="inline-block bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-400 text-xs font-semibold px-2 py-1 rounded-full h-7 flex items-center border border-blue-200 dark:border-blue-800">
               {reports.length}
             </span>
             <Button
-              className="flex items-center space-x-2 professional-button h-10"
+              className="flex items-center space-x-2 bg-amber-600 dark:bg-slate-700 hover:bg-amber-700 dark:hover:bg-slate-600 text-white h-10"
               onClick={handleDownloadAll}
             >
               <Download className="w-4 h-4" />
@@ -915,41 +917,41 @@ const PMSQuarterlyReport: React.FC = () => {
 
       {/* Reports Table Section */}
       {reports.length > 0 && !loading && (
-        <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm">
-          <div className="overflow-x-auto overflow-y-auto max-h-[61vh] w-full block" style={{ WebkitOverflowScrolling: 'touch' }}>
-            <Table className="min-w-[900px] border border-gray-200">
-              <TableHeader className="sticky top-0 z-20 bg-white shadow border-t border-gray-200">
-                <TableRow className="border-b border-gray-200">
-                  <TableHead className="whitespace-nowrap border-r border-gray-200">Quarter</TableHead>
-                  <TableHead className="whitespace-nowrap border-r border-gray-200">Department</TableHead>
-                  <TableHead className="whitespace-nowrap border-r border-gray-200">Employee Name</TableHead>
-                  <TableHead className="whitespace-nowrap border-r border-gray-200">Employee Code</TableHead>
-                  <TableHead className="whitespace-nowrap border-r border-gray-200">KRA Score</TableHead>
-                  <TableHead className="whitespace-nowrap border-r border-gray-200">Goal Score</TableHead>
-                  <TableHead className="whitespace-nowrap border-r border-gray-200">Total Score</TableHead>
-                  <TableHead className="whitespace-nowrap border-r border-gray-200">Total Out Of</TableHead>
-                  <TableHead className="whitespace-nowrap border-r border-gray-200">Percentage</TableHead>
-                  <TableHead className="whitespace-nowrap">Details</TableHead>
+        <div className="bg-white dark:bg-slate-900 p-6 rounded-lg border border-slate-200 dark:border-slate-700 shadow-sm flex-1 overflow-hidden">
+          <div className="overflow-x-auto overflow-y-auto h-full w-full block" style={{ WebkitOverflowScrolling: 'touch' }}>
+            <Table className="min-w-[900px] border border-slate-200 dark:border-slate-700">
+              <TableHeader className="sticky top-0 z-20 bg-white dark:bg-slate-800 shadow border-t border-slate-200 dark:border-slate-700">
+                <TableRow className="border-b border-slate-200 dark:border-slate-700">
+                  <TableHead className="whitespace-nowrap border-r border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200">Quarter</TableHead>
+                  <TableHead className="whitespace-nowrap border-r border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200">Department</TableHead>
+                  <TableHead className="whitespace-nowrap border-r border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200">Employee Name</TableHead>
+                  <TableHead className="whitespace-nowrap border-r border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200">Employee Code</TableHead>
+                  <TableHead className="whitespace-nowrap border-r border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200">KRA Score</TableHead>
+                  <TableHead className="whitespace-nowrap border-r border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200">Goal Score</TableHead>
+                  <TableHead className="whitespace-nowrap border-r border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200">Total Score</TableHead>
+                  <TableHead className="whitespace-nowrap border-r border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200">Total Out Of</TableHead>
+                  <TableHead className="whitespace-nowrap border-r border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200">Percentage</TableHead>
+                  <TableHead className="whitespace-nowrap text-slate-700 dark:text-slate-200">Details</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {reports.map((r, idx) => (
-                  <TableRow key={idx} className="border-b border-gray-200">
-                    <TableCell className="whitespace-nowrap border-r border-gray-200">{r.quarter}</TableCell>
-                    <TableCell className="whitespace-nowrap border-r border-gray-200">{r.department}</TableCell>
-                    <TableCell className="whitespace-nowrap border-r border-gray-200">{r.employeeName}</TableCell>
-                    <TableCell className="whitespace-nowrap border-r border-gray-200">{r.employeeCode}</TableCell>
-                    <TableCell className="whitespace-nowrap border-r border-gray-200">{r.kraScore} / {r.maxKRA}</TableCell>
-                    <TableCell className="whitespace-nowrap border-r border-gray-200">{r.goalScore} / {r.maxGoal}</TableCell>
-                    <TableCell className="whitespace-nowrap border-r border-gray-200">{r.totalScore}</TableCell>
-                    <TableCell className="whitespace-nowrap border-r border-gray-200">{r.maxTotal}</TableCell>
-                    <TableCell className="whitespace-nowrap border-r border-gray-200">{r.percentageOutOf10} / 10</TableCell>
+                  <TableRow key={idx} className="border-b border-slate-200 dark:border-slate-700 hover:bg-slate-50/50 dark:hover:bg-slate-800/60 transition-colors">
+                    <TableCell className="whitespace-nowrap border-r border-slate-200 dark:border-slate-700 text-slate-800 dark:text-white">{r.quarter}</TableCell>
+                    <TableCell className="whitespace-nowrap border-r border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200">{r.department}</TableCell>
+                    <TableCell className="whitespace-nowrap border-r border-slate-200 dark:border-slate-700 text-slate-800 dark:text-white">{r.employeeName}</TableCell>
+                    <TableCell className="whitespace-nowrap border-r border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200">{r.employeeCode}</TableCell>
+                    <TableCell className="whitespace-nowrap border-r border-slate-200 dark:border-slate-700 text-slate-800 dark:text-white">{r.kraScore} / {r.maxKRA}</TableCell>
+                    <TableCell className="whitespace-nowrap border-r border-slate-200 dark:border-slate-700 text-slate-800 dark:text-white">{r.goalScore} / {r.maxGoal}</TableCell>
+                    <TableCell className="whitespace-nowrap border-r border-slate-200 dark:border-slate-700 text-slate-800 dark:text-white">{r.totalScore}</TableCell>
+                    <TableCell className="whitespace-nowrap border-r border-slate-200 dark:border-slate-700 text-slate-800 dark:text-white">{r.maxTotal}</TableCell>
+                    <TableCell className="whitespace-nowrap border-r border-slate-200 dark:border-slate-700 text-slate-800 dark:text-white">{r.percentageOutOf10} / 10</TableCell>
                     <TableCell className="whitespace-nowrap text-center">
                       <div className="flex items-center justify-center space-x-2">
-                        <button onClick={() => handleShowDetails(r)} className="hover:text-amber-600">
+                        <button onClick={() => handleShowDetails(r)} className="hover:text-amber-400 dark:hover:text-amber-300">
                           <Eye className="w-5 h-5" />
                         </button>
-                        <button onClick={() => handleDownloadEmployee(r)} className="hover:text-green-600">
+                        <button onClick={() => handleDownloadEmployee(r)} className="hover:text-green-600 dark:hover:text-green-400">
                           <Download className="w-5 h-5" />
                         </button>
                       </div>
@@ -964,32 +966,35 @@ const PMSQuarterlyReport: React.FC = () => {
 
       {/* No Reports Message */}
       {reports.length === 0 && !loading && (
-        <div className="bg-white p-8 rounded-lg border border-gray-200 shadow-sm text-center">
-          <div className="text-gray-500 mb-4">
-            <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-            </svg>
+        <div className="bg-white dark:bg-slate-900 p-8 rounded-lg border border-slate-200 dark:border-slate-700 shadow-sm text-center flex-1 flex items-center justify-center">
+          <div>
+            <div className="text-gray-500 dark:text-slate-400 mb-4">
+              <svg className="mx-auto h-12 w-12 text-gray-400 dark:text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+            </div>
+            <h3 className="text-lg font-medium text-gray-900 dark:text-slate-100 mb-2">No Reports Available</h3>
+            <p className="text-gray-500 dark:text-slate-400 mb-4">
+              {file 
+                ? "Click 'Generate Report' to process your uploaded file and add reports to the database."
+                : "Upload an Excel file and click 'Generate Report' to create quarterly PMS reports."
+              }
+            </p>
           </div>
-          <h3 className="text-lg font-medium text-gray-900 mb-2">No Reports Available</h3>
-          <p className="text-gray-500 mb-4">
-            {file 
-              ? "Click 'Generate Report' to process your uploaded file and add reports to the database."
-              : "Upload an Excel file and click 'Generate Report' to create quarterly PMS reports."
-            }
-          </p>
         </div>
       )}
+        </div>
 
       {/* Modal for details */}
       {showModal && modalData && (
         <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-lg w-full max-w-2xl relative">
-            <div className="sticky top-0 z-10 bg-white p-6 pb-2 flex items-center justify-between rounded-t-lg border-b">
-              <h3 className="text-lg font-bold">
-                {modalData.employeeName} {modalData.employeeCode && (<span className="text-gray-500">- {modalData.employeeCode}</span>)} - Details
+          <div className="bg-slate-900 rounded-lg shadow-lg w-full max-w-2xl relative border border-slate-700">
+            <div className="sticky top-0 z-10 bg-slate-900 p-6 pb-2 flex items-center justify-between rounded-t-lg border-b border-slate-700">
+              <h3 className="text-lg font-bold text-slate-100">
+                {modalData.employeeName} {modalData.employeeCode && (<span className="text-slate-400">- {modalData.employeeCode}</span>)} - Details
               </h3>
               <button
-                className="text-gray-500 hover:text-red-500 text-2xl ml-4"
+                className="text-slate-400 hover:text-red-400 text-2xl ml-4"
                 onClick={() => setShowModal(false)}
                 aria-label="Close"
               >
@@ -998,69 +1003,69 @@ const PMSQuarterlyReport: React.FC = () => {
             </div>
             <div className="p-6 pt-2 max-h-[70vh] overflow-y-auto">
               <div className="mb-4">
-                <strong>KRA Scores</strong>
-                <Table className="w-full border mt-2 mb-4">
-                  <TableHeader>
+                <strong className="text-slate-200">KRA Scores</strong>
+                <Table className="w-full border mt-2 mb-4 border-slate-700">
+                  <TableHeader className="bg-slate-800">
                     <TableRow>
-                      <TableHead className="border">KRA</TableHead>
-                      <TableHead className="border">Score</TableHead>
+                      <TableHead className="border border-slate-700 text-slate-200">KRA</TableHead>
+                      <TableHead className="border border-slate-700 text-slate-200">Score</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {modalData.kraDetails.map((k, i) => (
-                      <TableRow key={i}>
-                        <TableCell className="border">{toProperCaseWithQuotes(k.name)}</TableCell>
-                        <TableCell className="border">{k.score}</TableCell>
+                      <TableRow key={i} className="bg-slate-900 hover:bg-slate-800 transition-colors">
+                        <TableCell className="border border-slate-700 text-slate-100">{toProperCaseWithQuotes(k.name)}</TableCell>
+                        <TableCell className="border border-slate-700 text-slate-100">{k.score}</TableCell>
                       </TableRow>
                     ))}
                     <TableRow>
-                      <TableCell className="border font-semibold">Total</TableCell>
-                      <TableCell className="border font-semibold">{modalData.kraScore} / {modalData.maxKRA}</TableCell>
+                      <TableCell className="border border-slate-700 font-semibold text-amber-200">Total</TableCell>
+                      <TableCell className="border border-slate-700 font-semibold text-amber-200">{modalData.kraScore} / {modalData.maxKRA}</TableCell>
                     </TableRow>
                   </TableBody>
                 </Table>
               </div>
               <div>
-                <strong>Goal Scores</strong>
-                <Table className="w-full border mt-2">
-                  <TableHeader>
+                <strong className="text-slate-200">Goal Scores</strong>
+                <Table className="w-full border mt-2 border-slate-700">
+                  <TableHeader className="bg-slate-800">
                     <TableRow>
-                      <TableHead className="border">Goal</TableHead>
-                      <TableHead className="border">Score</TableHead>
+                      <TableHead className="border border-slate-700 text-slate-200">Goal</TableHead>
+                      <TableHead className="border border-slate-700 text-slate-200">Score</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {modalData.goalDetails.map((g, i) => (
-                      <TableRow key={i}>
-                        <TableCell className="border">{toProperCaseWithQuotes(g.name)}</TableCell>
-                        <TableCell className="border">{g.score}</TableCell>
+                      <TableRow key={i} className="bg-slate-900 hover:bg-slate-800 transition-colors">
+                        <TableCell className="border border-slate-700 text-slate-100">{toProperCaseWithQuotes(g.name)}</TableCell>
+                        <TableCell className="border border-slate-700 text-slate-100">{g.score}</TableCell>
                       </TableRow>
                     ))}
                     <TableRow>
-                      <TableCell className="border font-semibold">Total</TableCell>
-                      <TableCell className="border font-semibold">{modalData.goalScore} / {modalData.maxGoal}</TableCell>
+                      <TableCell className="border border-slate-700 font-semibold text-amber-200">Total</TableCell>
+                      <TableCell className="border border-slate-700 font-semibold text-amber-200">{modalData.goalScore} / {modalData.maxGoal}</TableCell>
                     </TableRow>
                   </TableBody>
                 </Table>
               </div>
-              <div className="mt-4 p-3 border rounded bg-slate-50 flex flex-col items-end">
-                <span className="font-semibold">Overall Total: {modalData.totalScore} / {modalData.maxTotal}</span>
-                <span className="font-semibold">Score: {modalData.percentageOutOf10} / 10</span>
+              <div className="mt-4 p-3 border rounded bg-slate-800 border-slate-700 flex flex-col items-end">
+                <span className="font-semibold text-slate-200">Overall Total: {modalData.totalScore} / {modalData.maxTotal}</span>
+                <span className="font-semibold text-slate-200">Score: {modalData.percentageOutOf10} / 10</span>
                 {editingRemark === modalData.employeeCode ? (
                   <div className="flex items-center space-x-2 mt-2 w-full justify-end">
                     <input
-                      className="border rounded px-2 py-1 text-sm"
+                      className="border border-slate-700 rounded px-2 py-1 text-sm bg-slate-900 text-slate-100"
                       value={remarkInput}
                       onChange={e => setRemarkInput(e.target.value)}
                       autoFocus
                     />
-                    <Button size="sm" className="px-2 py-1" onClick={() => handleSaveRemark(modalData.employeeCode)}>Save</Button>
-                    <Button size="sm" variant="outline" className="px-2 py-1" onClick={handleCancelRemark}>Cancel</Button>
+                    <Button size="sm" className="px-2 py-1 bg-amber-600 dark:bg-slate-700 hover:bg-amber-700 dark:hover:bg-slate-600 text-white" onClick={() => handleSaveRemark(modalData.employeeCode)}>Save</Button>
+                    <Button size="sm" variant="outline" className="px-2 py-1 border-slate-700 text-slate-200 bg-slate-800 hover:bg-slate-700" onClick={handleCancelRemark}>Cancel</Button>
                   </div>
                 ) : (
                   <div className="flex items-center space-x-2 mt-2 w-full justify-end">
-                    {modalData.remark && <span className="font-semibold">Remark: {modalData.remark}</span>}
-                    <button onClick={() => handleEditRemark(modalData.employeeCode, modalData.remark || '')} className="hover:text-amber-600">
+                    {modalData.remark && <span className="font-semibold text-slate-200">Remark: {modalData.remark}</span>}
+                    <button onClick={() => handleEditRemark(modalData.employeeCode, modalData.remark || '')} className="hover:text-amber-400">
                       <Pencil className="w-4 h-4" />
                     </button>
                   </div>
@@ -1073,27 +1078,25 @@ const PMSQuarterlyReport: React.FC = () => {
       {/* Department selection dialog */}
       {showDeptDialog && (
         <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-md relative">
-            <h3 className="text-lg font-bold mb-4">Download PMS Report</h3>
-            
+          <div className="bg-slate-900 rounded-lg shadow-lg p-6 w-full max-w-md relative border border-slate-700">
+            <h3 className="text-lg font-bold mb-4 text-slate-100">Download PMS Report</h3>
             <div className="mb-4">
-            <label className="block mb-2 font-semibold">Select Department</label>
-            <select
-                className="border p-2 rounded w-full"
-              value={selectedDept}
-              onChange={e => setSelectedDept(e.target.value)}
-            >
-              <option value="all">All Departments</option>
-              {Array.from(new Set(reports.map(r => r.department))).map(dept => (
-                <option key={dept} value={dept}>{dept}</option>
-              ))}
-            </select>
-            </div>
-
-            <div className="mb-4">
-              <label className="block mb-2 font-semibold">Select Quarter</label>
+              <label className="block mb-2 font-semibold text-slate-200">Select Department</label>
               <select
-                className="border p-2 rounded w-full"
+                className="border border-slate-700 p-2 rounded w-full bg-slate-800 text-slate-100"
+                value={selectedDept}
+                onChange={e => setSelectedDept(e.target.value)}
+              >
+                <option value="all">All Departments</option>
+                {Array.from(new Set(reports.map(r => r.department))).map(dept => (
+                  <option key={dept} value={dept}>{dept}</option>
+                ))}
+              </select>
+            </div>
+            <div className="mb-4">
+              <label className="block mb-2 font-semibold text-slate-200">Select Quarter</label>
+              <select
+                className="border border-slate-700 p-2 rounded w-full bg-slate-800 text-slate-100"
                 value={selectedQuarter}
                 onChange={e => setSelectedQuarter(e.target.value)}
               >
@@ -1103,20 +1106,18 @@ const PMSQuarterlyReport: React.FC = () => {
                 ))}
               </select>
             </div>
-
-            <div className="text-sm text-gray-600 mb-4 p-3 bg-gray-50 rounded">
+            <div className="text-sm text-slate-400 mb-4 p-3 bg-slate-800 rounded">
               <strong>Tip:</strong> Select a specific quarter to avoid worksheet name conflicts and get a more focused report.
             </div>
-
             <div className="flex justify-end gap-2">
               <button 
-                className="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300" 
+                className="px-4 py-2 bg-slate-700 text-slate-200 rounded hover:bg-slate-800" 
                 onClick={() => setShowDeptDialog(false)}
               >
                 Cancel
               </button>
               <button 
-                className="px-4 py-2 bg-amber-500 text-white rounded hover:bg-amber-600" 
+                className="px-4 py-2 bg-amber-600 dark:bg-slate-700 text-white rounded hover:bg-amber-700 dark:hover:bg-slate-600" 
                 onClick={handleConfirmDownload}
               >
                 Download

@@ -336,34 +336,34 @@ const InterviewScheduling: React.FC<InterviewSchedulingProps> = ({
       <div className="flex items-center justify-end">
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
-            <Button className="flex items-center space-x-2 bg-amber-500 hover:bg-amber-600">
+            <Button className="flex items-center space-x-2 bg-amber-600 dark:bg-slate-700 hover:bg-amber-700 dark:hover:bg-slate-600">
               <Plus className="w-4 h-4" />
               <span>Schedule Interview</span>
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-lg">
+          <DialogContent className="max-w-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700">
             <DialogHeader>
-              <DialogTitle>Schedule New Interview</DialogTitle>
-              <DialogDescription>
+              <DialogTitle className="text-slate-900 dark:text-slate-100">Schedule New Interview</DialogTitle>
+              <DialogDescription className="text-slate-600 dark:text-slate-300">
                 Set up an interview with a candidate
               </DialogDescription>
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="candidateId">Candidate *</Label>
+                <Label htmlFor="candidateId" className="text-slate-700 dark:text-slate-300">Candidate *</Label>
                 <Select
                   value={formData.candidateId}
                   onValueChange={(value) => setFormData({ ...formData, candidateId: value })}
                   required
                 >
-                  <SelectTrigger>
+                  <SelectTrigger className="bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-600 text-slate-900 dark:text-slate-100 focus:ring-amber-200 dark:focus:ring-amber-400">
                     <SelectValue placeholder="Select candidate" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600">
                     {candidates
                       .filter(c => c.interviewStatus === 'shortlisted')
                       .map((candidate) => (
-                        <SelectItem key={candidate.id} value={candidate.id}>
+                        <SelectItem key={candidate.id} value={candidate.id} className="text-slate-900 dark:text-slate-100">
                           {candidate.name} - {candidate.position}
                         </SelectItem>
                       ))}
@@ -373,41 +373,43 @@ const InterviewScheduling: React.FC<InterviewSchedulingProps> = ({
               
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="date">Date *</Label>
+                  <Label htmlFor="date" className="text-slate-700 dark:text-slate-300">Date *</Label>
                   <Input
                     id="date"
                     type="date"
                     value={formData.date}
                     onChange={(e) => setFormData({ ...formData, date: e.target.value })}
                     required
+                    className="bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-600 text-slate-900 dark:text-slate-100 focus:ring-amber-200 dark:focus:ring-amber-400"
                   />
                 </div>
                 
                 <div className="space-y-2">
-                  <Label htmlFor="time">Time</Label>
+                  <Label htmlFor="time" className="text-slate-700 dark:text-slate-300">Time</Label>
                   <Input
                     id="time"
                     type="time"
                     value={formData.time}
                     onChange={(e) => setFormData({ ...formData, time: e.target.value })}
+                    className="bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-600 text-slate-900 dark:text-slate-100 focus:ring-amber-200 dark:focus:ring-amber-400"
                   />
                 </div>
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="interviewer">Interviewer *</Label>
+                <Label htmlFor="interviewer" className="text-slate-700 dark:text-slate-300">Interviewer *</Label>
                 <div className="flex gap-2">
                   <Select
                     value={formData.interviewer}
                     onValueChange={(value) => setFormData({ ...formData, interviewer: value })}
                     required
                   >
-                    <SelectTrigger>
+                    <SelectTrigger className="bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-600 text-slate-900 dark:text-slate-100 focus:ring-amber-200 dark:focus:ring-amber-400">
                       <SelectValue placeholder="Select interviewer" />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600">
                       {interviewers.map((interviewer) => (
-                        <SelectItem key={interviewer.id} value={interviewer.name}>
+                        <SelectItem key={interviewer.id} value={interviewer.name} className="text-slate-900 dark:text-slate-100">
                           {interviewer.name}
                         </SelectItem>
                       ))}
@@ -415,19 +417,20 @@ const InterviewScheduling: React.FC<InterviewSchedulingProps> = ({
                   </Select>
                   <Popover>
                     <PopoverTrigger asChild>
-                      <Button variant="outline" type="button">+</Button>
+                      <Button variant="outline" type="button" className="border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800">+</Button>
                     </PopoverTrigger>
-                    <PopoverContent className="w-80">
+                    <PopoverContent className="w-80 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600">
                       <div className="space-y-4">
                         <div className="space-y-2">
-                          <Label>Add New Interviewer</Label>
+                          <Label className="text-slate-700 dark:text-slate-300">Add New Interviewer</Label>
                           <div className="flex gap-2">
                             <Input
                               value={newInterviewer}
                               onChange={(e) => setNewInterviewer(e.target.value)}
                               placeholder="Enter interviewer name"
+                              className="bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-600 text-slate-900 dark:text-slate-100 focus:ring-amber-200 dark:focus:ring-amber-400"
                             />
-                            <Button onClick={handleAddInterviewer} type="button">Add</Button>
+                            <Button onClick={handleAddInterviewer} type="button" className="bg-amber-600 dark:bg-slate-700 hover:bg-amber-700 dark:hover:bg-slate-600 text-white">Add</Button>
                           </div>
                         </div>
                       </div>
@@ -437,19 +440,19 @@ const InterviewScheduling: React.FC<InterviewSchedulingProps> = ({
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="type">Interview Type *</Label>
+                <Label htmlFor="type" className="text-slate-700 dark:text-slate-300">Interview Type *</Label>
                 <div className="flex gap-2">
                   <Select
                     value={formData.type}
                     onValueChange={(value) => setFormData({ ...formData, type: value })}
                     required
                   >
-                    <SelectTrigger>
+                    <SelectTrigger className="bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-600 text-slate-900 dark:text-slate-100 focus:ring-amber-200 dark:focus:ring-amber-400">
                       <SelectValue placeholder="Select type" />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600">
                       {interviewTypes.map((type) => (
-                        <SelectItem key={type.id} value={type.name}>
+                        <SelectItem key={type.id} value={type.name} className="text-slate-900 dark:text-slate-100">
                           {type.name}
                         </SelectItem>
                       ))}
@@ -457,19 +460,20 @@ const InterviewScheduling: React.FC<InterviewSchedulingProps> = ({
                   </Select>
                   <Popover>
                     <PopoverTrigger asChild>
-                      <Button variant="outline" type="button">+</Button>
+                      <Button variant="outline" type="button" className="border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800">+</Button>
                     </PopoverTrigger>
-                    <PopoverContent className="w-80">
+                    <PopoverContent className="w-80 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600">
                       <div className="space-y-4">
                         <div className="space-y-2">
-                          <Label>Add New Interview Type</Label>
+                          <Label className="text-slate-700 dark:text-slate-300">Add New Interview Type</Label>
                           <div className="flex gap-2">
                             <Input
                               value={newInterviewType}
                               onChange={(e) => setNewInterviewType(e.target.value)}
                               placeholder="Enter interview type"
+                              className="bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-600 text-slate-900 dark:text-slate-100 focus:ring-amber-200 dark:focus:ring-amber-400"
                             />
-                            <Button onClick={handleAddInterviewType} type="button">Add</Button>
+                            <Button onClick={handleAddInterviewType} type="button" className="bg-amber-600 dark:bg-slate-700 hover:bg-amber-700 dark:hover:bg-slate-600 text-white">Add</Button>
                           </div>
                         </div>
                       </div>
@@ -479,21 +483,22 @@ const InterviewScheduling: React.FC<InterviewSchedulingProps> = ({
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="notes">Notes</Label>
+                <Label htmlFor="notes" className="text-slate-700 dark:text-slate-300">Notes</Label>
                 <Textarea
                   id="notes"
                   value={formData.notes}
                   onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
                   placeholder="Additional notes or instructions"
                   rows={3}
+                  className="bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-600 text-slate-900 dark:text-slate-100 focus:ring-amber-200 dark:focus:ring-amber-400"
                 />
               </div>
               
               <div className="flex justify-end space-x-2">
-                <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
+                <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)} className="border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800">
                   Cancel
                 </Button>
-                <Button type="submit">Schedule Interview</Button>
+                <Button type="submit" className="bg-amber-600 dark:bg-slate-700 hover:bg-amber-700 dark:hover:bg-slate-600 text-white">Schedule Interview</Button>
               </div>
             </form>
           </DialogContent>
@@ -501,9 +506,9 @@ const InterviewScheduling: React.FC<InterviewSchedulingProps> = ({
       </div>
 
       <div className="md:flex gap-6">
-        <Card className="w-auto max-w-xs flex-shrink-0">
+        <Card className="w-auto max-w-xs flex-shrink-0 dark:bg-slate-800 dark:border-slate-700">
           <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
+            <CardTitle className="flex items-center space-x-2 text-slate-900 dark:text-slate-100">
               <CalendarIcon className="w-5 h-5" />
               <span>Interview Calendar</span>
             </CardTitle>
@@ -513,27 +518,27 @@ const InterviewScheduling: React.FC<InterviewSchedulingProps> = ({
               mode="single"
               selected={selectedDate}
               onSelect={setSelectedDate}
-              className="rounded-md border"
+              className="rounded-md border border-slate-200 dark:border-slate-600"
             />
           </CardContent>
         </Card>
 
-        <Card className="flex-1">
+        <Card className="flex-1 dark:bg-slate-800 dark:border-slate-700">
           <CardHeader>
-            <CardTitle>
+            <CardTitle className="text-slate-900 dark:text-slate-100">
               {selectedDate ? format(selectedDate, 'PPPP') : 'Select a date'}
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
               {todaysInterviews.map((interview) => (
-                <div key={interview.id} className="p-3 border rounded-lg">
+                <div key={interview.id} className="p-3 border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700">
                   <div className="flex items-center justify-between mb-2">
-                    <h4 className="font-medium">{interview.candidate_name}</h4>
-                    <span className="text-sm text-gray-500">{interview.interview_time}</span>
+                    <h4 className="font-medium text-slate-900 dark:text-slate-100">{interview.candidate_name}</h4>
+                    <span className="text-sm text-gray-500 dark:text-slate-400">{interview.interview_time}</span>
                   </div>
-                  <p className="text-sm text-gray-600 mb-1">{interview.job_title}</p>
-                  <div className="flex items-center space-x-4 text-xs text-gray-500">
+                  <p className="text-sm text-gray-600 dark:text-slate-300 mb-1">{interview.job_title}</p>
+                  <div className="flex items-center space-x-4 text-xs text-gray-500 dark:text-slate-400">
                     <span className="flex items-center space-x-1">
                       <User className="w-3 h-3" />
                       <span>{interview.interviewer}</span>
@@ -543,29 +548,29 @@ const InterviewScheduling: React.FC<InterviewSchedulingProps> = ({
                 </div>
               ))}
               {todaysInterviews.length === 0 && (
-                <p className="text-gray-500 text-sm">No interviews scheduled for this date.</p>
+                <p className="text-gray-500 dark:text-slate-400 text-sm">No interviews scheduled for this date.</p>
               )}
             </div>
           </CardContent>
         </Card>
       </div>
 
-      <Card>
+      <Card className="dark:bg-slate-800 dark:border-slate-700">
         <CardHeader>
-          <CardTitle>All Scheduled Interviews</CardTitle>
+          <CardTitle className="text-slate-900 dark:text-slate-100">All Scheduled Interviews</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto overflow-y-auto max-h-[60vh] scroll-to-highlight" ref={scrollRef}>
             <Table>
               <TableHeader>
-                <TableRow>
-                  <TableHead>Candidate</TableHead>
-                  <TableHead>Position</TableHead>
-                  <TableHead>Date & Time</TableHead>
-                  <TableHead>Interviewer</TableHead>
-                  <TableHead>Type</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Action</TableHead>
+                <TableRow className="border-slate-200 dark:border-slate-700">
+                  <TableHead className="text-slate-700 dark:text-slate-300">Candidate</TableHead>
+                  <TableHead className="text-slate-700 dark:text-slate-300">Position</TableHead>
+                  <TableHead className="text-slate-700 dark:text-slate-300">Date & Time</TableHead>
+                  <TableHead className="text-slate-700 dark:text-slate-300">Interviewer</TableHead>
+                  <TableHead className="text-slate-700 dark:text-slate-300">Type</TableHead>
+                  <TableHead className="text-slate-700 dark:text-slate-300">Status</TableHead>
+                  <TableHead className="text-slate-700 dark:text-slate-300">Action</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -573,24 +578,24 @@ const InterviewScheduling: React.FC<InterviewSchedulingProps> = ({
                   <TableRow 
                     key={interview.id}
                     data-interview-id={interview.id}
-                    className={`transition-all duration-300 ${
+                    className={`transition-all duration-300 border-slate-200 dark:border-slate-700 ${
                       highlightedInterview === interview.id 
                         ? 'highlight-row' 
                         : ''
                     }`}
                   >
-                    <TableCell className="font-medium">{interview.candidate_name}</TableCell>
-                    <TableCell>{interview.job_title}</TableCell>
+                    <TableCell className="font-medium text-slate-900 dark:text-slate-100">{interview.candidate_name}</TableCell>
+                    <TableCell className="text-slate-900 dark:text-slate-100">{interview.job_title}</TableCell>
                     <TableCell>
-                      <div className="flex items-center space-x-1 text-sm">
+                      <div className="flex items-center space-x-1 text-sm text-slate-900 dark:text-slate-100">
                         <CalendarIcon className="w-3 h-3" />
                         <span>{format(new Date(interview.interview_date), 'MMM dd, yyyy')}</span>
                         <Clock className="w-3 h-3 ml-2" />
                         <span>{interview.interview_time}</span>
                       </div>
                     </TableCell>
-                    <TableCell>{interview.interviewer}</TableCell>
-                    <TableCell className="capitalize">{interview.interview_type}</TableCell>
+                    <TableCell className="text-slate-900 dark:text-slate-100">{interview.interviewer}</TableCell>
+                    <TableCell className="capitalize text-slate-900 dark:text-slate-100">{interview.interview_type}</TableCell>
                     <TableCell>
                       <span className={`status-badge ${
                         interview.status === 'scheduled' ? 'status-pending' :
@@ -615,8 +620,8 @@ const InterviewScheduling: React.FC<InterviewSchedulingProps> = ({
           
           {interviews.length === 0 && (
             <div className="text-center py-8">
-              <CalendarIcon className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-              <p className="text-gray-600">No interviews scheduled yet</p>
+              <CalendarIcon className="w-12 h-12 text-gray-400 dark:text-slate-500 mx-auto mb-4" />
+              <p className="text-gray-600 dark:text-slate-400">No interviews scheduled yet</p>
             </div>
           )}
         </CardContent>
@@ -624,10 +629,10 @@ const InterviewScheduling: React.FC<InterviewSchedulingProps> = ({
 
       {/* Cancel Interview Dialog */}
       <UIDialog open={cancelDialogOpen} onOpenChange={setCancelDialogOpen}>
-        <DialogContent>
+        <DialogContent className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700">
           <DialogHeader>
-            <DialogTitle>Cancel Interview</DialogTitle>
-            <DialogDescription>
+            <DialogTitle className="text-slate-900 dark:text-slate-100">Cancel Interview</DialogTitle>
+            <DialogDescription className="text-slate-600 dark:text-slate-300">
               Please provide a reason for cancelling this interview.
             </DialogDescription>
           </DialogHeader>
@@ -636,9 +641,10 @@ const InterviewScheduling: React.FC<InterviewSchedulingProps> = ({
             onChange={(e) => setCancelReason(e.target.value)}
             placeholder="Enter cancellation reason"
             rows={3}
+            className="bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-600 text-slate-900 dark:text-slate-100 focus:ring-amber-200 dark:focus:ring-amber-400"
           />
           <div className="flex justify-end space-x-2">
-            <Button variant="outline" onClick={() => setCancelDialogOpen(false)}>Close</Button>
+            <Button variant="outline" onClick={() => setCancelDialogOpen(false)} className="border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800">Close</Button>
             <Button variant="destructive" onClick={confirmCancelInterview} disabled={!cancelReason.trim()}>
               Confirm Cancel
             </Button>

@@ -53,6 +53,7 @@ const MonthlyAttendance: React.FC = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [selectedRecord, setSelectedRecord] = useState<AttendanceData | null>(null);
   const [showDetails, setShowDetails] = useState(false);
+  const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
 
   const handleFileUpload = (file: File | null) => {
     setUploadedFile(file);
@@ -270,14 +271,27 @@ const MonthlyAttendance: React.FC = () => {
     fetchAttendanceData();
   }, []);
 
+  const getAllTypes = () => {
+    const allTypes = Array.from(new Set([...(selectedRecord?.leave_types || []), 'P', 'ABS']));
+    return allTypes.sort();
+  };
+
+  const handleTypeToggle = (type: string) => {
+    setSelectedTypes(prev =>
+      prev.includes(type)
+        ? prev.filter(t => t !== type)
+        : [...prev, type]
+    );
+  };
+
   // Download Excel for modal details
   const handleDownloadExcel = () => {
     if (!selectedRecord || !selectedRecord.employee_details) return;
-    const headers = ['Employee ID', 'Employee Name', ...['P', ...(selectedRecord.leave_types || []), 'ABS']];
+    const headers = ['Employee ID', 'Employee Name', ...selectedTypes];
     const data = selectedRecord.employee_details.map(emp => [
       emp.employeeId,
       emp.employeeName,
-      ...['P', ...(selectedRecord.leave_types || []), 'ABS'].map(type => emp.attendance[type] || 0)
+      ...selectedTypes.map(type => emp.attendance[type] || 0)
     ]);
     const ws = XLSX.utils.aoa_to_sheet([headers, ...data]);
     const wb = XLSX.utils.book_new();
@@ -286,110 +300,133 @@ const MonthlyAttendance: React.FC = () => {
   };
 
   return (
-    <div className="bg-gradient-to-br from-slate-50 to-blue-50">
-      <div className="max-w-7xl mx-auto px-4 space-y-2 pt-2">
-        <div className="flex items-center space-x-3 mb-2">
-          <FileUpload onFileSelect={handleFileUpload} selectedFile={uploadedFile} />
-          <Button 
-            onClick={processAttendanceFile}
-            disabled={!uploadedFile || isProcessing}
-            className="bg-amber-800 hover:bg-amber-900"
-          >
-            {isProcessing ? "Processing..." : "Process Monthly File"}
-          </Button>
-        </div>
-        <div className="bg-white rounded shadow p-2">
-          <div style={{ maxHeight: '50vh', overflowY: 'auto' }}>
-            {attendanceData && attendanceData.length > 0 ? (
-              <Table className="w-full text-sm border-l border-r border-b border-gray-200">
-                <TableHeader className="sticky top-0 z-20 bg-white shadow border-t border-gray-200">
-                  <TableRow className="border-b border-gray-200">
-                    <TableHead className="border-r border-gray-200">Department</TableHead>
-                    <TableHead className="border-r border-gray-200">Month</TableHead>
-                    <TableHead className="border-r border-gray-200">Monthly Attendance %</TableHead>
-                    <TableHead className="border-r border-gray-200">Total Employees</TableHead>
-                    <TableHead className="border-r border-gray-200">Timestamp</TableHead>
-                    <TableHead>Details</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {attendanceData.map((record) => (
-                    <TableRow key={record.id} className="border-b border-gray-200">
-                      <TableCell className="border-r border-gray-200">{record.department}</TableCell>
-                      <TableCell className="border-r border-gray-200">{record.month}</TableCell>
-                      <TableCell className="border-r border-gray-200">{record.attendance_percentage}%</TableCell>
-                      <TableCell className="border-r border-gray-200">{record.total_employees}</TableCell>
-                      <TableCell className="border-r border-gray-200">{new Date(record.timestamp).toLocaleString()}</TableCell>
-                      <TableCell>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => {
-                            setSelectedRecord(record);
-                            setShowDetails(true);
-                          }}
-                        >
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            ) : (
-              <div className="text-center text-slate-500">No monthly attendance data available.</div>
-            )}
+    <div className="p-4 space-y-4 bg-slate-50 dark:bg-slate-900 min-h-screen">
+      <Card className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700">
+        <CardContent>
+          <div className="flex items-center space-x-3 mb-2">
+            <FileUpload onFileSelect={handleFileUpload} selectedFile={uploadedFile} />
+            <Button 
+              onClick={processAttendanceFile}
+              disabled={!uploadedFile || isProcessing}
+              className="bg-amber-800 hover:bg-amber-900 text-white"
+            >
+              {isProcessing ? "Processing..." : "Process File"}
+            </Button>
           </div>
-        </div>
-
-        <Dialog open={showDetails} onOpenChange={setShowDetails}>
-          <DialogContent className="max-w-4xl max-h-[80vh]">
-            <DialogHeader>
-              <div className="flex items-center justify-between mt-2">
-                <DialogTitle>
-                  {selectedRecord?.department} - {selectedRecord?.month} Monthly Attendance Details
-                </DialogTitle>
-                <button
-                  onClick={handleDownloadExcel}
-                  className="bg-amber-600 hover:bg-amber-700 text-white px-3 py-1 rounded text-sm shadow ml-4"
-                >
-                  Download Excel
-                </button>
-              </div>
-            </DialogHeader>
-            <div className="mt-4 bg-white rounded shadow p-2">
-              {selectedRecord && Array.isArray(selectedRecord.employee_details) && selectedRecord.employee_details.length > 0 ? (
-                <div style={{ maxHeight: '350px', overflowY: 'auto' }}>
-                  <Table className="w-full border border-gray-200">
-                    <TableHeader className="sticky top-0 z-20 bg-white shadow border-t border-gray-200">
-                      <TableRow className="border-b border-gray-200">
-                        <TableHead className="border-r border-gray-200 sticky left-0 bg-white z-20">Employee ID</TableHead>
-                        <TableHead className="border-r border-gray-200 sticky left-32 bg-white z-20">Employee Name</TableHead>
-                        {['P', ...((selectedRecord.leave_types || [])), 'ABS'].map((type, idx, arr) => (
-                          <TableHead key={type} className={idx < arr.length - 1 ? "border-r border-gray-200" : ""}>{type}</TableHead>
-                        ))}
+          <div className="bg-white dark:bg-slate-800 rounded shadow p-2 border border-slate-200 dark:border-slate-700">
+            <div style={{ maxHeight: '50vh', overflowY: 'auto' }}>
+              {attendanceData && attendanceData.length > 0 ? (
+                <Table className="w-full text-sm border-l border-r border-b border-slate-200 dark:border-slate-700">
+                  <TableHeader className="sticky top-0 z-20 bg-slate-100 dark:bg-slate-700 shadow-sm dark:shadow-slate-900/50 border-t border-slate-200 dark:border-slate-600">
+                    <TableRow className="border-b border-slate-200 dark:border-slate-700">
+                      <TableHead className="border-r border-slate-200 dark:border-slate-700">Department</TableHead>
+                      <TableHead className="border-r border-slate-200 dark:border-slate-700">Month</TableHead>
+                      <TableHead className="border-r border-slate-200 dark:border-slate-700">Attendance %</TableHead>
+                      <TableHead className="border-r border-slate-200 dark:border-slate-700">Total Employees</TableHead>
+                      <TableHead className="border-r border-slate-200 dark:border-slate-700">Timestamp</TableHead>
+                      <TableHead>Details</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody className="bg-white dark:bg-slate-800">
+                    {attendanceData.map((record) => (
+                      <TableRow key={record.id} className="border-b border-slate-200 dark:border-slate-700">
+                        <TableCell className="border-r border-slate-200 dark:border-slate-700">{record.department}</TableCell>
+                        <TableCell className="border-r border-slate-200 dark:border-slate-700">{record.month}</TableCell>
+                        <TableCell className="border-r border-slate-200 dark:border-slate-700">{record.attendance_percentage}%</TableCell>
+                        <TableCell className="border-r border-slate-200 dark:border-slate-700">{record.total_employees}</TableCell>
+                        <TableCell className="border-r border-slate-200 dark:border-slate-700">{new Date(record.timestamp).toLocaleString()}</TableCell>
+                        <TableCell>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => {
+                              setSelectedRecord(record);
+                              setSelectedTypes(getAllTypes());
+                              setShowDetails(true);
+                            }}
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                        </TableCell>
                       </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {selectedRecord.employee_details.map((employee) => (
-                        <TableRow key={employee.employeeId} className="border-b border-gray-200">
-                          <TableCell className="border-r border-gray-200 sticky left-0 bg-white z-10">{employee.employeeId}</TableCell>
-                          <TableCell className="border-r border-gray-200 sticky left-32 bg-white z-10">{employee.employeeName}</TableCell>
-                          {['P', ...((selectedRecord.leave_types || [])), 'ABS'].map((type, idx, arr) => (
-                            <TableCell key={type} className={idx < arr.length - 1 ? "border-r border-gray-200" : ""}>{employee.attendance[type] || 0}</TableCell>
-                          ))}
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
+                    ))}
+                  </TableBody>
+                </Table>
               ) : (
-                <div className="text-center text-slate-500">No employee details available.</div>
+                <div className="text-center text-slate-500 dark:text-slate-400">No monthly attendance data available.</div>
               )}
             </div>
-          </DialogContent>
-        </Dialog>
-      </div>
+          </div>
+          <Dialog open={showDetails} onOpenChange={setShowDetails}>
+            <DialogContent className="max-w-6xl w-[90vw] max-h-[90vh] p-6 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700">
+              <DialogHeader>
+                <div className="flex items-center justify-between mt-2">
+                  <DialogTitle className="text-slate-800 dark:text-white">
+                    {selectedRecord?.department} - {selectedRecord?.month} Monthly Attendance Details
+                  </DialogTitle>
+                  <div className="flex flex-wrap items-center gap-2 mt-1 mb-2 p-2 bg-slate-50 dark:bg-slate-800 rounded-xl shadow-inner border border-amber-100 dark:border-slate-700 overflow-x-auto w-full">
+                    <button
+                      type="button"
+                      className="px-3 py-1 rounded bg-amber-700 text-white text-xs font-semibold shadow hover:bg-amber-800 transition-all mr-2"
+                      onClick={() => setSelectedTypes(selectedTypes.length === getAllTypes().length ? [] : getAllTypes())}
+                    >
+                      {selectedTypes.length === getAllTypes().length ? 'Deselect All' : 'Select All'}
+                    </button>
+                    {getAllTypes().map(type => (
+                      <label key={type} className="inline-flex items-center mr-2 px-2 py-1 bg-white dark:bg-slate-900 border border-amber-200 dark:border-slate-700 rounded shadow-sm hover:bg-amber-50 dark:hover:bg-slate-800 transition-all cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={selectedTypes.includes(type)}
+                          onChange={() => handleTypeToggle(type)}
+                          className="form-checkbox accent-amber-700 mr-1"
+                        />
+                        <span className="text-xs text-slate-800 dark:text-slate-200 font-medium">{type}</span>
+                      </label>
+                    ))}
+                    <button
+                      type="button"
+                      className="px-3 py-1 rounded bg-amber-600 text-white text-xs font-semibold shadow hover:bg-amber-700 transition-all mr-2"
+                      onClick={handleDownloadExcel}
+                    >
+                      Download Excel
+                    </button>
+                  </div>
+                </div>
+              </DialogHeader>
+              <div className="mt-2 bg-white dark:bg-slate-800 rounded-xl shadow p-3 border border-slate-200 dark:border-slate-700">
+                {selectedRecord && Array.isArray(selectedRecord.employee_details) && selectedRecord.employee_details.length > 0 ? (
+                  <div style={{ maxHeight: '55vh', minHeight: '250px', overflowY: 'auto', minWidth: '900px' }} className="rounded-xl border border-slate-200 dark:border-slate-700 w-full">
+                    <Table className="w-full border border-slate-200 dark:border-slate-700 text-sm font-sans">
+                      <TableHeader className="sticky top-0 z-50 bg-slate-100 dark:bg-slate-700 shadow border-t border-slate-200 dark:border-slate-600">
+                        <TableRow className="border-b border-slate-200 dark:border-slate-700">
+                          <TableHead className="border-r border-slate-200 dark:border-slate-700 sticky left-0 bg-slate-100 dark:bg-slate-700 z-50 font-bold text-slate-800 dark:text-slate-200">Employee ID</TableHead>
+                          <TableHead className="border-r border-slate-200 dark:border-slate-700 sticky left-32 bg-slate-100 dark:bg-slate-700 z-50 font-bold text-slate-800 dark:text-slate-200">Employee Name</TableHead>
+                          {selectedTypes.map((type, idx, arr) => (
+                            <TableHead key={type} className={idx < arr.length - 1 ? "border-r border-slate-200 dark:border-slate-700 font-bold text-slate-800 dark:text-slate-200" : "font-bold text-slate-800 dark:text-slate-200"}>{type}</TableHead>
+                          ))}
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody className="bg-white dark:bg-slate-800">
+                        {selectedRecord.employee_details.map((employee) => (
+                          <TableRow key={employee.employeeId} className="border-b border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
+                            <TableCell className="border-r border-slate-200 dark:border-slate-700 sticky left-0 bg-slate-100 dark:bg-slate-700 z-40 font-medium text-slate-800 dark:text-white">{employee.employeeId}</TableCell>
+                            <TableCell className="border-r border-slate-200 dark:border-slate-700 sticky left-32 bg-slate-100 dark:bg-slate-700 z-40 font-medium text-slate-800 dark:text-white">{employee.employeeName}</TableCell>
+                            {selectedTypes.map((type, idx, arr) => (
+                              <TableCell key={type} className={idx < arr.length - 1 ? "border-r border-slate-200 dark:border-slate-700" : ""}>{employee.attendance[type] || 0}</TableCell>
+                            ))}
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                ) : (
+                  <div className="text-center text-slate-500 dark:text-slate-400">No employee details available.</div>
+                )}
+              </div>
+            </DialogContent>
+          </Dialog>
+        </CardContent>
+      </Card>
     </div>
   );
 };

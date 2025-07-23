@@ -90,10 +90,10 @@ const Dashboard: React.FC<DashboardProps> = ({
     <div className="p-6 space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {stats.map((stat, index) => (
-          <Card key={index} className="relative overflow-hidden">
+          <Card key={index} className="relative overflow-hidden bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 shadow-lg dark:shadow-xl">
             <CardHeader className="pb-2">
               <div className="flex items-center justify-between">
-                <CardTitle className="text-sm font-medium text-gray-600">
+                <CardTitle className="text-sm font-medium text-gray-600 dark:text-slate-300">
                   {stat.title}
                 </CardTitle>
                 <div className={`p-2 rounded-lg ${stat.color}`}>
@@ -102,8 +102,8 @@ const Dashboard: React.FC<DashboardProps> = ({
               </div>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-gray-900">{stat.value}</div>
-              <CardDescription className="text-xs text-gray-500">
+              <div className="text-2xl font-bold text-gray-900 dark:text-white">{stat.value}</div>
+              <CardDescription className="text-xs text-gray-500 dark:text-slate-400">
                 {stat.description}
               </CardDescription>
             </CardContent>
@@ -112,18 +112,18 @@ const Dashboard: React.FC<DashboardProps> = ({
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card>
+        <Card className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 shadow-lg dark:shadow-xl">
           <CardHeader>
-            <CardTitle>Recent Job Postings</CardTitle>
-            <CardDescription>Latest job openings</CardDescription>
+            <CardTitle className="text-slate-800 dark:text-white">Recent Job Postings</CardTitle>
+            <CardDescription className="text-slate-600 dark:text-slate-300">Latest job openings</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
               {jobs.slice(0, 5).map((job, index) => (
-                <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                <div key={index} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-slate-700 rounded-lg border border-slate-200 dark:border-slate-600">
                   <div>
-                    <p className="font-medium text-gray-900">{job.title}</p>
-                    <p className="text-sm text-gray-600">{job.department}</p>
+                    <p className="font-medium text-gray-900 dark:text-white">{job.title}</p>
+                    <p className="text-sm text-gray-600 dark:text-slate-300">{job.department}</p>
                   </div>
                   <span className={`status-badge ${
                     job.status === 'active' ? 'status-active' : 'status-pending'
@@ -136,32 +136,32 @@ const Dashboard: React.FC<DashboardProps> = ({
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 shadow-lg dark:shadow-xl">
           <CardHeader>
-            <CardTitle>Interview Pipeline</CardTitle>
-            <CardDescription>Scheduled interviews with date and time</CardDescription>
+            <CardTitle className="text-slate-800 dark:text-white">Interview Pipeline</CardTitle>
+            <CardDescription className="text-slate-600 dark:text-slate-300">Scheduled interviews with date and time</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
               {candidatesWithInterviews.slice(0, 5).map((candidate, index) => {
                 const interview = candidateInterviews.get(candidate.id);
                 return (
-                  <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                  <div key={index} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-slate-700 rounded-lg border border-slate-200 dark:border-slate-600">
                     <div className="flex-1">
                       <button
                         onClick={() => handleCandidateClick(candidate.id)}
-                        className="text-left hover:text-blue-600 transition-colors"
+                        className="text-left hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
                       >
-                        <p className="font-medium text-gray-900 hover:underline">
+                        <p className="font-medium text-gray-900 dark:text-white hover:underline">
                           {candidate.name}
                         </p>
-                        <p className="text-sm text-gray-600">{candidate.position}</p>
+                        <p className="text-sm text-gray-600 dark:text-slate-300">{candidate.position}</p>
                       </button>
                       {interview && (
-                        <div className="mt-2 flex items-center gap-4 text-xs text-gray-500">
+                        <div className="mt-2 flex items-center gap-4 text-xs text-gray-500 dark:text-slate-400">
                           <button
                             onClick={() => handleInterviewClick(interview.id)}
-                            className="flex items-center gap-1 hover:text-blue-600 transition-colors"
+                            className="flex items-center gap-1 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
                           >
                             <Calendar className="w-3 h-3" />
                             <span className="hover:underline">
@@ -170,7 +170,7 @@ const Dashboard: React.FC<DashboardProps> = ({
                           </button>
                           <button
                             onClick={() => handleInterviewClick(interview.id)}
-                            className="flex items-center gap-1 hover:text-blue-600 transition-colors"
+                            className="flex items-center gap-1 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
                           >
                             <Clock className="w-3 h-3" />
                             <span className="hover:underline">
@@ -193,7 +193,7 @@ const Dashboard: React.FC<DashboardProps> = ({
                 );
               })}
               {candidatesWithInterviews.length === 0 && (
-                <div className="text-center py-4 text-gray-500">
+                <div className="text-center py-4 text-gray-500 dark:text-slate-400">
                   <p>No scheduled interviews</p>
                 </div>
               )}

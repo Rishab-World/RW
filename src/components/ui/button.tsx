@@ -10,15 +10,15 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        default: "bg-gradient-to-r from-amber-500 to-yellow-600 hover:from-amber-600 hover:to-yellow-700 text-white shadow-lg hover:shadow-xl transform hover:scale-105",
+        default: "bg-amber-600 dark:bg-slate-700 hover:bg-amber-700 dark:hover:bg-slate-600 text-white shadow-lg hover:shadow-xl transform hover:scale-105",
         destructive:
           "bg-destructive text-destructive-foreground hover:bg-destructive/90",
         outline:
-          "border border-amber-400 text-amber-700 bg-white hover:bg-amber-50 hover:text-amber-800 shadow-md hover:shadow-lg",
+          "border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 hover:text-slate-800 dark:hover:text-slate-200 shadow-md hover:shadow-lg",
         secondary:
-          "bg-white border border-amber-300 text-amber-700 hover:bg-amber-50 hover:border-amber-400 shadow-md hover:shadow-lg",
-        ghost: "hover:bg-amber-50 hover:text-amber-800",
-        link: "text-amber-700 underline-offset-4 hover:underline",
+          "bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 hover:border-slate-400 dark:hover:border-slate-500 shadow-md hover:shadow-lg",
+        ghost: "hover:bg-slate-50 dark:hover:bg-slate-700 hover:text-slate-800 dark:hover:text-slate-200",
+        link: "text-slate-700 dark:text-slate-300 underline-offset-4 hover:underline",
       },
       size: {
         default: "h-10 px-4 py-2",

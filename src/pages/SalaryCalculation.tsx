@@ -87,21 +87,19 @@ const SalaryCalculation: React.FC = () => {
   };
 
   return (
-    <div className="p-6 max-w-7xl mx-auto">
+    <div className="p-6 max-w-7xl mx-auto bg-slate-50 dark:bg-slate-900 min-h-screen">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Make both columns flexible and wide */}
         <div className="flex flex-col flex-1 min-w-0">
           {/* Left: Salary Calculation Form */}
-          <Card>
-            <CardHeader>
-              {/* Removed CardTitle here */}
-            </CardHeader>
+          <Card className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-lg">
+            <CardHeader />
             <CardContent>
               <div className="flex flex-col md:flex-row md:items-end md:space-x-4 mb-4">
                 <div className="flex-1 mb-2 md:mb-0">
-                  <label className="block mb-1 font-medium">Select Calculation Type</label>
+                  <label className="block mb-1 font-medium text-slate-800 dark:text-slate-200">Select Calculation Type</label>
                   <select
-                    className="w-full border rounded px-3 py-2"
+                    className="w-full border border-slate-300 dark:border-slate-700 rounded px-3 py-2 bg-white dark:bg-slate-800 text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-400"
                     value={calculationType}
                     onChange={e => {
                       setCalculationType(e.target.value);
@@ -110,26 +108,27 @@ const SalaryCalculation: React.FC = () => {
                     }}
                   >
                     {calculationTypes.map(type => (
-                      <option key={type} value={type}>{type}</option>
+                      <option key={type} value={type} className="bg-white dark:bg-slate-800 text-slate-800 dark:text-white">{type}</option>
                     ))}
                   </select>
                 </div>
                 {calculationType === 'Monthly Salary Breakup' && (
                   <div className="flex-1">
-                    <label className="block mb-1 font-medium">Gross Monthly Salary</label>
+                    <label className="block mb-1 font-medium text-slate-800 dark:text-slate-200">Gross Monthly Salary</label>
                     <Input
                       type="number"
                       value={gross}
                       onChange={e => setGross(e.target.value === '' ? '' : Number(e.target.value))}
                       placeholder="Enter gross monthly salary"
                       disabled={loading}
+                      className="bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-800 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500"
                     />
                   </div>
                 )}
               </div>
               {calculationType === 'Monthly Salary Breakup' && (
                 <div className="mt-2">
-                  <Button onClick={handleCalculate} disabled={loading || salaryScales.length === 0}>Calculate</Button>
+                                     <Button onClick={handleCalculate} disabled={loading || salaryScales.length === 0} className="bg-amber-600 dark:bg-slate-700 hover:bg-amber-700 dark:hover:bg-slate-600 text-white">Calculate</Button>
                 </div>
               )}
             </CardContent>
@@ -138,24 +137,24 @@ const SalaryCalculation: React.FC = () => {
 
         <div className="flex flex-col flex-1 min-w-0">
           {result && selectedScale && Array.isArray(selectedScale.components) && (
-            <Card className="min-h-[220px]">
+            <Card className="min-h-[220px] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-lg">
               <CardHeader>
-                <CardTitle>{selectedScale.name}</CardTitle>
+                <CardTitle className="text-slate-800 dark:text-white">{selectedScale.name}</CardTitle>
               </CardHeader>
               <CardContent>
                 <div>
-                  <Table>
-                    <TableHeader>
+                  <Table className="border border-slate-200 dark:border-slate-700">
+                    <TableHeader className="bg-slate-100 dark:bg-slate-800">
                       <TableRow>
                         {selectedScale.components.map((comp: any) => (
-                          <TableHead key={comp.key}>{comp.label}</TableHead>
+                          <TableHead key={comp.key} className="text-slate-700 dark:text-slate-200">{comp.label}</TableHead>
                         ))}
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       <TableRow>
                         {selectedScale.components.map((comp: any) => (
-                          <TableCell key={comp.key} className="font-semibold">
+                          <TableCell key={comp.key} className="font-semibold text-slate-800 dark:text-white">
                             {typeof result[comp.key] === 'number'
                               ? result[comp.key].toLocaleString(undefined, { maximumFractionDigits: 2 })
                               : '-'}
@@ -169,7 +168,7 @@ const SalaryCalculation: React.FC = () => {
             </Card>
           )}
           {(!salaryScales || salaryScales.length === 0) && !loading && (
-            <div className="text-center text-red-600 mt-6">No salary scales found. Please check your Supabase table.</div>
+            <div className="text-center text-red-600 dark:text-red-400 mt-6">No salary scales found. Please check your Supabase table.</div>
           )}
         </div>
       </div>

@@ -3,6 +3,7 @@ import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import Login from '@/components/Login';
 import Register from '@/pages/Register';
 import HRSidebar from '@/components/HRSidebar';
+import ThemeToggle from '@/components/ThemeToggle';
 import Dashboard from '@/components/Dashboard';
 import JobManagement from '@/components/JobManagement';
 import CandidateManagement from '@/components/CandidateManagement';
@@ -15,6 +16,8 @@ import WeeklyAttendanceAnalysis from '@/components/WeeklyAttendanceAnalysis';
 import MonthlyAttendance from '@/components/MonthlyAttendance';
 import SalaryBreakup from '@/pages/SalaryBreakup';
 import PMSQuarterlyReport from '@/components/PMSQuarterlyReport';
+import KYCDataSection from '@/components/KYCDataSection';
+import Templates from '@/components/Templates';
 import { supabase } from '@/lib/supabaseClient';
 
 interface StatusChange {
@@ -460,13 +463,26 @@ const Index = () => {
         />;
       case 'employees':
         return <EmployeeManagement employees={employees} refreshEmployees={fetchEmployees} />;
+      case 'kyc-data':
+        return <KYCDataSection />;
+      case 'confirmation':
+        return (
+          <div className="p-6 min-h-screen bg-slate-50 dark:bg-slate-900">
+            <div className="max-w-3xl mx-auto">
+              <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg shadow-lg p-6">
+                <h2 className="text-2xl font-bold text-slate-800 dark:text-white mb-6">Employee Confirmation</h2>
+                <p className="text-slate-600 dark:text-slate-300">Employee confirmation functionality will be implemented here.</p>
+              </div>
+            </div>
+          </div>
+        );
       case 'leave':
         return (
-          <div className="p-6 bg-gradient-to-br from-slate-50 to-blue-50 min-h-screen">
+          <div className="p-6 min-h-screen bg-slate-50 dark:bg-slate-900">
             <div className="max-w-7xl mx-auto">
-              <div className="bg-white rounded-lg shadow-lg p-6">
-                <h2 className="text-2xl font-bold text-slate-800 mb-6">Leave Management</h2>
-                <p className="text-slate-600">Leave management functionality will be implemented here.</p>
+              <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg shadow-lg p-6">
+                <h2 className="text-2xl font-bold text-slate-800 dark:text-white mb-6">Leave Management</h2>
+                <p className="text-slate-600 dark:text-slate-300">Leave management functionality will be implemented here.</p>
               </div>
             </div>
           </div>
@@ -477,8 +493,13 @@ const Index = () => {
         return <SalaryCalculation />;
       case 'fnf':
         return (
-          <div className="p-6 bg-gradient-to-br from-slate-50 to-blue-50 min-h-screen">
-            {/* Content for FNF Settlement goes here */}
+          <div className="p-6 bg-slate-50 dark:bg-slate-900 min-h-screen">
+            <div className="max-w-7xl mx-auto">
+              <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-lg p-6">
+                <h2 className="text-2xl font-bold text-slate-800 dark:text-slate-100 mb-6">FNF Settlement</h2>
+                <p className="text-slate-600 dark:text-slate-300">FNF (Full and Final) settlement functionality will be implemented here.</p>
+              </div>
+            </div>
           </div>
         );
       case 'attendance-analysis':
@@ -493,15 +514,17 @@ const Index = () => {
         return <PMSQuarterlyReport />;
       case 'pms-yearly':
         return (
-          <div className="p-6 bg-gradient-to-br from-slate-50 to-blue-50 min-h-screen">
+          <div className="p-6 bg-slate-50 dark:bg-slate-900 min-h-screen">
             <div className="max-w-7xl mx-auto">
-              <div className="bg-white rounded-lg shadow-lg p-6">
-                <h2 className="text-2xl font-bold text-slate-800 mb-6">Yearly PMS Report</h2>
-                <p className="text-slate-600">Yearly PMS report functionality will be implemented here.</p>
+              <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-lg p-6">
+                <h2 className="text-2xl font-bold text-slate-800 dark:text-slate-100 mb-6">Yearly PMS Report</h2>
+                <p className="text-slate-600 dark:text-slate-300">Yearly PMS report functionality will be implemented here.</p>
               </div>
             </div>
           </div>
         );
+      case 'templates':
+        return <Templates />;
       default:
         return <Dashboard 
           jobs={jobs} 
@@ -522,6 +545,8 @@ const Index = () => {
     candidates: 'Candidate Management',
     interviews: 'Interview Scheduling',
     employees: 'All Employees',
+    'kyc-data': 'KYC Data Management',
+    confirmation: 'Employee Confirmation',
     leave: 'Leave Management',
     salary: 'Salary Master',
     fnf: 'FNF Settlement',
@@ -534,9 +559,51 @@ const Index = () => {
     'pms-yearly': 'Yearly PMS Report',
   };
 
+  let sectionTitle = '';
+  switch (activeSection) {
+    case 'dashboard':
+      sectionTitle = 'Dashboard'; break;
+    case 'jobs':
+      sectionTitle = 'Job Management'; break;
+    case 'candidates':
+      sectionTitle = 'Candidate Management'; break;
+    case 'interviews':
+      sectionTitle = 'Interview Scheduling'; break;
+    case 'employees':
+      sectionTitle = 'Employee Management'; break;
+    case 'kyc-data':
+      sectionTitle = 'KYC Data'; break;
+    case 'confirmation':
+      sectionTitle = 'Employee Confirmation'; break;
+    case 'leave':
+      sectionTitle = 'Leave Management'; break;
+    case 'salary':
+      sectionTitle = 'Salary Master'; break;
+    case 'salarycalc':
+      sectionTitle = 'Salary Calculation'; break;
+    case 'fnf':
+      sectionTitle = 'FNF Settlement'; break;
+    case 'attendance-analysis':
+      sectionTitle = 'Attendance Analysis'; break;
+    case 'attendance-weekly':
+      sectionTitle = 'Weekly Attendance'; break;
+    case 'attendance-monthly':
+      sectionTitle = 'Monthly Attendance'; break;
+    case 'salarybreakup':
+      sectionTitle = 'Salary Breakup'; break;
+    case 'pms-quarterly':
+      sectionTitle = 'Quarterly PMS Report'; break;
+    case 'pms-yearly':
+      sectionTitle = 'Yearly PMS Report'; break;
+    case 'templates':
+      sectionTitle = 'Document Templates'; break;
+    default:
+      sectionTitle = '';
+  }
+
   return (
     <SidebarProvider>
-      <div className="min-h-screen flex w-full max-w-screen overflow-x-hidden bg-gradient-to-br from-slate-50 to-blue-50">
+      <div className="min-h-screen flex w-full max-w-screen overflow-x-hidden bg-slate-50 dark:bg-slate-900">
         <HRSidebar 
           activeSection={activeSection}
           onSectionChange={setActiveSection}
@@ -544,11 +611,12 @@ const Index = () => {
           userEmail={userEmail}
         />
         <div className="flex-1 flex flex-col h-screen min-w-0 ml-[13rem] md:ml-0 transition-all duration-200">
-          <div className="border-b border-amber-200 bg-white px-6 py-3 flex items-center gap-4 sticky top-0 z-40">
-            <SidebarTrigger className="text-slate-700 hover:text-amber-600" />
-            <h1 className="text-2xl font-bold text-slate-800">{sectionTitles[activeSection] || ''}</h1>
+          <div className="border-b border-amber-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-6 py-3 flex items-center gap-4 sticky top-0 z-40">
+            <SidebarTrigger className="text-slate-700 dark:text-slate-300 hover:text-amber-600 dark:hover:text-amber-400" />
+            <h1 className="text-2xl font-bold text-slate-800 dark:text-white truncate mr-4">{sectionTitle}</h1>
+            <ThemeToggle />
           </div>
-          <main className="flex-1 flex flex-col overflow-y-auto min-w-0">
+          <main className="flex-1 flex flex-col overflow-y-auto min-w-0 bg-slate-50 dark:bg-slate-900">
             {renderActiveSection()}
           </main>
         </div>

@@ -5,8 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { User, Building, Calendar, Mail, Phone, Edit, FileText, Users, TrendingUp, Clock, Bell, Eye, Download, Upload, AlertCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import KYCDataForm from './KYCDataForm';
-import AttendanceAnalysis from './AttendanceAnalysis';
+
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import * as XLSX from 'xlsx';
@@ -89,6 +88,23 @@ const EmployeeManagement: React.FC<EmployeeManagementProps> = ({ employees, refr
   const [filterManager, setFilterManager] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
   
+  // Dropdown open states
+  const [openDropdown, setOpenDropdown] = useState<string | null>(null);
+  
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (openDropdown && !(event.target as Element).closest('.dropdown-container')) {
+        setOpenDropdown(null);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [openDropdown]);
+  
   // Import/Export states
   const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
   const [importFile, setImportFile] = useState<File | null>(null);
@@ -155,9 +171,9 @@ const EmployeeManagement: React.FC<EmployeeManagementProps> = ({ employees, refr
     const matchManager = filterManager ? emp.reportingManager === filterManager : true;
     const matchStatus = filterStatus ? emp.status === filterStatus : true;
     const matchSearch = search ? (
-      emp.name.toLowerCase().includes(search.toLowerCase()) ||
-      emp.employeeId.toLowerCase().includes(search.toLowerCase()) ||
-      emp.department.toLowerCase().includes(search.toLowerCase())
+      (emp.name?.toLowerCase() || '').includes(search.toLowerCase()) ||
+      (emp.employeeId?.toLowerCase() || '').includes(search.toLowerCase()) ||
+      (emp.department?.toLowerCase() || '').includes(search.toLowerCase())
     ) : true;
     return matchDate && matchDepartment && matchDesignation && matchManager && matchStatus && matchSearch;
   });
@@ -736,7 +752,7 @@ const EmployeeManagement: React.FC<EmployeeManagementProps> = ({ employees, refr
   }
 
   return (
-    <div className="p-4 space-y-4 bg-gradient-to-br from-slate-50 to-blue-50">
+    <div className="p-4 space-y-4 bg-slate-50 dark:bg-slate-900">
       {/* Search bar remains above the table container */}
       <div className="w-full flex flex-wrap gap-2 items-center mb-4">
         <input
@@ -744,7 +760,7 @@ const EmployeeManagement: React.FC<EmployeeManagementProps> = ({ employees, refr
           value={search}
           onChange={e => setSearch(e.target.value)}
           placeholder="Search employees..."
-          className="border border-gray-300 rounded px-3 py-2 text-sm flex-1 min-w-[180px] max-w-xs focus:outline-none focus:ring-2 focus:ring-amber-200 text-slate-800 placeholder:text-slate-400 shadow-sm"
+          className="border border-gray-300 dark:border-slate-600 rounded px-3 py-2 text-sm flex-1 min-w-[180px] max-w-xs focus:outline-none focus:ring-2 focus:ring-amber-200 dark:focus:ring-amber-400 text-slate-800 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 shadow-sm bg-white dark:bg-slate-700"
           style={{ minWidth: 180 }}
         />
         <button
@@ -755,11 +771,11 @@ const EmployeeManagement: React.FC<EmployeeManagementProps> = ({ employees, refr
             setFilterManager('');
             setFilterStatus('');
           }}
-          className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded shadow text-sm font-medium border border-slate-300"
+          className="px-4 py-2 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 rounded shadow text-sm font-medium border border-slate-300 dark:border-slate-600 transition-colors"
         >
           Clear Filters
         </button>
-        <span className="ml-2 inline-flex items-center px-3 py-1 rounded-full bg-blue-100 text-blue-800 text-sm font-medium">
+        <span className="ml-2 inline-flex items-center px-3 py-1 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-400 text-sm font-medium border border-blue-200 dark:border-blue-800">
           Employees: {filteredEmployees.length}
         </span>
         <div className="flex gap-2 ml-auto">
@@ -791,7 +807,7 @@ const EmployeeManagement: React.FC<EmployeeManagementProps> = ({ employees, refr
       </div>
       {/* Table container with filters inside */}
       <div className="mt-2">
-        <Card>
+        <Card className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700">
           <CardContent>
             {/* Filters inside table container, above the table */}
             <div className="w-full grid grid-cols-1 sm:grid-cols-5 gap-3 items-center mb-4 px-1 pt-4">
@@ -800,70 +816,210 @@ const EmployeeManagement: React.FC<EmployeeManagementProps> = ({ employees, refr
                 value={filterDate}
                 onChange={e => setFilterDate(e.target.value)}
                 placeholder="dd-----yyyy"
-                className="border border-gray-300 rounded px-3 py-2 text-sm w-full h-10 focus:outline-none focus:ring-2 focus:ring-amber-200 placeholder:text-slate-400"
+                className="border border-gray-300 dark:border-slate-600 rounded px-3 py-2 text-sm w-full h-10 focus:outline-none focus:ring-2 focus:ring-amber-200 dark:focus:ring-amber-400 placeholder:text-slate-400 dark:placeholder:text-slate-500 bg-white dark:bg-slate-700 text-slate-800 dark:text-white"
               />
-              <select value={filterDepartment} onChange={e => setFilterDepartment(e.target.value)} className="border border-gray-300 rounded px-3 py-2 text-sm w-full h-10 focus:outline-none focus:ring-2 focus:ring-amber-200">
-                <option value="">Department</option>
-                {departmentOptionsFiltered.map(opt => <option key={opt} value={opt}>{opt}</option>)}
-              </select>
-              <select value={filterDesignation} onChange={e => setFilterDesignation(e.target.value)} className="border border-gray-300 rounded px-3 py-2 text-sm w-full h-10 focus:outline-none focus:ring-2 focus:ring-amber-200">
-                <option value="">Designation</option>
-                {designationOptionsFiltered.map(opt => <option key={opt} value={opt}>{opt}</option>)}
-              </select>
-              <select value={filterManager} onChange={e => setFilterManager(e.target.value)} className="border border-gray-300 rounded px-3 py-2 text-sm w-full h-10 focus:outline-none focus:ring-2 focus:ring-amber-200">
-                <option value="">Manager</option>
-                {managerOptionsFiltered.map(opt => <option key={opt} value={opt}>{opt}</option>)}
-              </select>
-              <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)} className="border border-gray-300 rounded px-3 py-2 text-sm w-full h-10 focus:outline-none focus:ring-2 focus:ring-amber-200">
-                <option value="">Status</option>
-                {statusOptionsFiltered.map(opt => <option key={opt} value={opt}>{opt}</option>)}
-              </select>
+              
+              {/* Department Filter */}
+              <div className="relative dropdown-container">
+                <button
+                  type="button"
+                  onClick={() => setOpenDropdown(openDropdown === 'department' ? null : 'department')}
+                  className="w-full h-10 px-3 py-2 text-sm text-left border border-gray-300 dark:border-slate-600 rounded focus:outline-none focus:ring-2 focus:ring-amber-200 dark:focus:ring-amber-400 bg-white dark:bg-slate-700 text-slate-800 dark:text-white flex items-center justify-between"
+                >
+                  <span>{filterDepartment || 'Department'}</span>
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+                {openDropdown === 'department' && (
+                  <div className="absolute z-50 w-full mt-1 bg-white dark:bg-slate-700 border border-gray-300 dark:border-slate-600 rounded-md shadow-lg max-h-48 overflow-y-auto">
+                    <div
+                      className={`px-3 py-2 text-sm cursor-pointer hover:bg-gray-100 dark:hover:bg-slate-600 text-slate-800 dark:text-white ${filterDepartment === '' ? 'bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300' : ''}`}
+                      onClick={() => {
+                        setFilterDepartment('');
+                        setOpenDropdown(null);
+                      }}
+                    >
+                      Department
+                    </div>
+                    {departmentOptionsFiltered.map(opt => (
+                      <div
+                        key={opt}
+                        className={`px-3 py-2 text-sm cursor-pointer hover:bg-gray-100 dark:hover:bg-slate-600 text-slate-800 dark:text-white ${filterDepartment === opt ? 'bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300' : ''}`}
+                        onClick={() => {
+                          setFilterDepartment(opt);
+                          setOpenDropdown(null);
+                        }}
+                      >
+                        {opt}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Designation Filter */}
+              <div className="relative dropdown-container">
+                <button
+                  type="button"
+                  onClick={() => setOpenDropdown(openDropdown === 'designation' ? null : 'designation')}
+                  className="w-full h-10 px-3 py-2 text-sm text-left border border-gray-300 dark:border-slate-600 rounded focus:outline-none focus:ring-2 focus:ring-amber-200 dark:focus:ring-amber-400 bg-white dark:bg-slate-700 text-slate-800 dark:text-white flex items-center justify-between"
+                >
+                  <span>{filterDesignation || 'Designation'}</span>
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+                {openDropdown === 'designation' && (
+                  <div className="absolute z-50 w-full mt-1 bg-white dark:bg-slate-700 border border-gray-300 dark:border-slate-600 rounded-md shadow-lg max-h-48 overflow-y-auto">
+                    <div
+                      className={`px-3 py-2 text-sm cursor-pointer hover:bg-gray-100 dark:hover:bg-slate-600 text-slate-800 dark:text-white ${filterDesignation === '' ? 'bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300' : ''}`}
+                      onClick={() => {
+                        setFilterDesignation('');
+                        setOpenDropdown(null);
+                      }}
+                    >
+                      Designation
+                    </div>
+                    {designationOptionsFiltered.map(opt => (
+                      <div
+                        key={opt}
+                        className={`px-3 py-2 text-sm cursor-pointer hover:bg-gray-100 dark:hover:bg-slate-600 text-slate-800 dark:text-white ${filterDesignation === opt ? 'bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300' : ''}`}
+                        onClick={() => {
+                          setFilterDesignation(opt);
+                          setOpenDropdown(null);
+                        }}
+                      >
+                        {opt}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Manager Filter */}
+              <div className="relative dropdown-container">
+                <button
+                  type="button"
+                  onClick={() => setOpenDropdown(openDropdown === 'manager' ? null : 'manager')}
+                  className="w-full h-10 px-3 py-2 text-sm text-left border border-gray-300 dark:border-slate-600 rounded focus:outline-none focus:ring-2 focus:ring-amber-200 dark:focus:ring-amber-400 bg-white dark:bg-slate-700 text-slate-800 dark:text-white flex items-center justify-between"
+                >
+                  <span>{filterManager || 'Manager'}</span>
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+                {openDropdown === 'manager' && (
+                  <div className="absolute z-50 w-full mt-1 bg-white dark:bg-slate-700 border border-gray-300 dark:border-slate-600 rounded-md shadow-lg max-h-48 overflow-y-auto">
+                    <div
+                      className={`px-3 py-2 text-sm cursor-pointer hover:bg-gray-100 dark:hover:bg-slate-600 text-slate-800 dark:text-white ${filterManager === '' ? 'bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300' : ''}`}
+                      onClick={() => {
+                        setFilterManager('');
+                        setOpenDropdown(null);
+                      }}
+                    >
+                      Manager
+                    </div>
+                    {managerOptionsFiltered.map(opt => (
+                      <div
+                        key={opt}
+                        className={`px-3 py-2 text-sm cursor-pointer hover:bg-gray-100 dark:hover:bg-slate-600 text-slate-800 dark:text-white ${filterManager === opt ? 'bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300' : ''}`}
+                        onClick={() => {
+                          setFilterManager(opt);
+                          setOpenDropdown(null);
+                        }}
+                      >
+                        {opt}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Status Filter */}
+              <div className="relative dropdown-container">
+                <button
+                  type="button"
+                  onClick={() => setOpenDropdown(openDropdown === 'status' ? null : 'status')}
+                  className="w-full h-10 px-3 py-2 text-sm text-left border border-gray-300 dark:border-slate-600 rounded focus:outline-none focus:ring-2 focus:ring-amber-200 dark:focus:ring-amber-400 bg-white dark:bg-slate-700 text-slate-800 dark:text-white flex items-center justify-between"
+                >
+                  <span>{filterStatus || 'Status'}</span>
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+                {openDropdown === 'status' && (
+                  <div className="absolute z-50 w-full mt-1 bg-white dark:bg-slate-700 border border-gray-300 dark:border-slate-600 rounded-md shadow-lg max-h-48 overflow-y-auto">
+                    <div
+                      className={`px-3 py-2 text-sm cursor-pointer hover:bg-gray-100 dark:hover:bg-slate-600 text-slate-800 dark:text-white ${filterStatus === '' ? 'bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300' : ''}`}
+                      onClick={() => {
+                        setFilterStatus('');
+                        setOpenDropdown(null);
+                      }}
+                    >
+                      Status
+                    </div>
+                    {statusOptionsFiltered.map(opt => (
+                      <div
+                        key={opt}
+                        className={`px-3 py-2 text-sm cursor-pointer hover:bg-gray-100 dark:hover:bg-slate-600 text-slate-800 dark:text-white ${filterStatus === opt ? 'bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300' : ''}`}
+                        onClick={() => {
+                          setFilterStatus(opt);
+                          setOpenDropdown(null);
+                        }}
+                      >
+                        {opt}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
-            <div className="mt-4 w-full overflow-x-auto overflow-y-auto max-h-[60vh] border border-gray-200 rounded-lg">
-              <Table className="w-full min-w-[1200px] border border-gray-200">
-                <TableHeader className="sticky top-0 z-20 bg-white shadow border-t border-gray-200">
+            <div className="mt-4 w-full overflow-x-auto overflow-y-auto max-h-[60vh] border border-gray-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800">
+              <Table className="w-full min-w-[1200px] border border-gray-200 dark:border-slate-700">
+                <TableHeader className="sticky top-0 z-20 bg-slate-100 dark:bg-slate-700 shadow-sm dark:shadow-slate-900/50 border-t border-slate-200 dark:border-slate-600">
                   <TableRow>
-                    <TableHead className="sticky top-0 z-20 bg-white min-w-[150px] border-r border-gray-200 whitespace-nowrap text-sm font-medium">EMP ID</TableHead>
-                    <TableHead className="sticky top-0 z-20 bg-white w-[200px] min-w-[200px] max-w-[200px] border-r border-gray-200 text-sm font-medium">Name</TableHead>
-                    <TableHead className="sticky top-0 z-20 bg-white w-[150px] min-w-[150px] max-w-[150px] border-r border-gray-200 text-sm font-medium">Department</TableHead>
-                    <TableHead className="sticky top-0 z-20 bg-white w-[150px] min-w-[150px] max-w-[150px] border-r border-gray-200 text-sm font-medium">Designation</TableHead>
-                    <TableHead className="sticky top-0 z-20 bg-white w-[120px] min-w-[120px] max-w-[120px] border-r border-gray-200 text-sm font-medium">Joining Date</TableHead>
-                    <TableHead className="sticky top-0 z-20 bg-white w-[120px] min-w-[120px] max-w-[120px] border-r border-gray-200 text-sm font-medium">Salary</TableHead>
-                    <TableHead className="sticky top-0 z-20 bg-white w-[120px] min-w-[120px] max-w-[120px] border-r border-gray-200 text-sm font-medium">Cost to Hire</TableHead>
-                    <TableHead className="sticky top-0 z-20 bg-white w-[150px] min-w-[150px] max-w-[150px] border-r border-gray-200 text-sm font-medium">Manager</TableHead>
-                    <TableHead className="sticky top-0 z-20 bg-white w-[150px] min-w-[150px] max-w-[150px] border-r border-gray-200 text-sm font-medium">Application Source</TableHead>
-                    <TableHead className="sticky top-0 z-20 bg-white w-[100px] min-w-[100px] max-w-[100px] border-r border-gray-200 text-sm font-medium">Status</TableHead>
-                    <TableHead className="sticky top-0 z-20 bg-white w-[120px] min-w-[120px] max-w-[120px] text-sm font-medium">All Details</TableHead>
+                    <TableHead className="sticky top-0 z-20 bg-slate-100 dark:bg-slate-700 min-w-[150px] border-r border-slate-200 dark:border-slate-600 whitespace-nowrap text-sm font-semibold text-slate-700 dark:text-slate-200">EMP ID</TableHead>
+                    <TableHead className="sticky top-0 z-20 bg-slate-100 dark:bg-slate-700 w-[200px] min-w-[200px] max-w-[200px] border-r border-slate-200 dark:border-slate-600 text-sm font-semibold text-slate-700 dark:text-slate-200">Name</TableHead>
+                    <TableHead className="sticky top-0 z-20 bg-slate-100 dark:bg-slate-700 w-[150px] min-w-[150px] max-w-[150px] border-r border-slate-200 dark:border-slate-600 text-sm font-semibold text-slate-700 dark:text-slate-200">Department</TableHead>
+                    <TableHead className="sticky top-0 z-20 bg-slate-100 dark:bg-slate-700 w-[150px] min-w-[150px] max-w-[150px] border-r border-slate-200 dark:border-slate-600 text-sm font-semibold text-slate-700 dark:text-slate-200">Designation</TableHead>
+                    <TableHead className="sticky top-0 z-20 bg-slate-100 dark:bg-slate-700 w-[120px] min-w-[120px] max-w-[120px] border-r border-slate-200 dark:border-slate-600 text-sm font-semibold text-slate-700 dark:text-slate-200">Joining Date</TableHead>
+                    <TableHead className="sticky top-0 z-20 bg-slate-100 dark:bg-slate-700 w-[120px] min-w-[120px] max-w-[120px] border-r border-slate-200 dark:border-slate-600 text-sm font-semibold text-slate-700 dark:text-slate-200">Salary</TableHead>
+                    <TableHead className="sticky top-0 z-20 bg-slate-100 dark:bg-slate-700 w-[120px] min-w-[120px] max-w-[120px] border-r border-slate-200 dark:border-slate-600 text-sm font-semibold text-slate-700 dark:text-slate-200">Cost to Hire</TableHead>
+                    <TableHead className="sticky top-0 z-20 bg-slate-100 dark:bg-slate-700 w-[150px] min-w-[150px] max-w-[150px] border-r border-slate-200 dark:border-slate-600 text-sm font-semibold text-slate-700 dark:text-slate-200">Manager</TableHead>
+                    <TableHead className="sticky top-0 z-20 bg-slate-100 dark:bg-slate-700 w-[150px] min-w-[150px] max-w-[150px] border-r border-slate-200 dark:border-slate-600 text-sm font-semibold text-slate-700 dark:text-slate-200">Application Source</TableHead>
+                    <TableHead className="sticky top-0 z-20 bg-slate-100 dark:bg-slate-700 w-[100px] min-w-[100px] max-w-[100px] border-r border-slate-200 dark:border-slate-600 text-sm font-semibold text-slate-700 dark:text-slate-200">Status</TableHead>
+                    <TableHead className="sticky top-0 z-20 bg-slate-100 dark:bg-slate-700 w-[120px] min-w-[120px] max-w-[120px] text-sm font-semibold text-slate-700 dark:text-slate-200">All Details</TableHead>
                   </TableRow>
                 </TableHeader>
-                <TableBody>
-                  {filteredEmployees.map((emp) => (
-                    <TableRow key={emp.id} className="hover:bg-gray-50">
-                      <TableCell className="min-w-[150px] border-r border-gray-200 whitespace-nowrap text-sm font-medium">{emp.employeeId || '-'}</TableCell>
-                      <TableCell className="w-[200px] min-w-[200px] max-w-[200px] border-r border-gray-200 text-sm font-medium break-words leading-tight">{emp.name}</TableCell>
-                      <TableCell className="w-[150px] min-w-[150px] max-w-[150px] border-r border-gray-200 text-sm break-words leading-tight">{emp.department || '-'}</TableCell>
-                      <TableCell className="w-[150px] min-w-[150px] max-w-[150px] border-r border-gray-200 text-sm break-words leading-tight">{emp.position || '-'}</TableCell>
-                      <TableCell className="w-[120px] min-w-[120px] max-w-[120px] border-r border-gray-200 text-sm break-words leading-tight">{emp.joinDate ? new Date(emp.joinDate).toLocaleDateString() : '-'}</TableCell>
-                      <TableCell className="w-[120px] min-w-[120px] max-w-[120px] border-r border-gray-200 text-sm break-words leading-tight">{emp.salary ? `₹${formatINR(emp.salary)}` : '-'}</TableCell>
-                      <TableCell className="w-[120px] min-w-[120px] max-w-[120px] border-r border-gray-200 text-sm break-words leading-tight">{emp.costToHire ? `₹${formatINR(emp.costToHire)}` : '-'}</TableCell>
-                      <TableCell className="w-[150px] min-w-[150px] max-w-[150px] border-r border-gray-200 text-sm break-words leading-tight">{emp.reportingManager || '-'}</TableCell>
-                      <TableCell className="w-[150px] min-w-[150px] max-w-[150px] border-r border-gray-200 text-sm break-words leading-tight">{toProperCase(emp.source) || '-'}</TableCell>
-                      <TableCell className="w-[100px] min-w-[100px] max-w-[100px] border-r border-gray-200 text-sm">
+                <TableBody className="bg-white dark:bg-slate-800">
+                  {filteredEmployees.map(emp => (
+                    <TableRow key={emp.id} className="border-b border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-all duration-300">
+                      <TableCell className="min-w-[150px] border-r border-slate-200 dark:border-slate-700 whitespace-nowrap text-sm font-medium text-slate-900 dark:text-white">{emp.employeeId || '-'}</TableCell>
+                      <TableCell className="w-[200px] min-w-[200px] max-w-[200px] border-r border-slate-200 dark:border-slate-700 text-sm font-medium break-words leading-tight text-slate-900 dark:text-white">{emp.name}</TableCell>
+                      <TableCell className="w-[150px] min-w-[150px] max-w-[150px] border-r border-slate-200 dark:border-slate-700 text-sm break-words leading-tight text-slate-900 dark:text-white">{emp.department || '-'}</TableCell>
+                      <TableCell className="w-[150px] min-w-[150px] max-w-[150px] border-r border-slate-200 dark:border-slate-700 text-sm break-words leading-tight text-slate-900 dark:text-white">{emp.position || '-'}</TableCell>
+                      <TableCell className="w-[120px] min-w-[120px] max-w-[120px] border-r border-slate-200 dark:border-slate-700 text-sm break-words leading-tight text-slate-900 dark:text-white">{emp.joinDate ? new Date(emp.joinDate).toLocaleDateString() : '-'}</TableCell>
+                      <TableCell className="w-[120px] min-w-[120px] max-w-[120px] border-r border-slate-200 dark:border-slate-700 text-sm break-words leading-tight text-slate-900 dark:text-white">{emp.salary ? `₹${formatINR(emp.salary)}` : '-'}</TableCell>
+                      <TableCell className="w-[120px] min-w-[120px] max-w-[120px] border-r border-slate-200 dark:border-slate-700 text-sm break-words leading-tight text-slate-900 dark:text-white">{emp.costToHire ? `₹${formatINR(emp.costToHire)}` : '-'}</TableCell>
+                      <TableCell className="w-[150px] min-w-[150px] max-w-[150px] border-r border-slate-200 dark:border-slate-700 text-sm break-words leading-tight text-slate-900 dark:text-white">{emp.reportingManager || '-'}</TableCell>
+                      <TableCell className="w-[150px] min-w-[150px] max-w-[150px] border-r border-slate-200 dark:border-slate-700 text-sm break-words leading-tight text-slate-900 dark:text-white">{toProperCase(emp.source) || '-'}</TableCell>
+                      <TableCell className="w-[100px] min-w-[100px] max-w-[100px] border-r border-slate-200 dark:border-slate-700 text-sm">
                         <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                          emp.status === 'active' ? 'bg-green-100 text-green-800' : 
-                          emp.status === 'inactive' ? 'bg-red-100 text-red-800' : 
-                          'bg-gray-100 text-gray-800'
+                          emp.status === 'active' ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400' : 
+                          emp.status === 'inactive' ? 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400' : 
+                          'bg-gray-100 dark:bg-slate-700 text-gray-800 dark:text-slate-200'
                         }`}>
                           {emp.status}
                         </span>
                       </TableCell>
                       <TableCell className="w-[120px] min-w-[120px] max-w-[120px]">
                         <div className="flex items-center space-x-1">
-                        <button onClick={() => setModalEmployee(emp)} className="p-2 rounded hover:bg-amber-100 transition-colors">
-                          <Eye className="w-5 h-5 text-amber-600" />
+                        <button onClick={() => setModalEmployee(emp)} className="p-2 rounded hover:bg-amber-100 dark:hover:bg-amber-900/30 transition-colors">
+                          <Eye className="w-5 h-5 text-amber-600 dark:text-amber-400" />
                         </button>
-                          <button onClick={() => handleEditEmployee(emp)} className="p-2 rounded hover:bg-blue-100 transition-colors">
-                          <Edit className="w-5 h-5 text-blue-600" />
+                          <button onClick={() => handleEditEmployee(emp)} className="p-2 rounded hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors">
+                          <Edit className="w-5 h-5 text-blue-600 dark:text-blue-400" />
                         </button>
                         </div>
                       </TableCell>
@@ -877,27 +1033,27 @@ const EmployeeManagement: React.FC<EmployeeManagementProps> = ({ employees, refr
       </div>
       {/* Employee Details Modal */}
       <Dialog open={!!modalEmployee} onOpenChange={() => setModalEmployee(null)}>
-        <DialogContent className="max-w-5xl w-full max-h-[80vh] overflow-y-auto p-4 bg-gradient-to-br from-slate-50 to-blue-50 border-0 shadow-2xl rounded-xl">
+        <DialogContent className="max-w-5xl w-full max-h-[80vh] overflow-y-auto p-4 bg-slate-50 dark:bg-slate-900 border-0 shadow-2xl rounded-xl">
           {modalEmployee && (
             <div className="space-y-4">
               {/* Modal Header */}
-              <div className="p-6 border-b border-amber-200 bg-gradient-to-r from-white/80 to-slate-50/80 rounded-t-xl">
+                              <div className="p-6 border-b border-amber-200 dark:border-amber-600 bg-white/80 dark:bg-slate-800/80 rounded-t-xl">
                 <div className="flex items-center space-x-4">
-                  <div className="w-14 h-14 bg-gradient-to-br from-amber-500 to-yellow-600 rounded-lg flex items-center justify-center shadow-lg">
+                                      <div className="w-14 h-14 bg-amber-600 dark:bg-slate-700 rounded-lg flex items-center justify-center shadow-lg">
                     <User className="w-7 h-7 text-white" />
                   </div>
                   <div className="flex-1">
                     <div className="flex items-center space-x-2 mb-1">
-                      <h2 className="text-2xl font-semibold text-slate-800">{modalEmployee.name}</h2>
-                      <Badge className="bg-amber-100 text-amber-800 border border-amber-200 text-xs">
+                      <h2 className="text-2xl font-semibold text-slate-800 dark:text-slate-100">{modalEmployee.name}</h2>
+                      <Badge className="bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-600 text-xs">
                         {modalEmployee.employeeId}
                       </Badge>
-                      <Badge className="bg-blue-100 text-blue-800 border border-blue-200 text-xs">
+                      <Badge className="bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 border border-blue-200 dark:border-blue-600 text-xs">
                         Probation
                       </Badge>
                     </div>
-                    <p className="text-lg text-blue-600 font-medium mb-2">{modalEmployee.position} - {modalEmployee.department}</p>
-                    <div className="grid grid-cols-4 gap-4 text-sm text-slate-600">
+                    <p className="text-lg text-blue-600 dark:text-blue-400 font-medium mb-2">{modalEmployee.position} - {modalEmployee.department}</p>
+                    <div className="grid grid-cols-4 gap-4 text-sm text-slate-600 dark:text-slate-300">
                       <div>
                         <span className="font-medium text-xs">Manager:</span>
                         <p className="text-sm">{modalEmployee.reportingManager || 'Sarah Wilson'}</p>
@@ -920,68 +1076,63 @@ const EmployeeManagement: React.FC<EmployeeManagementProps> = ({ employees, refr
               </div>
           {/* Compact Tabs */}
           <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="grid w-full grid-cols-7 bg-white border border-amber-200 h-10">
-                  <TabsTrigger value="overview" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-amber-100 data-[state=active]:to-yellow-100 data-[state=active]:text-amber-800 text-xs">Overview</TabsTrigger>
-                  <TabsTrigger value="performance" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-amber-100 data-[state=active]:to-yellow-100 data-[state=active]:text-amber-800 text-xs">Performance</TabsTrigger>
-                  <TabsTrigger value="leave" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-amber-100 data-[state=active]:to-yellow-100 data-[state=active]:text-amber-800 text-xs">Leave</TabsTrigger>
-                  <TabsTrigger value="actions" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-amber-100 data-[state=active]:to-yellow-100 data-[state=active]:text-amber-800 text-xs">Actions</TabsTrigger>
-                  <TabsTrigger value="kyc" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-amber-100 data-[state=active]:to-yellow-100 data-[state=active]:text-amber-800 text-xs">KYC Data</TabsTrigger>
-                  <TabsTrigger value="attendance" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-amber-100 data-[state=active]:to-yellow-100 data-[state=active]:text-amber-800 text-xs">Attendance</TabsTrigger>
-                  <TabsTrigger value="confirmation" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-amber-100 data-[state=active]:to-yellow-100 data-[state=active]:text-amber-800 text-xs">Confirmation</TabsTrigger>
+            <TabsList className="grid w-full grid-cols-2 bg-white dark:bg-slate-800 border border-amber-200 dark:border-amber-600 h-10">
+                  <TabsTrigger value="overview" className="data-[state=active]:bg-amber-100 dark:data-[state=active]:bg-amber-900/30 data-[state=active]:text-amber-800 dark:data-[state=active]:text-amber-300 text-xs text-slate-700 dark:text-slate-300">Overview</TabsTrigger>
+                                      <TabsTrigger value="actions" className="data-[state=active]:bg-amber-100 dark:data-[state=active]:bg-amber-900/30 data-[state=active]:text-amber-800 dark:data-[state=active]:text-amber-300 text-xs text-slate-700 dark:text-slate-300">Actions</TabsTrigger>
             </TabsList>
             <TabsContent value="overview" className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-                <Card className="professional-card">
+                <Card className="professional-card dark:bg-slate-800 dark:border-slate-700">
                   <CardContent className="p-4">
                     <div className="flex items-center space-x-2">
-                      <div className="w-8 h-8 bg-blue-100 rounded-md flex items-center justify-center">
-                        <User className="w-4 h-4 text-blue-600" />
+                      <div className="w-8 h-8 bg-blue-100 dark:bg-blue-900/30 rounded-md flex items-center justify-center">
+                        <User className="w-4 h-4 text-blue-600 dark:text-blue-400" />
                       </div>
                       <div>
-                        <p className="text-xs font-medium text-gray-600">Employee ID</p>
-                            <p className="text-base font-semibold text-gray-900">{modalEmployee.employeeId}</p>
+                        <p className="text-xs font-medium text-gray-600 dark:text-gray-300">Employee ID</p>
+                            <p className="text-base font-semibold text-gray-900 dark:text-gray-100">{modalEmployee.employeeId}</p>
                       </div>
                     </div>
                   </CardContent>
                 </Card>
 
-                <Card className="professional-card">
+                <Card className="professional-card dark:bg-slate-800 dark:border-slate-700">
                   <CardContent className="p-4">
                     <div className="flex items-center space-x-2">
-                      <div className="w-8 h-8 bg-green-100 rounded-md flex items-center justify-center">
-                        <Building className="w-4 h-4 text-green-600" />
+                      <div className="w-8 h-8 bg-green-100 dark:bg-green-900/30 rounded-md flex items-center justify-center">
+                        <Building className="w-4 h-4 text-green-600 dark:text-green-400" />
                       </div>
                       <div>
-                        <p className="text-xs font-medium text-gray-600">Department</p>
-                            <p className="text-base font-semibold text-gray-900">{modalEmployee.department}</p>
+                        <p className="text-xs font-medium text-gray-600 dark:text-gray-300">Department</p>
+                            <p className="text-base font-semibold text-gray-900 dark:text-gray-100">{modalEmployee.department}</p>
                       </div>
                     </div>
                   </CardContent>
                 </Card>
 
-                <Card className="professional-card">
+                <Card className="professional-card dark:bg-slate-800 dark:border-slate-700">
                   <CardContent className="p-4">
                     <div className="flex items-center space-x-2">
-                      <div className="w-8 h-8 bg-yellow-100 rounded-md flex items-center justify-center">
-                        <Calendar className="w-4 h-4 text-yellow-600" />
+                      <div className="w-8 h-8 bg-yellow-100 dark:bg-yellow-900/30 rounded-md flex items-center justify-center">
+                        <Calendar className="w-4 h-4 text-yellow-600 dark:text-yellow-400" />
                       </div>
                       <div>
-                        <p className="text-xs font-medium text-gray-600">Join Date</p>
-                            <p className="text-base font-semibold text-gray-900">{new Date(modalEmployee.joinDate).toLocaleDateString()}</p>
+                        <p className="text-xs font-medium text-gray-600 dark:text-gray-300">Join Date</p>
+                            <p className="text-base font-semibold text-gray-900 dark:text-gray-100">{new Date(modalEmployee.joinDate).toLocaleDateString()}</p>
                       </div>
                     </div>
                   </CardContent>
                 </Card>
 
-                <Card className="professional-card">
+                <Card className="professional-card dark:bg-slate-800 dark:border-slate-700">
                   <CardContent className="p-4">
                     <div className="flex items-center space-x-2">
-                      <div className="w-8 h-8 bg-purple-100 rounded-md flex items-center justify-center">
-                        <TrendingUp className="w-4 h-4 text-purple-600" />
+                      <div className="w-8 h-8 bg-purple-100 dark:bg-purple-900/30 rounded-md flex items-center justify-center">
+                        <TrendingUp className="w-4 h-4 text-purple-600 dark:text-purple-400" />
                       </div>
                       <div>
-                        <p className="text-xs font-medium text-gray-600">Salary</p>
-                            <p className="text-base font-semibold text-gray-900">₹{formatINR(modalEmployee.salary)}</p>
+                        <p className="text-xs font-medium text-gray-600 dark:text-gray-300">Salary</p>
+                            <p className="text-base font-semibold text-gray-900 dark:text-gray-100">₹{formatINR(modalEmployee.salary)}</p>
                       </div>
                     </div>
                   </CardContent>
@@ -989,77 +1140,7 @@ const EmployeeManagement: React.FC<EmployeeManagementProps> = ({ employees, refr
               </div>
             </TabsContent>
 
-            <TabsContent value="performance" className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                <Card className="professional-card">
-                  <CardContent className="p-4 text-center">
-                    <div className="text-2xl font-bold text-gray-400 mb-1">N/A</div>
-                    <p className="text-xs text-gray-600">Performance Rating</p>
-                  </CardContent>
-                </Card>
 
-                <Card className="professional-card">
-                  <CardContent className="p-4 text-center">
-                    <div className="text-2xl font-bold text-green-600 mb-1">85%</div>
-                    <p className="text-xs text-gray-600">Goal Completion</p>
-                  </CardContent>
-                </Card>
-
-                <Card className="professional-card">
-                  <CardContent className="p-4 text-center">
-                    <div className="text-2xl font-bold text-purple-600 mb-1">Q4 2023</div>
-                    <p className="text-xs text-gray-600">Last Review</p>
-                  </CardContent>
-                </Card>
-              </div>
-
-              <div className="flex space-x-3">
-                <Button size="sm">
-                  <Calendar className="w-3 h-3 mr-1" />
-                  Schedule Review
-                </Button>
-                <Button variant="outline" size="sm">
-                  <FileText className="w-3 h-3 mr-1" />
-                  View History
-                </Button>
-              </div>
-            </TabsContent>
-
-            <TabsContent value="leave" className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                <Card className="professional-card">
-                  <CardContent className="p-4 text-center">
-                    <div className="text-2xl font-bold text-blue-600 mb-1">15</div>
-                    <p className="text-xs text-gray-600">Available Days</p>
-                  </CardContent>
-                </Card>
-
-                <Card className="professional-card">
-                  <CardContent className="p-4 text-center">
-                    <div className="text-2xl font-bold text-orange-600 mb-1">3</div>
-                    <p className="text-xs text-gray-600">Pending Requests</p>
-                  </CardContent>
-                </Card>
-
-                <Card className="professional-card">
-                  <CardContent className="p-4 text-center">
-                    <div className="text-2xl font-bold text-green-600 mb-1">18</div>
-                    <p className="text-xs text-gray-600">Used This Year</p>
-                  </CardContent>
-                </Card>
-              </div>
-
-              <div className="flex space-x-3">
-                <Button size="sm">
-                  <FileText className="w-3 h-3 mr-1" />
-                  View Requests
-                </Button>
-                <Button variant="outline" size="sm">
-                  <Clock className="w-3 h-3 mr-1" />
-                  Leave History
-                </Button>
-              </div>
-            </TabsContent>
 
             <TabsContent value="actions" className="space-y-4">
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -1098,110 +1179,61 @@ const EmployeeManagement: React.FC<EmployeeManagementProps> = ({ employees, refr
               </div>
             </TabsContent>
 
-            <TabsContent value="kyc">
-              <KYCDataForm />
-            </TabsContent>
 
-                <TabsContent value="attendance" className="space-y-2">
-              <AttendanceAnalysis />
-            </TabsContent>
-
-            <TabsContent value="confirmation" className="space-y-4">
-              <Card className="professional-card">
-                <CardHeader>
-                  <CardTitle className="flex items-center space-x-2 text-amber-800">
-                    <Bell className="w-5 h-5" />
-                    <span>Confirmation Process</span>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
-                    <h4 className="font-semibold text-blue-800 mb-2">Automatic Confirmation Process</h4>
-                    <p className="text-sm text-blue-700 mb-3">
-                      When an employee completes 6 months of service, an email with probation form 
-                      will be automatically sent to their reporting manager the next day.
-                    </p>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                      <div>
-                        <span className="font-medium">Employee:</span>
-                            <p>{modalEmployee.name}</p>
-                      </div>
-                      <div>
-                        <span className="font-medium">Join Date:</span>
-                            <p>{new Date(modalEmployee.joinDate).toLocaleDateString()}</p>
-                      </div>
-                      <div>
-                        <span className="font-medium">6 Months Completion:</span>
-                            <p>{new Date(new Date(modalEmployee.joinDate).setMonth(new Date(modalEmployee.joinDate).getMonth() + 6)).toLocaleDateString()}</p>
-                      </div>
-                      <div>
-                        <span className="font-medium">Reporting Manager:</span>
-                            <p>{modalEmployee.reportingManager}</p>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <Button className="professional-button">
-                    <Mail className="w-4 h-4 mr-2" />
-                    Send Confirmation Email Now
-                  </Button>
-                </CardContent>
-              </Card>
-            </TabsContent>
           </Tabs>
         </div>
           )}
         </DialogContent>
       </Dialog>
       <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="max-w-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700">
           <DialogHeader>
-            <DialogTitle>Create New Employee</DialogTitle>
+            <DialogTitle className="text-slate-900 dark:text-slate-100">Create New Employee</DialogTitle>
           </DialogHeader>
           <form onSubmit={handleCreateEmployee} className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label>Name *</label>
-                <input className="w-full border rounded p-2" value={createForm.name} onChange={e => setCreateForm({ ...createForm, name: e.target.value })} required />
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Name *</label>
+                <input className="w-full border border-slate-300 dark:border-slate-600 rounded p-2 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-200 dark:focus:ring-amber-400" value={createForm.name} onChange={e => setCreateForm({ ...createForm, name: e.target.value })} required />
               </div>
               <div>
-                <label>Email *</label>
-                <input className="w-full border rounded p-2" value={createForm.email} onChange={e => setCreateForm({ ...createForm, email: e.target.value })} required />
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Email *</label>
+                <input className="w-full border border-slate-300 dark:border-slate-600 rounded p-2 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-200 dark:focus:ring-amber-400" value={createForm.email} onChange={e => setCreateForm({ ...createForm, email: e.target.value })} required />
               </div>
               <div>
-                <label>Phone</label>
-                <input className="w-full border rounded p-2" value={createForm.phone} onChange={e => setCreateForm({ ...createForm, phone: e.target.value })} />
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Phone</label>
+                <input className="w-full border border-slate-300 dark:border-slate-600 rounded p-2 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-200 dark:focus:ring-amber-400" value={createForm.phone} onChange={e => setCreateForm({ ...createForm, phone: e.target.value })} />
               </div>
               <div>
-                <label>Department</label>
-                <input className="w-full border rounded p-2" value={createForm.department} onChange={e => setCreateForm({ ...createForm, department: e.target.value })} />
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Department</label>
+                <input className="w-full border border-slate-300 dark:border-slate-600 rounded p-2 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-200 dark:focus:ring-amber-400" value={createForm.department} onChange={e => setCreateForm({ ...createForm, department: e.target.value })} />
               </div>
               <div>
-                <label>Position</label>
-                <input className="w-full border rounded p-2" value={createForm.position} onChange={e => setCreateForm({ ...createForm, position: e.target.value })} />
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Position</label>
+                <input className="w-full border border-slate-300 dark:border-slate-600 rounded p-2 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-200 dark:focus:ring-amber-400" value={createForm.position} onChange={e => setCreateForm({ ...createForm, position: e.target.value })} />
               </div>
               <div>
-                <label>Join Date</label>
-                <input type="date" className="w-full border rounded p-2" value={createForm.joinDate} onChange={e => setCreateForm({ ...createForm, joinDate: e.target.value })} />
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Join Date</label>
+                <input type="date" className="w-full border border-slate-300 dark:border-slate-600 rounded p-2 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-200 dark:focus:ring-amber-400" value={createForm.joinDate} onChange={e => setCreateForm({ ...createForm, joinDate: e.target.value })} />
               </div>
               <div>
-                <label>Reporting Manager</label>
-                <input className="w-full border rounded p-2" value={createForm.reportingManager} onChange={e => setCreateForm({ ...createForm, reportingManager: e.target.value })} />
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Reporting Manager</label>
+                <input className="w-full border border-slate-300 dark:border-slate-600 rounded p-2 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-200 dark:focus:ring-amber-400" value={createForm.reportingManager} onChange={e => setCreateForm({ ...createForm, reportingManager: e.target.value })} />
               </div>
               <div>
-                <label>Employee ID</label>
-                <input className="w-full border rounded p-2" value={createForm.employeeId} onChange={e => setCreateForm({ ...createForm, employeeId: e.target.value })} />
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Employee ID</label>
+                <input className="w-full border border-slate-300 dark:border-slate-600 rounded p-2 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-200 dark:focus:ring-amber-400" value={createForm.employeeId} onChange={e => setCreateForm({ ...createForm, employeeId: e.target.value })} />
               </div>
               <div>
-                <label>Salary</label>
-                <input type="number" className="w-full border rounded p-2" value={createForm.salary} onChange={e => setCreateForm({ ...createForm, salary: e.target.value })} />
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Salary</label>
+                <input type="number" className="w-full border border-slate-300 dark:border-slate-600 rounded p-2 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-200 dark:focus:ring-amber-400" value={createForm.salary} onChange={e => setCreateForm({ ...createForm, salary: e.target.value })} />
               </div>
               <div>
-                <label>Cost to Hire</label>
-                <input type="number" className="w-full border rounded p-2" value={createForm.costToHire} onChange={e => setCreateForm({ ...createForm, costToHire: e.target.value })} />
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Cost to Hire</label>
+                <input type="number" className="w-full border border-slate-300 dark:border-slate-600 rounded p-2 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-200 dark:focus:ring-amber-400" value={createForm.costToHire} onChange={e => setCreateForm({ ...createForm, costToHire: e.target.value })} />
               </div>
               <div>
-                <label>Application Source</label>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Application Source</label>
                 <Select
                   value={createForm.source}
                   onValueChange={value => {
@@ -1211,22 +1243,22 @@ const EmployeeManagement: React.FC<EmployeeManagementProps> = ({ employees, refr
                   }}
                   required
                 >
-                  <SelectTrigger className="w-full border rounded p-2">
+                  <SelectTrigger className="w-full border border-slate-300 dark:border-slate-600 rounded p-2 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-200 dark:focus:ring-amber-400">
                     <SelectValue placeholder="Select source" />
                   </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="referral">Employee Referral</SelectItem>
-                    <SelectItem value="linkedin">LinkedIn</SelectItem>
-                    <SelectItem value="indeed">Indeed</SelectItem>
-                    <SelectItem value="company-website">Company Website</SelectItem>
-                    <SelectItem value="recruitment-agency">Recruitment Agency</SelectItem>
-                    <SelectItem value="job-fair">Job Fair</SelectItem>
-                    <SelectItem value="other">Other</SelectItem>
+                  <SelectContent className="bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600">
+                    <SelectItem value="referral" className="text-slate-900 dark:text-slate-100">Employee Referral</SelectItem>
+                    <SelectItem value="linkedin" className="text-slate-900 dark:text-slate-100">LinkedIn</SelectItem>
+                    <SelectItem value="indeed" className="text-slate-900 dark:text-slate-100">Indeed</SelectItem>
+                    <SelectItem value="company-website" className="text-slate-900 dark:text-slate-100">Company Website</SelectItem>
+                    <SelectItem value="recruitment-agency" className="text-slate-900 dark:text-slate-100">Recruitment Agency</SelectItem>
+                    <SelectItem value="job-fair" className="text-slate-900 dark:text-slate-100">Job Fair</SelectItem>
+                    <SelectItem value="other" className="text-slate-900 dark:text-slate-100">Other</SelectItem>
                   </SelectContent>
                 </Select>
                 {createForm.source === 'recruitment-agency' && (
                   <input
-                    className="w-full border rounded p-2 mt-2"
+                    className="w-full border border-slate-300 dark:border-slate-600 rounded p-2 mt-2 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-200 dark:focus:ring-amber-400"
                     placeholder="Name of Recruitment Agency"
                     value={createAgencyName}
                     onChange={e => setCreateAgencyName(e.target.value)}
@@ -1234,7 +1266,7 @@ const EmployeeManagement: React.FC<EmployeeManagementProps> = ({ employees, refr
                 )}
                 {createForm.source === 'other' && (
                   <input
-                    className="w-full border rounded p-2 mt-2"
+                    className="w-full border border-slate-300 dark:border-slate-600 rounded p-2 mt-2 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-200 dark:focus:ring-amber-400"
                     placeholder="Please specify"
                     value={createOtherSource}
                     onChange={e => setCreateOtherSource(e.target.value)}
@@ -1243,48 +1275,48 @@ const EmployeeManagement: React.FC<EmployeeManagementProps> = ({ employees, refr
               </div>
             </div>
             <div className="flex justify-end space-x-2">
-              <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)} type="button">Cancel</Button>
-              <Button type="submit">Create</Button>
+              <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)} type="button" className="border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800">Cancel</Button>
+                              <Button type="submit" className="bg-amber-600 dark:bg-slate-700 hover:bg-amber-700 dark:hover:bg-slate-600 text-white">Create</Button>
             </div>
           </form>
         </DialogContent>
       </Dialog>
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="max-w-4xl max-h-[80vh] p-6">
+        <DialogContent className="max-w-4xl max-h-[80vh] p-6 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700">
           <DialogHeader className="mb-4">
-            <DialogTitle>Edit Employee</DialogTitle>
+            <DialogTitle className="text-slate-900 dark:text-slate-100">Edit Employee</DialogTitle>
           </DialogHeader>
           {editForm && (
             <form onSubmit={handleUpdateEmployee} className="flex flex-col h-full">
               <div className="overflow-y-auto max-h-[50vh] pr-2 flex-1">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label>Name *</label>
-                  <input className="w-full border rounded p-2" value={editForm.name} onChange={e => setEditForm({ ...editForm, name: e.target.value })} required />
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Name *</label>
+                  <input className="w-full border border-slate-300 dark:border-slate-600 rounded p-2 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-200 dark:focus:ring-amber-400" value={editForm.name} onChange={e => setEditForm({ ...editForm, name: e.target.value })} required />
                 </div>
                 <div>
-                  <label>Email *</label>
-                  <input type="email" className="w-full border rounded p-2" value={editForm.email} onChange={e => setEditForm({ ...editForm, email: e.target.value })} required />
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Email *</label>
+                  <input type="email" className="w-full border border-slate-300 dark:border-slate-600 rounded p-2 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-200 dark:focus:ring-amber-400" value={editForm.email} onChange={e => setEditForm({ ...editForm, email: e.target.value })} required />
                 </div>
                 <div>
-                  <label>Phone</label>
-                  <input className="w-full border rounded p-2" value={editForm.phone || ''} onChange={e => setEditForm({ ...editForm, phone: e.target.value })} />
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Phone</label>
+                  <input className="w-full border border-slate-300 dark:border-slate-600 rounded p-2 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-200 dark:focus:ring-amber-400" value={editForm.phone || ''} onChange={e => setEditForm({ ...editForm, phone: e.target.value })} />
                 </div>
                 <div>
-                  <label>Department</label>
-                  <input className="w-full border rounded p-2" value={editForm.department || ''} onChange={e => setEditForm({ ...editForm, department: e.target.value })} />
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Department</label>
+                  <input className="w-full border border-slate-300 dark:border-slate-600 rounded p-2 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-200 dark:focus:ring-amber-400" value={editForm.department || ''} onChange={e => setEditForm({ ...editForm, department: e.target.value })} />
                 </div>
                 <div>
-                  <label>Position</label>
-                  <input className="w-full border rounded p-2" value={editForm.position || ''} onChange={e => setEditForm({ ...editForm, position: e.target.value })} />
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Position</label>
+                  <input className="w-full border border-slate-300 dark:border-slate-600 rounded p-2 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-200 dark:focus:ring-amber-400" value={editForm.position || ''} onChange={e => setEditForm({ ...editForm, position: e.target.value })} />
                 </div>
                 <div>
-                  <label>Join Date</label>
-                  <input type="date" className="w-full border rounded p-2" value={editForm.joinDate || ''} onChange={e => setEditForm({ ...editForm, joinDate: e.target.value })} />
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Join Date</label>
+                  <input type="date" className="w-full border border-slate-300 dark:border-slate-600 rounded p-2 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-200 dark:focus:ring-amber-400" value={editForm.joinDate || ''} onChange={e => setEditForm({ ...editForm, joinDate: e.target.value })} />
                 </div>
                 <div>
-                  <label>Status</label>
-                  <select className="w-full border rounded p-2" value={editForm.status || 'active'} onChange={e => setEditForm({ ...editForm, status: e.target.value })}>
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Status</label>
+                  <select className="w-full border border-slate-300 dark:border-slate-600 rounded p-2 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-200 dark:focus:ring-amber-400" value={editForm.status || 'active'} onChange={e => setEditForm({ ...editForm, status: e.target.value })}>
                     <option value="active">Active</option>
                     <option value="inactive">Inactive</option>
                     <option value="terminated">Terminated</option>
@@ -1292,31 +1324,31 @@ const EmployeeManagement: React.FC<EmployeeManagementProps> = ({ employees, refr
                   </select>
                 </div>
                 <div>
-                  <label>Probation Status</label>
-                  <select className="w-full border rounded p-2" value={editForm.probationStatus || 'ongoing'} onChange={e => setEditForm({ ...editForm, probationStatus: e.target.value })}>
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Probation Status</label>
+                  <select className="w-full border border-slate-300 dark:border-slate-600 rounded p-2 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-200 dark:focus:ring-amber-400" value={editForm.probationStatus || 'ongoing'} onChange={e => setEditForm({ ...editForm, probationStatus: e.target.value })}>
                     <option value="ongoing">Ongoing</option>
                     <option value="completed">Completed</option>
                   </select>
                 </div>
                 <div>
-                  <label>Reporting Manager</label>
-                  <input className="w-full border rounded p-2" value={editForm.reportingManager || ''} onChange={e => setEditForm({ ...editForm, reportingManager: e.target.value })} />
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Reporting Manager</label>
+                  <input className="w-full border border-slate-300 dark:border-slate-600 rounded p-2 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-200 dark:focus:ring-amber-400" value={editForm.reportingManager || ''} onChange={e => setEditForm({ ...editForm, reportingManager: e.target.value })} />
                 </div>
                 <div>
-                  <label>Employee ID</label>
-                  <input className="w-full border rounded p-2" value={editForm.employeeId || ''} onChange={e => setEditForm({ ...editForm, employeeId: e.target.value })} />
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Employee ID</label>
+                  <input className="w-full border border-slate-300 dark:border-slate-600 rounded p-2 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-200 dark:focus:ring-amber-400" value={editForm.employeeId || ''} onChange={e => setEditForm({ ...editForm, employeeId: e.target.value })} />
                 </div>
                 <div>
-                  <label>Salary</label>
-                  <input type="number" className="w-full border rounded p-2" value={editForm.salary || ''} onChange={e => setEditForm({ ...editForm, salary: e.target.value })} />
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Salary</label>
+                  <input type="number" className="w-full border border-slate-300 dark:border-slate-600 rounded p-2 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-200 dark:focus:ring-amber-400" value={editForm.salary || ''} onChange={e => setEditForm({ ...editForm, salary: e.target.value })} />
                 </div>
                 <div>
-                  <label>Cost to Hire</label>
-                  <input type="number" className="w-full border rounded p-2" value={editForm.costToHire || ''} onChange={e => setEditForm({ ...editForm, costToHire: e.target.value })} />
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Cost to Hire</label>
+                  <input type="number" className="w-full border border-slate-300 dark:border-slate-600 rounded p-2 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-200 dark:focus:ring-amber-400" value={editForm.costToHire || ''} onChange={e => setEditForm({ ...editForm, costToHire: e.target.value })} />
                 </div>
                 <div>
-                  <label>Performance Rating</label>
-                  <select className="w-full border rounded p-2" value={editForm.performanceRating || ''} onChange={e => setEditForm({ ...editForm, performanceRating: e.target.value })}>
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Performance Rating</label>
+                  <select className="w-full border border-slate-300 dark:border-slate-600 rounded p-2 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-200 dark:focus:ring-amber-400" value={editForm.performanceRating || ''} onChange={e => setEditForm({ ...editForm, performanceRating: e.target.value })}>
                     <option value="">Select Rating</option>
                     <option value="Excellent">Excellent</option>
                     <option value="Good">Good</option>
@@ -1326,7 +1358,7 @@ const EmployeeManagement: React.FC<EmployeeManagementProps> = ({ employees, refr
                   </select>
                 </div>
                 <div>
-                  <label>Application Source</label>
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Application Source</label>
                   <Select
                     value={editForm?.sourceType || ''}
                     onValueChange={value => {
@@ -1335,22 +1367,22 @@ const EmployeeManagement: React.FC<EmployeeManagementProps> = ({ employees, refr
                       setEditOtherSource('');
                     }}
                   >
-                    <SelectTrigger className="w-full border rounded p-2">
+                    <SelectTrigger className="w-full border border-slate-300 dark:border-slate-600 rounded p-2 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-200 dark:focus:ring-amber-400">
                       <SelectValue placeholder="Select source" />
                     </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="referral">Employee Referral</SelectItem>
-                      <SelectItem value="linkedin">LinkedIn</SelectItem>
-                      <SelectItem value="indeed">Indeed</SelectItem>
-                      <SelectItem value="company-website">Company Website</SelectItem>
-                      <SelectItem value="recruitment-agency">Recruitment Agency</SelectItem>
-                      <SelectItem value="job-fair">Job Fair</SelectItem>
-                      <SelectItem value="other">Other</SelectItem>
+                    <SelectContent className="bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600">
+                      <SelectItem value="referral" className="text-slate-900 dark:text-slate-100">Employee Referral</SelectItem>
+                      <SelectItem value="linkedin" className="text-slate-900 dark:text-slate-100">LinkedIn</SelectItem>
+                      <SelectItem value="indeed" className="text-slate-900 dark:text-slate-100">Indeed</SelectItem>
+                      <SelectItem value="company-website" className="text-slate-900 dark:text-slate-100">Company Website</SelectItem>
+                      <SelectItem value="recruitment-agency" className="text-slate-900 dark:text-slate-100">Recruitment Agency</SelectItem>
+                      <SelectItem value="job-fair" className="text-slate-900 dark:text-slate-100">Job Fair</SelectItem>
+                      <SelectItem value="other" className="text-slate-900 dark:text-slate-100">Other</SelectItem>
                     </SelectContent>
                   </Select>
                   {editForm?.sourceType === 'recruitment-agency' && (
                     <input
-                      className="w-full border rounded p-2 mt-2"
+                      className="w-full border border-slate-300 dark:border-slate-600 rounded p-2 mt-2 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-200 dark:focus:ring-amber-400"
                       placeholder="Name of Recruitment Agency"
                       value={editAgencyName}
                       onChange={e => setEditAgencyName(e.target.value)}
@@ -1358,7 +1390,7 @@ const EmployeeManagement: React.FC<EmployeeManagementProps> = ({ employees, refr
                   )}
                   {editForm?.sourceType === 'other' && (
                     <input
-                      className="w-full border rounded p-2 mt-2"
+                      className="w-full border border-slate-300 dark:border-slate-600 rounded p-2 mt-2 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-200 dark:focus:ring-amber-400"
                       placeholder="Please specify"
                       value={editOtherSource}
                       onChange={e => setEditOtherSource(e.target.value)}
@@ -1367,9 +1399,9 @@ const EmployeeManagement: React.FC<EmployeeManagementProps> = ({ employees, refr
                 </div>
               </div>
               </div>
-              <div className="flex justify-end space-x-2 pt-4 border-t border-gray-200 mt-4 flex-shrink-0">
-                <Button variant="outline" onClick={() => setIsEditDialogOpen(false)} type="button">Cancel</Button>
-                <Button type="submit">Update</Button>
+              <div className="flex justify-end space-x-2 pt-4 border-t border-slate-200 dark:border-slate-700 mt-4 flex-shrink-0">
+                <Button variant="outline" onClick={() => setIsEditDialogOpen(false)} type="button" className="border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800">Cancel</Button>
+                <Button type="submit" className="bg-amber-600 dark:bg-slate-700 hover:bg-amber-700 dark:hover:bg-slate-600 text-white">Update</Button>
               </div>
             </form>
           )}

@@ -255,20 +255,20 @@ const SalaryMaster: React.FC<SalaryMasterProps> = ({ isManagement = false }) => 
   };
 
   return (
-    <div className="p-6 space-y-6 bg-gradient-to-br from-slate-50 to-blue-50 min-h-screen">
+    <div className="p-6 space-y-6 bg-slate-50 dark:bg-slate-900 min-h-screen">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
           {isManagement && (
             <div className="flex items-center gap-2">
-              <span className="text-sm font-medium text-slate-700">Employee-wise</span>
+              <span className="text-sm font-medium text-slate-700 dark:text-slate-200">Employee-wise</span>
               <Switch checked={view === 'department'} onCheckedChange={checked => setView(checked ? 'department' : 'employee')} />
-              <span className="text-sm font-medium text-slate-700">Department-wise</span>
+              <span className="text-sm font-medium text-slate-700 dark:text-slate-200">Department-wise</span>
             </div>
           )}
         </div>
         <div className="flex space-x-3">
           <Button 
-            className="professional-button"
+            className="bg-amber-600 hover:bg-amber-700 text-white shadow"
             onClick={handleExport}
           >
             <svg className="w-4 h-4 mr-2" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -282,48 +282,48 @@ const SalaryMaster: React.FC<SalaryMasterProps> = ({ isManagement = false }) => 
           </Button>
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
-              <Button className="professional-button">
+                              <Button className="bg-amber-600 dark:bg-slate-700 hover:bg-amber-700 dark:hover:bg-slate-600 text-white shadow">
                 <Plus className="w-4 h-4 mr-2" />
                 Add Employee
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-lg">
+            <DialogContent className="max-w-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700">
               <DialogHeader>
-                <DialogTitle>Add New Employee</DialogTitle>
+                <DialogTitle className="text-slate-800 dark:text-white">Add New Employee</DialogTitle>
               </DialogHeader>
               <form onSubmit={handleAddEmployee} className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <Label htmlFor="empCode">Employee Code *</Label>
-                    <Input id="empCode" value={formData.emp_code} onChange={e => setFormData({ ...formData, emp_code: e.target.value })} required />
+                    <Label htmlFor="empCode" className="text-slate-700 dark:text-slate-200">Employee Code *</Label>
+                    <Input id="empCode" value={formData.emp_code} onChange={e => setFormData({ ...formData, emp_code: e.target.value })} required className="bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-700 text-slate-800 dark:text-white" />
                   </div>
                   <div>
-                    <Label htmlFor="empName">Name *</Label>
-                    <Input id="empName" value={formData.emp_name} onChange={e => setFormData({ ...formData, emp_name: e.target.value })} required />
+                    <Label htmlFor="empName" className="text-slate-700 dark:text-slate-200">Name *</Label>
+                    <Input id="empName" value={formData.emp_name} onChange={e => setFormData({ ...formData, emp_name: e.target.value })} required className="bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-700 text-slate-800 dark:text-white" />
                   </div>
                   <div>
-                    <Label htmlFor="designation">Designation *</Label>
-                    <Input id="designation" value={formData.designation} onChange={e => setFormData({ ...formData, designation: e.target.value })} required />
+                    <Label htmlFor="designation" className="text-slate-700 dark:text-slate-200">Designation *</Label>
+                    <Input id="designation" value={formData.designation} onChange={e => setFormData({ ...formData, designation: e.target.value })} required className="bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-700 text-slate-800 dark:text-white" />
                   </div>
                   <div>
-                    <Label htmlFor="department">Department *</Label>
-                    <Input id="department" value={formData.department} onChange={e => setFormData({ ...formData, department: e.target.value })} required />
+                    <Label htmlFor="department" className="text-slate-700 dark:text-slate-200">Department *</Label>
+                    <Input id="department" value={formData.department} onChange={e => setFormData({ ...formData, department: e.target.value })} required className="bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-700 text-slate-800 dark:text-white" />
                   </div>
                   <div>
-                    <Label htmlFor="location">Location *</Label>
-                    <Input id="location" value={formData.location} onChange={e => setFormData({ ...formData, location: e.target.value })} required />
+                    <Label htmlFor="location" className="text-slate-700 dark:text-slate-200">Location *</Label>
+                    <Input id="location" value={formData.location} onChange={e => setFormData({ ...formData, location: e.target.value })} required className="bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-700 text-slate-800 dark:text-white" />
                   </div>
                   <div>
-                    <Label htmlFor="fixGross">Fixed Gross *</Label>
-                    <Input id="fixGross" type="number" value={formData.fix_gross} onChange={e => setFormData({ ...formData, fix_gross: e.target.value })} required />
+                    <Label htmlFor="fixGross" className="text-slate-700 dark:text-slate-200">Fixed Gross *</Label>
+                    <Input id="fixGross" type="number" value={formData.fix_gross} onChange={e => setFormData({ ...formData, fix_gross: e.target.value })} required className="bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-700 text-slate-800 dark:text-white" />
                   </div>
                   <div>
-                    <Label htmlFor="doj">Date of Joining *</Label>
-                    <Input id="doj" type="date" value={formData.doj} onChange={e => setFormData({ ...formData, doj: e.target.value })} required />
+                    <Label htmlFor="doj" className="text-slate-700 dark:text-slate-200">Date of Joining *</Label>
+                    <Input id="doj" type="date" value={formData.doj} onChange={e => setFormData({ ...formData, doj: e.target.value })} required className="bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-700 text-slate-800 dark:text-white" />
                   </div>
                 </div>
                 <div className="flex justify-end">
-                  <Button type="submit">Save</Button>
+                  <Button type="submit" className="bg-amber-600 dark:bg-slate-700 hover:bg-amber-700 dark:hover:bg-slate-600 text-white">Save</Button>
                 </div>
               </form>
             </DialogContent>
@@ -335,77 +335,77 @@ const SalaryMaster: React.FC<SalaryMasterProps> = ({ isManagement = false }) => 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         {view === 'employee' ? (
           <>
-            <Card className="border-amber-200 bg-gradient-to-br from-amber-50 to-yellow-50">
+            <Card className="border-amber-200 bg-amber-50 dark:bg-slate-900 dark:border-slate-700">
               <CardHeader className="pb-3">
-                <CardTitle className="text-sm font-medium text-amber-700 flex items-center">
+                <CardTitle className="text-sm font-medium text-amber-700 dark:text-amber-300 flex items-center">
                   <Users className="w-4 h-4 mr-2" />
                   Total Employees
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-amber-800">{totalEmployees}</div>
+                <div className="text-2xl font-bold text-amber-800 dark:text-amber-200">{totalEmployees}</div>
               </CardContent>
             </Card>
-            <Card className="border-emerald-200 bg-gradient-to-br from-emerald-50 to-green-50">
+            <Card className="border-emerald-200 bg-emerald-50 dark:bg-slate-900 dark:border-slate-700">
               <CardHeader className="pb-3">
-                <CardTitle className="text-sm font-medium text-emerald-700">Total Payroll</CardTitle>
+                <CardTitle className="text-sm font-medium text-emerald-700 dark:text-emerald-300">Total Payroll</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-emerald-800">{formatCurrency(totalSalary)}</div>
+                <div className="text-2xl font-bold text-emerald-800 dark:text-emerald-200">{formatCurrency(totalSalary)}</div>
               </CardContent>
             </Card>
-            <Card className="border-blue-200 bg-gradient-to-br from-blue-50 to-indigo-50">
+            <Card className="border-blue-200 bg-blue-50 dark:bg-slate-900 dark:border-slate-700">
               <CardHeader className="pb-3">
-                <CardTitle className="text-sm font-medium text-blue-700">Avg Salary</CardTitle>
+                <CardTitle className="text-sm font-medium text-blue-700 dark:text-blue-300">Avg Salary</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-blue-800">{formatCurrency(avgSalary)}</div>
+                <div className="text-2xl font-bold text-blue-800 dark:text-blue-200">{formatCurrency(avgSalary)}</div>
               </CardContent>
             </Card>
-            <Card className="border-purple-200 bg-gradient-to-br from-purple-50 to-violet-50">
+            <Card className="border-purple-200 bg-purple-50 dark:bg-slate-900 dark:border-slate-700">
               <CardHeader className="pb-3">
-                <CardTitle className="text-sm font-medium text-purple-700">Departments</CardTitle>
+                <CardTitle className="text-sm font-medium text-purple-700 dark:text-purple-300">Departments</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-purple-800">{totalDepartments}</div>
+                <div className="text-2xl font-bold text-purple-800 dark:text-purple-200">{totalDepartments}</div>
               </CardContent>
             </Card>
           </>
         ) : (
           <>
-            <Card className="border-purple-200 bg-gradient-to-br from-purple-50 to-violet-50">
+            <Card className="border-purple-200 bg-purple-50 dark:bg-slate-900 dark:border-slate-700">
               <CardHeader className="pb-3">
-                <CardTitle className="text-sm font-medium text-purple-700">Departments</CardTitle>
+                <CardTitle className="text-sm font-medium text-purple-700 dark:text-purple-300">Departments</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-purple-800">{departmentCount}</div>
+                <div className="text-2xl font-bold text-purple-800 dark:text-purple-200">{departmentCount}</div>
               </CardContent>
             </Card>
-            <Card className="border-emerald-200 bg-gradient-to-br from-emerald-50 to-green-50">
+            <Card className="border-emerald-200 bg-emerald-50 dark:bg-slate-900 dark:border-slate-700">
               <CardHeader className="pb-3">
-                <CardTitle className="text-sm font-medium text-emerald-700">Total Payroll</CardTitle>
+                <CardTitle className="text-sm font-medium text-emerald-700 dark:text-emerald-300">Total Payroll</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-emerald-800">{formatCurrency(departmentTotalSalary)}</div>
+                <div className="text-2xl font-bold text-emerald-800 dark:text-emerald-200">{formatCurrency(departmentTotalSalary)}</div>
               </CardContent>
             </Card>
-            <Card className="border-blue-200 bg-gradient-to-br from-blue-50 to-indigo-50">
+            <Card className="border-blue-200 bg-blue-50 dark:bg-slate-900 dark:border-slate-700">
               <CardHeader className="pb-3">
-                <CardTitle className="text-sm font-medium text-blue-700">Avg Dept Salary</CardTitle>
+                <CardTitle className="text-sm font-medium text-blue-700 dark:text-blue-300">Avg Dept Salary</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-blue-800">{formatCurrency(avgDepartmentSalary)}</div>
+                <div className="text-2xl font-bold text-blue-800 dark:text-blue-200">{formatCurrency(avgDepartmentSalary)}</div>
               </CardContent>
             </Card>
-            <Card className="border-amber-200 bg-gradient-to-br from-amber-50 to-yellow-50">
+            <Card className="border-amber-200 bg-amber-50 dark:bg-slate-900 dark:border-slate-700">
               <CardHeader className="pb-3">
-                <CardTitle className="text-sm font-medium text-amber-700 flex items-center">
+                <CardTitle className="text-sm font-medium text-amber-700 dark:text-amber-300 flex items-center">
                   <Users className="w-4 h-4 mr-2" />
                   Total Employees
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-amber-800">{departmentTotalEmployees}</div>
+                <div className="text-2xl font-bold text-amber-800 dark:text-amber-200">{departmentTotalEmployees}</div>
               </CardContent>
             </Card>
           </>
@@ -413,7 +413,7 @@ const SalaryMaster: React.FC<SalaryMasterProps> = ({ isManagement = false }) => 
       </div>
 
       {/* Search and Filter */}
-      <Card className="border-slate-200 bg-white/70 backdrop-blur-sm">
+      <Card className="border-slate-200 dark:border-slate-700 bg-white/70 dark:bg-slate-800/80 backdrop-blur-sm">
         <CardHeader>
           <div className="flex flex-wrap items-center gap-4">
             <div className="relative flex-grow" style={{ minWidth: '250px' }}>
@@ -422,32 +422,32 @@ const SalaryMaster: React.FC<SalaryMasterProps> = ({ isManagement = false }) => 
                 placeholder="Search employees..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 border-slate-300 focus:border-blue-400 focus:ring-blue-400"
+                className="pl-10 border-slate-300 dark:border-slate-700 focus:border-blue-400 dark:focus:border-blue-500 focus:ring-blue-400 dark:focus:ring-blue-500 bg-white dark:bg-slate-800 text-slate-800 dark:text-white"
               />
             </div>
             <Select value={filterDesignation} onValueChange={setFilterDesignation}>
-              <SelectTrigger className="w-full md:w-auto flex-grow" style={{ minWidth: '150px' }}>
+              <SelectTrigger className="w-full md:w-auto flex-grow bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-700 text-slate-800 dark:text-white" style={{ minWidth: '150px' }}>
                 <SelectValue placeholder="Designation" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-700 text-slate-800 dark:text-white">
                 <SelectItem value="all">All Designations</SelectItem>
                 {designations.map(d => <SelectItem key={d} value={d}>{d}</SelectItem>)}
               </SelectContent>
             </Select>
             <Select value={filterDepartment} onValueChange={setFilterDepartment}>
-              <SelectTrigger className="w-full md:w-auto flex-grow" style={{ minWidth: '150px' }}>
+              <SelectTrigger className="w-full md:w-auto flex-grow bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-700 text-slate-800 dark:text-white" style={{ minWidth: '150px' }}>
                 <SelectValue placeholder="Department" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-700 text-slate-800 dark:text-white">
                 <SelectItem value="all">All Departments</SelectItem>
                 {departments.map(d => <SelectItem key={d} value={d}>{d}</SelectItem>)}
               </SelectContent>
             </Select>
             <Select value={filterLocation} onValueChange={setFilterLocation}>
-              <SelectTrigger className="w-full md:w-auto flex-grow" style={{ minWidth: '150px' }}>
+              <SelectTrigger className="w-full md:w-auto flex-grow bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-700 text-slate-800 dark:text-white" style={{ minWidth: '150px' }}>
                 <SelectValue placeholder="Location" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-700 text-slate-800 dark:text-white">
                 <SelectItem value="all">All Locations</SelectItem>
                 {locations.map(l => <SelectItem key={l} value={l}>{l}</SelectItem>)}
               </SelectContent>
@@ -456,7 +456,7 @@ const SalaryMaster: React.FC<SalaryMasterProps> = ({ isManagement = false }) => 
               type="date"
               value={filterDoj}
               onChange={e => setFilterDoj(e.target.value)}
-              className="w-full md:w-auto flex-grow"
+              className="w-full md:w-auto flex-grow bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-700 text-slate-800 dark:text-white"
               style={{ minWidth: '150px' }}
             />
           </div>
@@ -465,45 +465,45 @@ const SalaryMaster: React.FC<SalaryMasterProps> = ({ isManagement = false }) => 
 
       {/* Salary Table */}
       {view === 'employee' && (
-        <Card className="border-slate-200 bg-white/70 backdrop-blur-sm">
+        <Card className="border-slate-200 dark:border-slate-700 bg-white/70 dark:bg-slate-800/80 backdrop-blur-sm">
           <CardHeader>
-            <CardTitle className="text-slate-800">Employee Salary Details</CardTitle>
+            <CardTitle className="text-slate-800 dark:text-white">Employee Salary Details</CardTitle>
           </CardHeader>
           <CardContent className="p-0">
             <div className="overflow-x-auto overflow-y-auto max-h-[56vh] w-full block">
-              <Table className="min-w-[1200px] border border-gray-200">
-                <TableHeader className="sticky top-0 z-20 bg-white shadow border-t border-gray-200">
-                  <TableRow className="border-b border-gray-200">
-                    <TableHead className="border-r border-gray-200 text-slate-700 font-semibold">Employee Code</TableHead>
-                    <TableHead className="border-r border-gray-200 text-slate-700 font-semibold">Name</TableHead>
-                    <TableHead className="border-r border-gray-200 text-slate-700 font-semibold">Designation</TableHead>
-                    <TableHead className="border-r border-gray-200 text-slate-700 font-semibold">Department</TableHead>
-                    <TableHead className="border-r border-gray-200 text-slate-700 font-semibold">Location</TableHead>
-                    <TableHead className="border-r border-gray-200 text-slate-700 font-semibold">Fixed Gross</TableHead>
-                    <TableHead className="border-r border-gray-200 text-slate-700 font-semibold">Date of Joining</TableHead>
-                    <TableHead className="text-slate-700 font-semibold">Actions</TableHead>
+              <Table className="min-w-[1200px] border border-slate-200 dark:border-slate-700">
+                <TableHeader className="sticky top-0 z-20 bg-white dark:bg-slate-900 shadow border-t border-slate-200 dark:border-slate-700">
+                  <TableRow className="border-b border-slate-200 dark:border-slate-700">
+                    <TableHead className="border-r border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 font-semibold">Employee Code</TableHead>
+                    <TableHead className="border-r border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 font-semibold">Name</TableHead>
+                    <TableHead className="border-r border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 font-semibold">Designation</TableHead>
+                    <TableHead className="border-r border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 font-semibold">Department</TableHead>
+                    <TableHead className="border-r border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 font-semibold">Location</TableHead>
+                    <TableHead className="border-r border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 font-semibold">Fixed Gross</TableHead>
+                    <TableHead className="border-r border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 font-semibold">Date of Joining</TableHead>
+                    <TableHead className="text-slate-700 dark:text-slate-200 font-semibold">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {filteredData.map((emp) => (
-                    <TableRow key={emp.id} className="border-b border-gray-200 hover:bg-slate-50/50 transition-colors">
-                      <TableCell className="border-r border-gray-200 font-medium text-slate-800">{emp.emp_code}</TableCell>
-                      <TableCell className="border-r border-gray-200 text-slate-700">{emp.emp_name}</TableCell>
-                      <TableCell className="border-r border-gray-200">
-                        <Badge variant="secondary" className="bg-blue-100 text-blue-700 border-blue-200">
+                    <TableRow key={emp.id} className="border-b border-slate-200 dark:border-slate-700 hover:bg-slate-50/50 dark:hover:bg-slate-800/60 transition-colors">
+                      <TableCell className="border-r border-slate-200 dark:border-slate-700 font-medium text-slate-800 dark:text-white">{emp.emp_code}</TableCell>
+                      <TableCell className="border-r border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200">{emp.emp_name}</TableCell>
+                      <TableCell className="border-r border-slate-200 dark:border-slate-700">
+                        <Badge variant="secondary" className="bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-700">
                           {emp.designation}
                         </Badge>
                       </TableCell>
-                      <TableCell className="border-r border-gray-200">
-                        <Badge variant="outline" className="border-emerald-200 text-emerald-700">
+                      <TableCell className="border-r border-slate-200 dark:border-slate-700">
+                        <Badge variant="outline" className="border-emerald-200 dark:border-emerald-700 text-emerald-700 dark:text-emerald-300">
                           {emp.department}
                         </Badge>
                       </TableCell>
-                      <TableCell className="border-r border-gray-200 text-slate-600">{emp.location}</TableCell>
-                      <TableCell className="border-r border-gray-200 font-semibold text-slate-800">
+                      <TableCell className="border-r border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400">{emp.location}</TableCell>
+                      <TableCell className="border-r border-slate-200 dark:border-slate-700 font-semibold text-slate-800 dark:text-white">
                         {formatCurrency(emp.fix_gross)}
                       </TableCell>
-                      <TableCell className="border-r border-gray-200 text-slate-600">
+                      <TableCell className="border-r border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400">
                         {new Date(emp.doj).toLocaleDateString('en-GB')}
                       </TableCell>
                       <TableCell>
@@ -512,6 +512,7 @@ const SalaryMaster: React.FC<SalaryMasterProps> = ({ isManagement = false }) => 
                             size="sm"
                             variant="outline"
                             onClick={() => openEditDialog(emp)}
+                            className="border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200"
                           >
                             <Edit className="w-3 h-3" />
                           </Button>
@@ -524,36 +525,36 @@ const SalaryMaster: React.FC<SalaryMasterProps> = ({ isManagement = false }) => 
             </div>
             {filteredData.length === 0 && (
               <div className="text-center py-8">
-                <Users className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                <p className="text-gray-600">No employees found</p>
+                <Users className="w-12 h-12 text-gray-400 dark:text-slate-600 mx-auto mb-4" />
+                <p className="text-gray-600 dark:text-slate-400">No employees found</p>
               </div>
             )}
           </CardContent>
         </Card>
       )}
       {view === 'department' && (
-        <Card className="border-slate-200 bg-white/70 backdrop-blur-sm">
+        <Card className="border-slate-200 dark:border-slate-700 bg-white/70 dark:bg-slate-800/80 backdrop-blur-sm">
           <CardHeader>
-            <CardTitle className="text-slate-800">Department Salary Details</CardTitle>
+            <CardTitle className="text-slate-800 dark:text-white">Department Salary Details</CardTitle>
           </CardHeader>
           <CardContent className="p-0">
             <div className="overflow-x-auto overflow-y-auto max-h-[56vh] w-full block">
-              <Table className="min-w-[800px] border border-gray-200">
-                <TableHeader className="sticky top-0 z-20 bg-white shadow border-t border-gray-200">
-                  <TableRow className="border-b border-gray-200">
-                    <TableHead className="border-r border-gray-200 text-slate-700 font-semibold">Department</TableHead>
-                    <TableHead className="border-r border-gray-200 text-slate-700 font-semibold">Total Salary</TableHead>
-                    <TableHead className="border-r border-gray-200 text-slate-700 font-semibold">Employees</TableHead>
-                    <TableHead className="text-slate-700 font-semibold">Avg Percentage</TableHead>
+              <Table className="min-w-[800px] border border-slate-200 dark:border-slate-700">
+                <TableHeader className="sticky top-0 z-20 bg-white dark:bg-slate-900 shadow border-t border-slate-200 dark:border-slate-700">
+                  <TableRow className="border-b border-slate-200 dark:border-slate-700">
+                    <TableHead className="border-r border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 font-semibold">Department</TableHead>
+                    <TableHead className="border-r border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 font-semibold">Total Salary</TableHead>
+                    <TableHead className="border-r border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 font-semibold">Employees</TableHead>
+                    <TableHead className="text-slate-700 dark:text-slate-200 font-semibold">Avg Percentage</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {departmentRows.map((dept) => (
-                    <TableRow key={dept.department} className="border-b border-gray-200 hover:bg-slate-50/50 transition-colors">
-                      <TableCell className="border-r border-gray-200 font-medium text-slate-800">{dept.department}</TableCell>
-                      <TableCell className="border-r border-gray-200 font-semibold text-slate-800">{formatCurrency(dept.total)}</TableCell>
-                      <TableCell className="border-r border-gray-200 text-slate-700">{dept.count}</TableCell>
-                      <TableCell className="text-slate-700">{dept.avgPercentage.toFixed(2)}%</TableCell>
+                    <TableRow key={dept.department} className="border-b border-slate-200 dark:border-slate-700 hover:bg-slate-50/50 dark:hover:bg-slate-800/60 transition-colors">
+                      <TableCell className="border-r border-slate-200 dark:border-slate-700 font-medium text-slate-800 dark:text-white">{dept.department}</TableCell>
+                      <TableCell className="border-r border-slate-200 dark:border-slate-700 font-semibold text-slate-800 dark:text-white">{formatCurrency(dept.total)}</TableCell>
+                      <TableCell className="border-r border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200">{dept.count}</TableCell>
+                      <TableCell className="text-slate-700 dark:text-slate-200">{dept.avgPercentage.toFixed(2)}%</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -565,46 +566,44 @@ const SalaryMaster: React.FC<SalaryMasterProps> = ({ isManagement = false }) => 
 
       {/* Edit Employee Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="max-w-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700">
           <DialogHeader>
-            <DialogTitle>Edit Employee</DialogTitle>
+            <DialogTitle className="text-slate-800 dark:text-white">Edit Employee</DialogTitle>
           </DialogHeader>
           <form onSubmit={handleEditEmployee} className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="editEmpCode">Employee Code *</Label>
-                <Input id="editEmpCode" value={formData.emp_code} onChange={e => setFormData({ ...formData, emp_code: e.target.value })} required />
+                <Label htmlFor="editEmpCode" className="text-slate-700 dark:text-slate-200">Employee Code *</Label>
+                <Input id="editEmpCode" value={formData.emp_code} onChange={e => setFormData({ ...formData, emp_code: e.target.value })} required className="bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-700 text-slate-800 dark:text-white" />
               </div>
               <div>
-                <Label htmlFor="editEmpName">Name *</Label>
-                <Input id="editEmpName" value={formData.emp_name} onChange={e => setFormData({ ...formData, emp_name: e.target.value })} required />
+                <Label htmlFor="editEmpName" className="text-slate-700 dark:text-slate-200">Name *</Label>
+                <Input id="editEmpName" value={formData.emp_name} onChange={e => setFormData({ ...formData, emp_name: e.target.value })} required className="bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-700 text-slate-800 dark:text-white" />
               </div>
               <div>
-                <Label htmlFor="editDesignation">Designation *</Label>
-                <Input id="editDesignation" value={formData.designation} onChange={e => setFormData({ ...formData, designation: e.target.value })} required />
+                <Label htmlFor="editDesignation" className="text-slate-700 dark:text-slate-200">Designation *</Label>
+                <Input id="editDesignation" value={formData.designation} onChange={e => setFormData({ ...formData, designation: e.target.value })} required className="bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-700 text-slate-800 dark:text-white" />
               </div>
               <div>
-                <Label htmlFor="editDepartment">Department *</Label>
-                <Input id="editDepartment" value={formData.department} onChange={e => setFormData({ ...formData, department: e.target.value })} required />
+                <Label htmlFor="editDepartment" className="text-slate-700 dark:text-slate-200">Department *</Label>
+                <Input id="editDepartment" value={formData.department} onChange={e => setFormData({ ...formData, department: e.target.value })} required className="bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-700 text-slate-800 dark:text-white" />
               </div>
               <div>
-                <Label htmlFor="editLocation">Location *</Label>
-                <Input id="editLocation" value={formData.location} onChange={e => setFormData({ ...formData, location: e.target.value })} required />
+                <Label htmlFor="editLocation" className="text-slate-700 dark:text-slate-200">Location *</Label>
+                <Input id="editLocation" value={formData.location} onChange={e => setFormData({ ...formData, location: e.target.value })} required className="bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-700 text-slate-800 dark:text-white" />
               </div>
               <div>
-                <Label htmlFor="editFixGross">Fixed Gross *</Label>
-                <Input id="editFixGross" type="number" value={formData.fix_gross} onChange={e => setFormData({ ...formData, fix_gross: e.target.value })} required />
+                <Label htmlFor="editFixGross" className="text-slate-700 dark:text-slate-200">Fixed Gross *</Label>
+                <Input id="editFixGross" type="number" value={formData.fix_gross} onChange={e => setFormData({ ...formData, fix_gross: e.target.value })} required className="bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-700 text-slate-800 dark:text-white" />
               </div>
               <div>
-                <Label htmlFor="editDoj">Date of Joining *</Label>
-                <Input id="editDoj" type="date" value={formData.doj} onChange={e => setFormData({ ...formData, doj: e.target.value })} required />
+                <Label htmlFor="editDoj" className="text-slate-700 dark:text-slate-200">Date of Joining *</Label>
+                <Input id="editDoj" type="date" value={formData.doj} onChange={e => setFormData({ ...formData, doj: e.target.value })} required className="bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-700 text-slate-800 dark:text-white" />
               </div>
             </div>
             <div className="flex justify-end space-x-2">
-              <Button type="button" variant="outline" onClick={() => setIsEditDialogOpen(false)}>
-                Cancel
-              </Button>
-              <Button type="submit">Update</Button>
+              <Button type="button" variant="outline" onClick={() => setIsEditDialogOpen(false)} className="border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200">Cancel</Button>
+              <Button type="submit" className="bg-amber-600 dark:bg-slate-700 hover:bg-amber-700 dark:hover:bg-slate-600 text-white">Update</Button>
             </div>
           </form>
         </DialogContent>

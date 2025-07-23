@@ -278,15 +278,15 @@ const CandidateManagement: React.FC<CandidateManagementProps> = ({
       <div className="flex items-center gap-2 mb-4 w-full">
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
-            <Button className="flex items-center space-x-2 professional-button">
+            <Button className="flex items-center space-x-2 bg-amber-600 dark:bg-slate-700 hover:bg-amber-700 dark:hover:bg-slate-600 text-white shadow-lg hover:shadow-xl transition-all duration-200">
               <Plus className="w-4 h-4" />
               <span>Add Candidate</span>
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700">
             <DialogHeader>
-              <DialogTitle>Add New Candidate</DialogTitle>
-              <DialogDescription>
+              <DialogTitle className="text-slate-800 dark:text-white">Add New Candidate</DialogTitle>
+              <DialogDescription className="text-slate-600 dark:text-slate-300">
                 Enter candidate application details
               </DialogDescription>
             </DialogHeader>
@@ -294,19 +294,19 @@ const CandidateManagement: React.FC<CandidateManagementProps> = ({
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="name">Full Name *</Label>
+                  <Label htmlFor="name" className="text-slate-700 dark:text-slate-200">Full Name *</Label>
                   <Input
                     id="name"
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                     placeholder="John Doe"
                     required
-                    className="professional-input"
+                    className="border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500"
                   />
                 </div>
                 
                 <div className="space-y-2">
-                  <Label htmlFor="email">Email *</Label>
+                  <Label htmlFor="email" className="text-slate-700 dark:text-slate-200">Email *</Label>
                   <Input
                     id="email"
                     type="email"
@@ -314,33 +314,33 @@ const CandidateManagement: React.FC<CandidateManagementProps> = ({
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                     placeholder="john@example.com"
                     required
-                    className="professional-input"
+                    className="border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500"
                   />
                 </div>
                 
                 <div className="space-y-2">
-                  <Label htmlFor="phone">Phone Number *</Label>
+                  <Label htmlFor="phone" className="text-slate-700 dark:text-slate-200">Phone Number *</Label>
                   <Input
                     id="phone"
                     value={formData.phone}
                     onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                     placeholder="+1 (555) 123-4567"
                     required
-                    className="professional-input"
+                    className="border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500"
                   />
                 </div>
                 
                 <div className="space-y-2">
-                  <Label htmlFor="jobId">Applied Position *</Label>
+                  <Label htmlFor="jobId" className="text-slate-700 dark:text-slate-200">Applied Position *</Label>
                   <Select
                     value={formData.jobId}
                     onValueChange={(value) => setFormData({ ...formData, jobId: value })}
                     required
                   >
-                    <SelectTrigger className="professional-input">
+                    <SelectTrigger className="border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
                       <SelectValue placeholder="Select job position" />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="bg-white dark:bg-slate-700 border-slate-200 dark:border-slate-600">
                       {jobs.map((job) => (
                         <SelectItem key={job.id} value={job.id}>
                           {job.title} - {job.department}
@@ -351,7 +351,7 @@ const CandidateManagement: React.FC<CandidateManagementProps> = ({
                 </div>
                 
                 <div className="space-y-2">
-                  <Label htmlFor="source">Application Source *</Label>
+                  <Label htmlFor="source" className="text-slate-700 dark:text-slate-200">Application Source *</Label>
                   <Select
                     value={formData.source}
                     onValueChange={value => {
@@ -361,10 +361,10 @@ const CandidateManagement: React.FC<CandidateManagementProps> = ({
                     }}
                     required
                   >
-                    <SelectTrigger className="professional-input">
+                    <SelectTrigger className="border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
                       <SelectValue placeholder="Select source" />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="bg-white dark:bg-slate-700 border-slate-200 dark:border-slate-600">
                       <SelectItem value="referral">Employee Referral</SelectItem>
                       <SelectItem value="linkedin">LinkedIn</SelectItem>
                       <SelectItem value="indeed">Indeed</SelectItem>
@@ -376,7 +376,7 @@ const CandidateManagement: React.FC<CandidateManagementProps> = ({
                   </Select>
                   {formData.source === 'recruitment-agency' && (
                     <input
-                      className="w-full border rounded p-2 mt-2"
+                      className="w-full border border-slate-200 dark:border-slate-600 rounded p-2 mt-2 bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500"
                       placeholder="Name of Recruitment Agency"
                       value={agencyName}
                       onChange={e => setAgencyName(e.target.value)}
@@ -384,7 +384,7 @@ const CandidateManagement: React.FC<CandidateManagementProps> = ({
                   )}
                   {formData.source === 'other' && (
                     <input
-                      className="w-full border rounded p-2 mt-2"
+                      className="w-full border border-slate-200 dark:border-slate-600 rounded p-2 mt-2 bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500"
                       placeholder="Please specify"
                       value={otherSource}
                       onChange={e => setOtherSource(e.target.value)}
@@ -393,7 +393,7 @@ const CandidateManagement: React.FC<CandidateManagementProps> = ({
                 </div>
                 
                 <div className="space-y-2">
-                  <Label htmlFor="experience">Years of Experience *</Label>
+                  <Label htmlFor="experience" className="text-slate-700 dark:text-slate-200">Years of Experience *</Label>
                   <Input
                     id="experience"
                     type="number"
@@ -402,12 +402,12 @@ const CandidateManagement: React.FC<CandidateManagementProps> = ({
                     onChange={(e) => setFormData({ ...formData, experience: e.target.value })}
                     placeholder="3"
                     required
-                    className="professional-input"
+                    className="border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500"
                   />
                 </div>
                 
                 <div className="space-y-2">
-                  <Label htmlFor="currentSalary">Current Salary *</Label>
+                  <Label htmlFor="currentSalary" className="text-slate-700 dark:text-slate-200">Current Salary *</Label>
                   <Input
                     id="currentSalary"
                     type="number"
@@ -415,12 +415,12 @@ const CandidateManagement: React.FC<CandidateManagementProps> = ({
                     onChange={(e) => setFormData({ ...formData, currentSalary: e.target.value })}
                     placeholder="65000"
                     required
-                    className="professional-input"
+                    className="border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500"
                   />
                 </div>
                 
                 <div className="space-y-2">
-                  <Label htmlFor="expectedSalary">Expected Salary *</Label>
+                  <Label htmlFor="expectedSalary" className="text-slate-700 dark:text-slate-200">Expected Salary *</Label>
                   <Input
                     id="expectedSalary"
                     type="number"
@@ -428,21 +428,21 @@ const CandidateManagement: React.FC<CandidateManagementProps> = ({
                     onChange={(e) => setFormData({ ...formData, expectedSalary: e.target.value })}
                     placeholder="75000"
                     required
-                    className="professional-input"
+                    className="border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500"
                   />
                 </div>
                 
                 <div className="space-y-2">
-                  <Label htmlFor="noticePeriod">Notice Period *</Label>
+                  <Label htmlFor="noticePeriod" className="text-slate-700 dark:text-slate-200">Notice Period *</Label>
                   <Select
                     value={formData.noticePeriod}
                     onValueChange={(value) => setFormData({ ...formData, noticePeriod: value })}
                     required
                   >
-                    <SelectTrigger className="professional-input">
+                    <SelectTrigger className="border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
                       <SelectValue placeholder="Select notice period" />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="bg-white dark:bg-slate-700 border-slate-200 dark:border-slate-600">
                       <SelectItem value="immediate">Immediate</SelectItem>
                       <SelectItem value="15-days">15 Days</SelectItem>
                       <SelectItem value="1-month">1 Month</SelectItem>
@@ -454,20 +454,20 @@ const CandidateManagement: React.FC<CandidateManagementProps> = ({
                 </div>
                 
                 <div className="space-y-2 md:col-span-2">
-                  <Label htmlFor="remark">Remarks</Label>
+                  <Label htmlFor="remark" className="text-slate-700 dark:text-slate-200">Remarks</Label>
                   <Textarea
                     id="remark"
                     value={formData.remark}
                     onChange={(e) => setFormData({ ...formData, remark: e.target.value })}
                     placeholder="Additional notes about the candidate..."
                     rows={3}
-                    className="professional-input"
+                    className="border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500"
                   />
                 </div>
               </div>
               
               <div className="space-y-2">
-                <Label>Resume Upload *</Label>
+                <Label className="text-slate-700 dark:text-slate-200">Resume Upload *</Label>
                 <FileUpload
                   onFileSelect={setSelectedFile}
                   selectedFile={selectedFile}
@@ -481,10 +481,11 @@ const CandidateManagement: React.FC<CandidateManagementProps> = ({
                   type="button"
                   variant="outline"
                   onClick={() => setIsDialogOpen(false)}
+                  className="border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700"
                 >
                   Cancel
                 </Button>
-                <Button type="submit" className="professional-button">
+                <Button type="submit" className="bg-amber-600 dark:bg-slate-700 hover:bg-amber-700 dark:hover:bg-slate-600 text-white shadow-lg hover:shadow-xl transition-all duration-200">
                   Add Candidate
                 </Button>
               </div>
@@ -496,7 +497,7 @@ const CandidateManagement: React.FC<CandidateManagementProps> = ({
           value={searchTerm}
           onChange={e => setSearchTerm(e.target.value)}
           placeholder="Search candidates..."
-          className="border border-gray-300 rounded px-3 py-2 text-sm flex-1 min-w-[200px] focus:outline-none focus:ring-2 focus:ring-amber-200 text-slate-800 placeholder:text-slate-400 shadow-sm"
+          className="border border-slate-200 dark:border-slate-600 rounded px-3 py-2 text-sm flex-1 min-w-[200px] focus:outline-none focus:ring-2 focus:ring-amber-200 dark:focus:ring-amber-400 text-slate-800 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 shadow-sm bg-white dark:bg-slate-700"
         />
         <button
           onClick={() => {
@@ -506,23 +507,23 @@ const CandidateManagement: React.FC<CandidateManagementProps> = ({
             setFilterDate('');
             setSearchTerm('');
           }}
-          className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded shadow text-sm font-medium border border-slate-300"
+          className="px-4 py-2 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 rounded shadow text-sm font-medium border border-slate-300 dark:border-slate-600 transition-colors"
         >
           Clear Filters
         </button>
-        <span className="ml-2 inline-flex items-center px-3 py-1 rounded-full bg-blue-100 text-blue-800 text-sm font-medium">
+        <span className="ml-2 inline-flex items-center px-3 py-1 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-400 text-sm font-medium border border-blue-200 dark:border-blue-800">
           Candidates: {sortedCandidates.length}
         </span>
       </div>
 
       {/* Table and controls container */}
-      <div className="bg-white p-6 rounded-lg border">
+      <div className="bg-white dark:bg-slate-800 p-6 rounded-lg border border-slate-200 dark:border-slate-700 shadow-lg dark:shadow-xl">
         <div className="w-full grid grid-cols-1 sm:grid-cols-4 gap-3 items-center mb-4 px-1">
           <Select value={filterStatus} onValueChange={setFilterStatus}>
-            <SelectTrigger className="w-full">
+            <SelectTrigger className="w-full border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
               <SelectValue placeholder="All Status" />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="bg-white dark:bg-slate-700 border-slate-200 dark:border-slate-600">
               <SelectItem value="all">All Status</SelectItem>
               {statusOptionsFiltered.map(status => (
                 <SelectItem key={status} value={status}>{status}</SelectItem>
@@ -530,10 +531,10 @@ const CandidateManagement: React.FC<CandidateManagementProps> = ({
             </SelectContent>
           </Select>
           <Select value={filterPosition} onValueChange={setFilterPosition}>
-            <SelectTrigger className="w-full">
+            <SelectTrigger className="w-full border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
               <SelectValue placeholder="All Positions" />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="bg-white dark:bg-slate-700 border-slate-200 dark:border-slate-600">
               <SelectItem value="all">All Positions</SelectItem>
               {positionOptionsFiltered.map(position => (
                 <SelectItem key={position} value={position}>{position}</SelectItem>
@@ -541,10 +542,10 @@ const CandidateManagement: React.FC<CandidateManagementProps> = ({
             </SelectContent>
           </Select>
           <Select value={filterNoticePeriod} onValueChange={setFilterNoticePeriod}>
-            <SelectTrigger className="w-full">
+            <SelectTrigger className="w-full border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
               <SelectValue placeholder="All Notice Periods" />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="bg-white dark:bg-slate-700 border-slate-200 dark:border-slate-600">
               <SelectItem value="all">All Notice Periods</SelectItem>
               {noticePeriodOptionsFiltered.map(noticePeriod => (
                 <SelectItem key={noticePeriod} value={noticePeriod}>{noticePeriod}</SelectItem>
@@ -556,50 +557,50 @@ const CandidateManagement: React.FC<CandidateManagementProps> = ({
             value={filterDate}
             onChange={e => setFilterDate(e.target.value)}
             placeholder="dd-----yyyy"
-            className="w-full"
+            className="w-full border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
           />
         </div>
         <div className="overflow-x-auto overflow-y-auto max-h-[56vh] w-full block scroll-to-highlight" ref={scrollRef} style={{ WebkitOverflowScrolling: 'touch' }}>
-          <Table className="min-w-[1200px] border border-gray-200">
-            <TableHeader className="sticky top-0 z-20 bg-white shadow border-t border-gray-200">
-              <TableRow className="border-b border-gray-200">
-                <TableHead className="border-r border-gray-200">Candidate</TableHead>
-                <TableHead className="border-r border-gray-200">Position</TableHead>
-                <TableHead className="border-r border-gray-200">Application Source</TableHead>
-                <TableHead className="border-r border-gray-200">Experience</TableHead>
-                <TableHead className="border-r border-gray-200">Current Salary</TableHead>
-                <TableHead className="border-r border-gray-200">Expected Salary</TableHead>
-                <TableHead className="border-r border-gray-200">Notice Period</TableHead>
-                <TableHead className="border-r border-gray-200">Status</TableHead>
-                <TableHead className="border-r border-gray-200">Applied Date</TableHead>
-                <TableHead>Actions</TableHead>
+          <Table className="min-w-[1200px] border border-slate-200 dark:border-slate-700">
+            <TableHeader className="sticky top-0 z-20 bg-slate-100 dark:bg-slate-700 shadow-sm dark:shadow-slate-900/50 border-t border-slate-200 dark:border-slate-600">
+              <TableRow className="border-b border-slate-200 dark:border-slate-600">
+                <TableHead className="border-r border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-200 font-semibold">Candidate</TableHead>
+                <TableHead className="border-r border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-200 font-semibold">Position</TableHead>
+                <TableHead className="border-r border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-200 font-semibold">Application Source</TableHead>
+                <TableHead className="border-r border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-200 font-semibold">Experience</TableHead>
+                <TableHead className="border-r border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-200 font-semibold">Current Salary</TableHead>
+                <TableHead className="border-r border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-200 font-semibold">Expected Salary</TableHead>
+                <TableHead className="border-r border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-200 font-semibold">Notice Period</TableHead>
+                <TableHead className="border-r border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-200 font-semibold">Status</TableHead>
+                <TableHead className="border-r border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-200 font-semibold">Applied Date</TableHead>
+                <TableHead className="text-slate-700 dark:text-slate-200 font-semibold">Actions</TableHead>
               </TableRow>
             </TableHeader>
-            <TableBody>
-              {sortedCandidates.map((candidate) => (
+            <TableBody className="bg-white dark:bg-slate-800">
+              {sortedCandidates.map((candidate, index) => (
                 <TableRow 
                   key={candidate.id} 
                   data-candidate-id={candidate.id}
-                  className={`border-b border-gray-200 transition-all duration-300 ${
+                  className={`border-b border-slate-200 dark:border-slate-700 transition-all duration-300 hover:bg-slate-50 dark:hover:bg-slate-700/50 ${
                     highlightedCandidate === candidate.id 
-                      ? 'highlight-row' 
-                      : ''
+                      ? 'highlight-row bg-amber-50 dark:bg-amber-900/20' 
+                      : index % 2 === 0 ? 'bg-white dark:bg-slate-800' : 'bg-slate-50/50 dark:bg-slate-800/50'
                   }`}
                 >
-                  <TableCell className="border-r border-gray-200">
+                  <TableCell className="border-r border-slate-200 dark:border-slate-700">
                     <div>
-                      <div className="font-medium">{candidate.name}</div>
-                      <div className="text-sm text-gray-600">{candidate.email}</div>
-                      <div className="text-sm text-gray-600">{candidate.phone}</div>
+                      <div className="font-medium text-slate-900 dark:text-white">{candidate.name}</div>
+                      <div className="text-sm text-gray-600 dark:text-slate-400">{candidate.email}</div>
+                      <div className="text-sm text-gray-600 dark:text-slate-400">{candidate.phone}</div>
                     </div>
                   </TableCell>
-                  <TableCell className="border-r border-gray-200">{candidate.position}</TableCell>
-                  <TableCell className="border-r border-gray-200">{toProperCase(candidate.source) || 'N/A'}</TableCell>
-                  <TableCell className="border-r border-gray-200">{candidate.experience || 'N/A'}</TableCell>
-                  <TableCell className="border-r border-gray-200">{formatCurrency(candidate.currentSalary) || 'N/A'}</TableCell>
-                  <TableCell className="border-r border-gray-200">{formatCurrency(candidate.expectedSalary)}</TableCell>
-                  <TableCell className="border-r border-gray-200 capitalize">{candidate.noticePeriod || 'N/A'}</TableCell>
-                  <TableCell className="border-r border-gray-200">
+                  <TableCell className="border-r border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white">{candidate.position}</TableCell>
+                  <TableCell className="border-r border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white">{toProperCase(candidate.source) || 'N/A'}</TableCell>
+                  <TableCell className="border-r border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white">{candidate.experience || 'N/A'}</TableCell>
+                  <TableCell className="border-r border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white">{formatCurrency(candidate.currentSalary) || 'N/A'}</TableCell>
+                  <TableCell className="border-r border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white">{formatCurrency(candidate.expectedSalary)}</TableCell>
+                  <TableCell className="border-r border-slate-200 dark:border-slate-700 capitalize text-slate-900 dark:text-white">{candidate.noticePeriod || 'N/A'}</TableCell>
+                  <TableCell className="border-r border-slate-200 dark:border-slate-700">
                     <span className={`status-badge ${
                       candidate.interviewStatus === 'applied' ? 'status-pending' :
                       candidate.interviewStatus === 'shortlisted' ? 'status-pending' :
@@ -608,7 +609,7 @@ const CandidateManagement: React.FC<CandidateManagementProps> = ({
                       {candidate.interviewStatus}
                     </span>
                   </TableCell>
-                  <TableCell className="border-r border-gray-200">
+                  <TableCell className="border-r border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white">
                     {new Date(candidate.appliedDate).toLocaleDateString()}
                   </TableCell>
                   <TableCell>
@@ -617,6 +618,7 @@ const CandidateManagement: React.FC<CandidateManagementProps> = ({
                         size="sm"
                         variant="outline"
                         onClick={() => openStatusDialog(candidate)}
+                        className="border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700"
                       >
                         <Edit className="w-3 h-3" />
                       </Button>
@@ -624,6 +626,7 @@ const CandidateManagement: React.FC<CandidateManagementProps> = ({
                         size="sm"
                         variant="outline"
                         onClick={() => openHistoryDialog(candidate)}
+                        className="border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700"
                       >
                         <History className="w-3 h-3" />
                       </Button>
@@ -633,6 +636,7 @@ const CandidateManagement: React.FC<CandidateManagementProps> = ({
                         onClick={() => handleSeeResume(candidate)}
                         disabled={!candidate.resume_url}
                         title={candidate.resume_url ? 'View Resume' : 'No resume available'}
+                        className="border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-50"
                       >
                         <Eye className="w-3 h-3" />
                       </Button>
@@ -645,51 +649,51 @@ const CandidateManagement: React.FC<CandidateManagementProps> = ({
         </div>
         {sortedCandidates.length === 0 && (
           <div className="text-center py-8">
-            <Users className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-            <p className="text-gray-600">No candidates found</p>
+            <Users className="w-12 h-12 text-gray-400 dark:text-slate-500 mx-auto mb-4" />
+            <p className="text-gray-600 dark:text-slate-300">No candidates found</p>
           </div>
         )}
       </div>
 
       {/* Status Update Dialog */}
       <Dialog open={isStatusDialogOpen} onOpenChange={setIsStatusDialogOpen}>
-        <DialogContent>
+        <DialogContent className="max-w-md bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700">
           <DialogHeader>
-            <DialogTitle>Update Candidate Status</DialogTitle>
-            <DialogDescription>
+            <DialogTitle className="text-slate-800 dark:text-white">Update Candidate Status</DialogTitle>
+            <DialogDescription className="text-slate-600 dark:text-slate-300">
               Change the status of {selectedCandidate?.name}
             </DialogDescription>
           </DialogHeader>
           
           <form onSubmit={handleStatusUpdate} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="newStatus">New Status *</Label>
+              <Label htmlFor="newStatus" className="text-slate-700 dark:text-slate-200">New Status *</Label>
               <Select
                 value={statusFormData.newStatus}
                 onValueChange={(value) => setStatusFormData({ ...statusFormData, newStatus: value })}
                 required
               >
-                <SelectTrigger>
+                <SelectTrigger className="border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
                   <SelectValue placeholder="Select new status" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="bg-white dark:bg-slate-700 border-slate-200 dark:border-slate-600">
                   <SelectItem value="applied">Applied</SelectItem>
                   <SelectItem value="shortlisted">Shortlisted</SelectItem>
                   <SelectItem value="interviewed">Interviewed</SelectItem>
-                  <SelectItem value="selected">Selected</SelectItem>
                   <SelectItem value="rejected">Rejected</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="reason">Reason for change</Label>
+              <Label htmlFor="reason" className="text-slate-700 dark:text-slate-200">Reason for change</Label>
               <Textarea
                 id="reason"
                 value={statusFormData.reason}
                 onChange={(e) => setStatusFormData({ ...statusFormData, reason: e.target.value })}
                 placeholder="Enter reason for status change..."
                 rows={3}
+                className="border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500"
               />
             </div>
             
@@ -698,10 +702,13 @@ const CandidateManagement: React.FC<CandidateManagementProps> = ({
                 type="button"
                 variant="outline"
                 onClick={() => setIsStatusDialogOpen(false)}
+                className="border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700"
               >
                 Cancel
               </Button>
-              <Button type="submit">Update Status</Button>
+              <Button type="submit" className="bg-amber-600 dark:bg-slate-700 hover:bg-amber-700 dark:hover:bg-slate-600 text-white shadow-lg hover:shadow-xl transition-all duration-200">
+                Update Status
+              </Button>
             </div>
           </form>
         </DialogContent>
@@ -709,11 +716,10 @@ const CandidateManagement: React.FC<CandidateManagementProps> = ({
 
       {/* Status History Dialog */}
       <Dialog open={isHistoryDialogOpen} onOpenChange={setIsHistoryDialogOpen}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-2xl bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700">
           <DialogHeader>
-            <DialogTitle>Status History - {selectedCandidate?.name}</DialogTitle>
+            <DialogTitle className="text-slate-800 dark:text-white">Status History - {selectedCandidate?.name}</DialogTitle>
           </DialogHeader>
-          
           {selectedCandidate && (
             <CandidateStatusHistory 
               candidateId={selectedCandidate.id}
