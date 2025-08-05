@@ -8,11 +8,13 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from '@/hooks/use-toast';
-import { Users, Plus, Search, History, Edit, Eye } from 'lucide-react';
+import { Users, Plus, Search, History, Edit, Eye, Download, Upload, AlertCircle, FileText, Settings } from 'lucide-react';
 import CandidateStatusHistory from './CandidateStatusHistory';
 import FileUpload from './FileUpload';
 import { supabase } from '@/lib/supabaseClient';
 import { formatCurrency } from '@/lib/utils';
+import * as XLSX from 'xlsx';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 interface Candidate {
   id: string;
@@ -20,13 +22,15 @@ interface Candidate {
   email: string;
   phone: string;
   position: string;
+  department?: string;
   jobId: string;
   source: string;
   experience: number;
+  monthlyYearly?: string;
   expectedSalary: number;
   currentSalary: number;
+  remark?: string;
   noticePeriod: string;
-  remark: string;
   resumeUploaded: boolean;
   resumeFile: File | null;
   interviewStatus: string;
@@ -48,6 +52,7 @@ interface CandidateManagementProps {
   candidates: Candidate[];
   jobs: any[];
   onAddCandidate: (candidate: Omit<Candidate, 'id'> & { resumeFile?: File | null }) => void;
+  onUpdateCandidate: (updatedCandidate: Candidate) => Promise<void>;
   onUpdateCandidateStatus: (candidateId: string, newStatus: string, reason?: string) => void;
   statusHistory: StatusChange[];
   userEmail: string;
@@ -59,6 +64,7 @@ const CandidateManagement: React.FC<CandidateManagementProps> = ({
   candidates, 
   jobs, 
   onAddCandidate,
+  onUpdateCandidate,
   onUpdateCandidateStatus,
   statusHistory: _statusHistory,
   userEmail,
@@ -86,10 +92,11 @@ const CandidateManagement: React.FC<CandidateManagementProps> = ({
     jobId: '',
     source: '',
     experience: '',
+    monthlyYearly: 'monthly',
     expectedSalary: '',
     currentSalary: '',
-    noticePeriod: '',
     remark: '',
+    noticePeriod: '',
   });
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [historyRecords, setHistoryRecords] = useState([]);
@@ -97,7 +104,25 @@ const CandidateManagement: React.FC<CandidateManagementProps> = ({
   const [resumeFileType, setResumeFileType] = useState<string | null>(null);
   const [agencyName, setAgencyName] = useState('');
   const [otherSource, setOtherSource] = useState('');
+  const [customPosition, setCustomPosition] = useState('');
+  const [isCustomPosition, setIsCustomPosition] = useState(false);
+  const [drafts, setDrafts] = useState<any[]>([]);
+  const [isDraftsDialogOpen, setIsDraftsDialogOpen] = useState(false);
+  const [isSavingDraft, setIsSavingDraft] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [editingCandidate, setEditingCandidate] = useState<Candidate | null>(null);
+  const [completingDraft, setCompletingDraft] = useState<any>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  // Import/Export state
+  const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
+  const [importFile, setImportFile] = useState<File | null>(null);
+  const [importData, setImportData] = useState<any[]>([]);
+  const [importPreview, setImportPreview] = useState<any[]>([]);
+  const [importErrors, setImportErrors] = useState<string[]>([]);
+  const [showImportPreview, setShowImportPreview] = useState(false);
+  const [isImporting, setIsImporting] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Clear highlight when component mounts or highlighted candidate changes
   useEffect(() => {
@@ -119,28 +144,285 @@ const CandidateManagement: React.FC<CandidateManagementProps> = ({
     }
   }, [highlightedCandidate, onClearHighlight]);
 
+  const draftDataRef = useRef<any>(null);
+
   useEffect(() => {
     if (isDialogOpen) {
-      setFormData({
-        name: '',
-        email: '',
-        phone: '',
-        jobId: '',
-        source: '',
-        experience: '',
-        expectedSalary: '',
-        currentSalary: '',
-        noticePeriod: '',
-        remark: '',
-      });
-      setAgencyName('');
-      setOtherSource('');
-      setSelectedFile(null);
+      // If we have draft data to load, use it instead of resetting
+      if (draftDataRef.current) {
+        const draft = draftDataRef.current;
+        
+        // Parse source field to extract the base source and additional info
+        let source = '';
+        let agencyNameValue = '';
+        let otherSourceValue = '';
+        
+        if (draft.source) {
+          if (draft.source.startsWith('Recruitment Agency - ')) {
+            source = 'recruitment-agency';
+            agencyNameValue = draft.source.replace('Recruitment Agency - ', '');
+          } else if (draft.source.startsWith('Other - ')) {
+            source = 'other';
+            otherSourceValue = draft.source.replace('Other - ', '');
+          } else {
+            // Convert back to the original format
+            source = draft.source.toLowerCase().replace(/\s+/g, '-');
+          }
+        }
+        
+        const formDataToSet = {
+          name: draft.name || '',
+          email: draft.email || '',
+          phone: draft.phone || '',
+          jobId: draft.custom_position ? 'custom' : (draft.job_id || ''),
+          source: source,
+          experience: draft.experience?.toString() || '',
+          monthlyYearly: draft.monthly_yearly || 'monthly',
+          expectedSalary: draft.expected_salary?.toString() || '',
+          currentSalary: draft.current_salary?.toString() || '',
+          remark: draft.remark || '',
+          noticePeriod: draft.notice_period || '',
+        };
+        
+        console.log('Loading draft data in useEffect:', formDataToSet);
+        console.log('Setting custom position:', draft.custom_position);
+        console.log('Setting is custom position:', !!draft.custom_position);
+        
+        setFormData(formDataToSet);
+        setCustomPosition(draft.custom_position || '');
+        setIsCustomPosition(!!draft.custom_position);
+        setAgencyName(agencyNameValue);
+        setOtherSource(otherSourceValue);
+        
+        console.log('All form data set, clearing draft data');
+        // Clear the draft data after loading
+        draftDataRef.current = null;
+      } else if (!isEditMode && !completingDraft) {
+        // Normal form reset - only if no draft data to load, not in edit mode, and not completing draft
+        console.log('Performing normal form reset');
+        setFormData({
+          name: '',
+          email: '',
+          phone: '',
+          jobId: '',
+          source: '',
+          experience: '',
+          monthlyYearly: 'monthly',
+          expectedSalary: '',
+          currentSalary: '',
+          remark: '',
+          noticePeriod: '',
+        });
+        setAgencyName('');
+        setOtherSource('');
+        setCustomPosition('');
+        setIsCustomPosition(false);
+        setSelectedFile(null);
+      }
     }
-  }, [isDialogOpen]);
+  }, [isDialogOpen, isEditMode, completingDraft]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  // Load drafts when component mounts
+  useEffect(() => {
+    fetchDrafts();
+  }, []);
+
+  const fetchDrafts = async () => {
+    try {
+      console.log('Fetching drafts for user:', userEmail);
+      const { data, error } = await supabase
+        .from('candidate_drafts')
+        .select('*')
+        .eq('created_by', userEmail)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching drafts:', error);
+        toast({
+          title: "Error",
+          description: "Failed to load drafts",
+          variant: "destructive",
+        });
+      } else {
+        console.log('Drafts loaded:', data);
+        setDrafts(data || []);
+      }
+    } catch (error) {
+      console.error('Error fetching drafts:', error);
+    }
+  };
+
+  const handleSaveAsDraft = async () => {
+    if (!formData.name.trim()) {
+      toast({
+        title: "Error",
+        description: "Name is required to save as draft",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Validate custom position if selected
+    if (isCustomPosition && !customPosition.trim()) {
+      toast({
+        title: "Error",
+        description: "Please enter a custom job title",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsSavingDraft(true);
+    try {
+      const sourceValue =
+        formData.source === 'recruitment-agency' ? `Recruitment Agency - ${agencyName}` :
+        formData.source === 'other' ? `Other - ${otherSource}` :
+        formData.source ? toProperCase(formData.source.replace(/-/g, ' ')) : '';
+
+      const selectedJob = jobs.find(job => job.id === formData.jobId);
+      
+      const draftData = {
+        name: formData.name,
+        email: formData.email || null,
+        phone: formData.phone || null,
+        position: isCustomPosition ? customPosition : (selectedJob?.title || ''),
+        department: selectedJob?.department || null,
+        job_id: isCustomPosition ? null : (formData.jobId || null), // Don't save "custom" as job_id
+        source: sourceValue || null,
+        experience: formData.experience && formData.experience.trim() ? parseInt(formData.experience) : null,
+        monthly_yearly: formData.monthlyYearly || 'monthly',
+        expected_salary: formData.expectedSalary && formData.expectedSalary.trim() ? parseFloat(formData.expectedSalary) : null,
+        current_salary: formData.currentSalary && formData.currentSalary.trim() ? parseFloat(formData.currentSalary) : null,
+        remark: formData.remark || null,
+        notice_period: formData.noticePeriod || null,
+        resume_uploaded: selectedFile !== null,
+        custom_position: isCustomPosition ? customPosition : null,
+        created_by: userEmail,
+      };
+
+      const { error } = await supabase
+        .from('candidate_drafts')
+        .insert([draftData])
+        .select();
+
+      if (error) {
+        console.error('Error saving draft:', error);
+        toast({
+          title: "Error",
+          description: "Failed to save draft",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Success",
+          description: "Draft saved successfully",
+        });
+        setIsDialogOpen(false);
+        fetchDrafts();
+      }
+    } catch (error) {
+      console.error('Error saving draft:', error);
+      toast({
+        title: "Error",
+        description: "Failed to save draft",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSavingDraft(false);
+    }
+  };
+
+  const loadDraft = (draft: any) => {
+    console.log('Loading draft:', draft);
+    
+    // Close drafts dialog first
+    setIsDraftsDialogOpen(false);
+    
+    // Store the draft data to load in ref
+    draftDataRef.current = draft;
+    
+    // Set completing draft to track which draft we're completing
+    setCompletingDraft(draft);
+    
+    // Set edit mode to false since we're loading a draft (not editing existing candidate)
+    setIsEditMode(false);
+    setEditingCandidate(null);
+    
+    // Open form dialog after a small delay to ensure state is set
+    setTimeout(() => {
+      setIsDialogOpen(true);
+    }, 50);
+  };
+
+  const deleteDraft = async (draftId: string) => {
+    try {
+      const { error } = await supabase
+        .from('candidate_drafts')
+        .delete()
+        .eq('id', draftId);
+
+      if (error) {
+        console.error('Error deleting draft:', error);
+        toast({
+          title: "Error",
+          description: "Failed to delete draft",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Success",
+          description: "Draft deleted successfully",
+        });
+        fetchDrafts();
+      }
+    } catch (error) {
+      console.error('Error deleting draft:', error);
+    }
+  };
+
+
+
+  const handleCompleteDraft = async (newCandidate: any, draftId: string) => {
+    try {
+      // Use the parent's onAddCandidate function to add the candidate
+      await onAddCandidate(newCandidate);
+
+      // Delete the draft
+      const { error: deleteError } = await supabase
+        .from('candidate_drafts')
+        .delete()
+        .eq('id', draftId);
+
+      if (deleteError) {
+        console.error('Error deleting draft:', deleteError);
+        toast({
+          title: "Warning",
+          description: "Candidate added but failed to delete draft",
+          variant: "destructive",
+        });
+      }
+
+      // Refresh drafts list
+      await fetchDrafts();
+
+    } catch (error) {
+      console.error('Error completing draft:', error);
+      throw error;
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validate custom position if selected
+    if (isCustomPosition && !customPosition.trim()) {
+      toast({
+        title: "Error",
+        description: "Please enter a custom job title",
+        variant: "destructive",
+      });
+      return;
+    }
     
     const selectedJob = jobs.find(job => job.id === formData.jobId);
     
@@ -149,26 +431,118 @@ const CandidateManagement: React.FC<CandidateManagementProps> = ({
       formData.source === 'other' ? `Other - ${otherSource}` :
       formData.source ? toProperCase(formData.source.replace(/-/g, ' ')) : '';
     
-    const newCandidate = {
-      name: formData.name,
-      email: formData.email,
-      phone: formData.phone,
-      position: selectedJob?.title || '',
-      jobId: formData.jobId,
-      source: sourceValue,
-      experience: parseInt(formData.experience),
-      expectedSalary: parseInt(formData.expectedSalary),
-      currentSalary: parseInt(formData.currentSalary),
-      noticePeriod: formData.noticePeriod,
-      remark: formData.remark,
-      resumeUploaded: selectedFile !== null,
-      resumeFile: selectedFile,
-      interviewStatus: 'applied',
-      appliedDate: new Date().toISOString().split('T')[0],
-    };
+    if (isEditMode && editingCandidate) {
+      // Update existing candidate
+      const updatedCandidate = {
+        id: editingCandidate.id,
+        name: formData.name,
+        email: formData.email,
+        phone: formData.phone,
+        position: isCustomPosition ? customPosition : (selectedJob?.title || ''),
+        department: selectedJob?.department || '',
+        jobId: formData.jobId,
+        source: sourceValue,
+        experience: parseInt(formData.experience),
+        monthlyYearly: formData.monthlyYearly,
+        expectedSalary: parseInt(formData.expectedSalary),
+        currentSalary: parseInt(formData.currentSalary),
+        remark: formData.remark,
+        noticePeriod: formData.noticePeriod,
+        resumeUploaded: selectedFile !== null,
+        resumeFile: selectedFile,
+        interviewStatus: editingCandidate.interviewStatus, // Keep existing status
+        appliedDate: editingCandidate.appliedDate, // Keep existing date
+        resume_url: editingCandidate.resume_url, // Keep existing resume URL
+      };
 
-    onAddCandidate(newCandidate);
+      // Call update function
+      try {
+        await onUpdateCandidate(updatedCandidate);
+        
+        setIsEditMode(false);
+        setEditingCandidate(null);
+        
+        toast({
+          title: "Candidate Updated",
+          description: "Candidate information has been updated successfully.",
+        });
+      } catch (error) {
+        toast({
+          title: "Error",
+          description: "Failed to update candidate",
+          variant: "destructive",
+        });
+      }
+    } else if (completingDraft) {
+      // Complete draft and add to candidates table
+      const newCandidate = {
+        name: formData.name,
+        email: formData.email,
+        phone: formData.phone,
+        position: isCustomPosition ? customPosition : (selectedJob?.title || ''),
+        department: selectedJob?.department || '',
+        jobId: formData.jobId,
+        source: sourceValue,
+        experience: parseInt(formData.experience),
+        monthlyYearly: formData.monthlyYearly,
+        expectedSalary: parseInt(formData.expectedSalary),
+        currentSalary: parseInt(formData.currentSalary),
+        remark: formData.remark,
+        noticePeriod: formData.noticePeriod,
+        resumeUploaded: selectedFile !== null,
+        resumeFile: selectedFile,
+        interviewStatus: 'applied',
+        appliedDate: new Date().toISOString().split('T')[0],
+      };
+
+      // Add candidate and delete draft
+      try {
+        await handleCompleteDraft(newCandidate, completingDraft.id);
+        
+        setCompletingDraft(null);
+        
+        toast({
+          title: "Draft Completed",
+          description: "Draft has been completed and added to candidates.",
+        });
+      } catch (error) {
+        toast({
+          title: "Error",
+          description: "Failed to complete draft",
+          variant: "destructive",
+        });
+      }
+    } else {
+      // Add new candidate
+      const newCandidate = {
+        name: formData.name,
+        email: formData.email,
+        phone: formData.phone,
+        position: isCustomPosition ? customPosition : (selectedJob?.title || ''),
+        department: selectedJob?.department || '',
+        jobId: formData.jobId,
+        source: sourceValue,
+        experience: parseInt(formData.experience),
+        monthlyYearly: formData.monthlyYearly,
+        expectedSalary: parseInt(formData.expectedSalary),
+        currentSalary: parseInt(formData.currentSalary),
+        remark: formData.remark,
+        noticePeriod: formData.noticePeriod,
+        resumeUploaded: selectedFile !== null,
+        resumeFile: selectedFile,
+        interviewStatus: 'applied',
+        appliedDate: new Date().toISOString().split('T')[0],
+      };
+
+      onAddCandidate(newCandidate);
+      
+      toast({
+        title: "Candidate Added",
+        description: "New candidate application has been recorded.",
+      });
+    }
     
+    // Reset form
     setFormData({
       name: '',
       email: '',
@@ -176,18 +550,19 @@ const CandidateManagement: React.FC<CandidateManagementProps> = ({
       jobId: '',
       source: '',
       experience: '',
+      monthlyYearly: 'monthly',
       expectedSalary: '',
       currentSalary: '',
-      noticePeriod: '',
       remark: '',
+      noticePeriod: '',
     });
     setSelectedFile(null);
+    setCustomPosition('');
+    setIsCustomPosition(false);
+    setAgencyName('');
+    setOtherSource('');
     
     setIsDialogOpen(false);
-    toast({
-      title: "Candidate Added",
-      description: "New candidate application has been recorded.",
-    });
   };
 
   const handleStatusUpdate = (e: React.FormEvent) => {
@@ -236,6 +611,56 @@ const CandidateManagement: React.FC<CandidateManagementProps> = ({
     }
   };
 
+  const openEditDialog = (candidate: Candidate) => {
+    setEditingCandidate(candidate);
+    setIsEditMode(true);
+    
+    // Parse source field to extract the base source and additional info
+    let source = '';
+    let agencyNameValue = '';
+    let otherSourceValue = '';
+    
+    if (candidate.source) {
+      if (candidate.source.startsWith('Recruitment Agency - ')) {
+        source = 'recruitment-agency';
+        agencyNameValue = candidate.source.replace('Recruitment Agency - ', '');
+      } else if (candidate.source.startsWith('Other - ')) {
+        source = 'other';
+        otherSourceValue = candidate.source.replace('Other - ', '');
+      } else {
+        // Convert back to the original format
+        source = candidate.source.toLowerCase().replace(/\s+/g, '-');
+      }
+    }
+    
+    // Find the job ID for the position
+    const job = jobs.find(j => j.title === candidate.position);
+    
+    // Check if this is a custom position (not in jobs list)
+    const isCustomPos = !job && candidate.position;
+    
+    setFormData({
+      name: candidate.name || '',
+      email: candidate.email || '',
+      phone: candidate.phone || '',
+      jobId: isCustomPos ? 'custom' : (job?.id || ''),
+      source: source,
+      experience: candidate.experience?.toString() || '',
+      monthlyYearly: candidate.monthlyYearly || 'monthly',
+      expectedSalary: candidate.expectedSalary?.toString() || '',
+      currentSalary: candidate.currentSalary?.toString() || '',
+      remark: candidate.remark || '',
+      noticePeriod: candidate.noticePeriod || '',
+    });
+    
+    setCustomPosition(isCustomPos ? candidate.position : '');
+    setIsCustomPosition(!!isCustomPos);
+    setAgencyName(agencyNameValue);
+    setOtherSource(otherSourceValue);
+    
+    setIsDialogOpen(true);
+  };
+
   const handleSeeResume = (candidate: Candidate) => {
     if (candidate.resume_url) {
       setResumeUrl(candidate.resume_url);
@@ -273,6 +698,395 @@ const CandidateManagement: React.FC<CandidateManagementProps> = ({
   // Helper to capitalize each word
   const toProperCase = (str) => str ? str.replace(/\w\S*/g, (txt) => txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase()) : '';
 
+  // Export to Excel function
+  const handleExport = () => {
+    const ws = XLSX.utils.json_to_sheet(sortedCandidates);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Candidates');
+    XLSX.writeFile(wb, 'candidates.xlsx');
+  };
+
+  // Export template function
+  const handleExportTemplate = () => {
+    const templateData = [
+      {
+        name: 'John Doe',
+        email: 'john.doe@example.com',
+        phone: '+91-9876543210',
+        position: 'Software Engineer',
+        department: 'Engineering',
+        source: 'LinkedIn',
+        experience: '3',
+        monthly_yearly: 'monthly',
+        current_salary: '65000',
+        expected_salary: '75000',
+        remark: 'Strong technical background',
+        notice_period: '1-month',
+        interview_status: 'applied',
+        applied_date: '2024-01-15'
+      }
+    ];
+    
+    const ws = XLSX.utils.json_to_sheet(templateData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Candidate Template');
+    XLSX.writeFile(wb, 'candidate_import_template.xlsx');
+  };
+
+  // Validate import data
+  const validateImportData = (data: any[]): { valid: any[], errors: string[] } => {
+    const valid: any[] = [];
+    const errors: string[] = [];
+    
+    data.forEach((row, index) => {
+      const rowNumber = index + 2; // +2 because Excel is 1-indexed and we have header
+      const rowErrors: string[] = [];
+      
+      // Required field validations - only name is required
+      if (!row.name || row.name.trim() === '') {
+        rowErrors.push(`Row ${rowNumber}: Name is required`);
+      }
+      
+      // Email validation - only if provided
+      if (row.email && row.email.trim() !== '') {
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(row.email)) {
+          rowErrors.push(`Row ${rowNumber}: Invalid email format`);
+        }
+      }
+      
+      // Check for duplicate emails - only if email is provided
+      if (row.email && row.email.trim() !== '') {
+        const existingEmails = candidates.map(candidate => candidate.email?.toLowerCase()).filter(Boolean);
+        if (existingEmails.includes(row.email.toLowerCase())) {
+          rowErrors.push(`Row ${rowNumber}: Email already exists in database`);
+        }
+        
+        // Check for duplicate emails within import data
+        const importEmails = data.slice(0, index).map(r => r.email?.toLowerCase()).filter(Boolean);
+        if (importEmails.includes(row.email.toLowerCase())) {
+          rowErrors.push(`Row ${rowNumber}: Duplicate email within import file`);
+        }
+      }
+      
+      // Date validation and Excel date conversion
+      if (row.applied_date) {
+        let appliedDate: Date;
+        
+        // Check if it's an Excel date serial number (numeric value)
+        if (typeof row.applied_date === 'number' || !isNaN(Number(row.applied_date))) {
+          const excelDateNumber = Number(row.applied_date);
+          
+          // Excel date serial numbers start from 1 (January 1, 1900)
+          // Valid range: 1 to 2958465 (December 31, 9999)
+          if (excelDateNumber >= 1 && excelDateNumber <= 2958465) {
+            // Convert Excel date serial number to JavaScript Date
+            const excelEpoch = new Date(1900, 0, 1); // January 1, 1900
+            const daysToAdd = excelDateNumber - 1; // Subtract 1 because Excel day 1 is 1900-01-01
+            
+            // Adjust for Excel's leap year bug (it incorrectly treats 1900 as leap year)
+            let adjustedDaysToAdd = daysToAdd;
+            if (excelDateNumber > 60) {
+              adjustedDaysToAdd -= 1;
+            }
+            
+            appliedDate = new Date(excelEpoch.getTime() + adjustedDaysToAdd * 24 * 60 * 60 * 1000);
+          } else {
+            rowErrors.push(`Row ${rowNumber}: Invalid Excel date serial number`);
+          }
+        } else {
+          // Try to parse as string date
+          const parsedDate = new Date(row.applied_date);
+          if (isNaN(parsedDate.getTime())) {
+            rowErrors.push(`Row ${rowNumber}: Invalid date format. Use YYYY-MM-DD or Excel date`);
+          }
+        }
+      }
+      
+      // Experience validation
+      if (row.experience && isNaN(Number(row.experience))) {
+        rowErrors.push(`Row ${rowNumber}: Experience must be a number`);
+      }
+      
+      // Salary validation
+      if (row.current_salary && isNaN(Number(row.current_salary))) {
+        rowErrors.push(`Row ${rowNumber}: Current salary must be a number`);
+      }
+      
+      if (row.expected_salary && isNaN(Number(row.expected_salary))) {
+        rowErrors.push(`Row ${rowNumber}: Expected salary must be a number`);
+      }
+      
+      // Monthly/Yearly validation
+      if (row.monthly_yearly && !['monthly', 'yearly'].includes(row.monthly_yearly.toLowerCase())) {
+        rowErrors.push(`Row ${rowNumber}: Monthly/Yearly must be 'monthly' or 'yearly'`);
+      }
+      
+      // Notice period validation
+      if (row.notice_period && !['immediate', '15-days', '1-month', '2-months', '3-months', 'negotiable'].includes(row.notice_period.toLowerCase())) {
+        rowErrors.push(`Row ${rowNumber}: Notice period must be one of: immediate, 15-days, 1-month, 2-months, 3-months, negotiable`);
+      }
+      
+      // Interview status validation
+      if (row.interview_status && !['applied', 'shortlisted', 'selected', 'rejected'].includes(row.interview_status.toLowerCase())) {
+        rowErrors.push(`Row ${rowNumber}: Interview status must be one of: applied, shortlisted, selected, rejected`);
+      }
+      
+      if (rowErrors.length > 0) {
+        errors.push(...rowErrors);
+      } else {
+        valid.push(row);
+      }
+    });
+    
+    return { valid, errors };
+  };
+
+  // Handle file upload
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    
+    // File format validation
+    if (!file.name.endsWith('.xlsx') && !file.name.endsWith('.xls')) {
+      toast({
+        title: 'Invalid file format',
+        description: 'Please upload an Excel file (.xlsx or .xls)',
+        variant: 'destructive'
+      });
+      return;
+    }
+    
+    // File size validation (10MB limit)
+    const maxSize = 10 * 1024 * 1024; // 10MB in bytes
+    if (file.size > maxSize) {
+      toast({
+        title: 'File too large',
+        description: 'File size must be less than 10MB',
+        variant: 'destructive'
+      });
+      return;
+    }
+    
+    setImportFile(file);
+    const reader = new FileReader();
+    
+    reader.onload = (e) => {
+      try {
+        if (!e.target?.result) {
+          throw new Error('No file data received');
+        }
+        
+        const data = new Uint8Array(e.target.result as ArrayBuffer);
+        const workbook = XLSX.read(data, { type: 'array' });
+        
+        if (!workbook.SheetNames || workbook.SheetNames.length === 0) {
+          throw new Error('No sheets found in the Excel file');
+        }
+        
+        const sheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[sheetName];
+        
+        if (!worksheet) {
+          throw new Error('Unable to read the first sheet');
+        }
+        
+        const jsonData = XLSX.utils.sheet_to_json(worksheet);
+        
+        if (!jsonData || jsonData.length === 0) {
+          toast({
+            title: 'Empty file',
+            description: 'The uploaded file contains no data',
+            variant: 'destructive'
+          });
+          return;
+        }
+        
+        // Ensure all rows have the required structure - only name is required
+        const processedData = jsonData.map((row: any) => ({
+          name: row.name || row.Name || '',
+          email: row.email || row.Email || '',
+          phone: row.phone || row.Phone || '',
+          position: row.position || row.Position || '',
+          department: row.department || row.Department || '',
+          source: row.source || row.Source || '',
+          experience: row.experience || row.Experience || '',
+          monthly_yearly: row.monthly_yearly || row['monthly_yearly'] || row['Monthly/Yearly'] || 'monthly',
+          current_salary: row.current_salary || row['current_salary'] || row['Current Salary'] || '',
+          expected_salary: row.expected_salary || row['expected_salary'] || row['Expected Salary'] || '',
+          remark: row.remark || row.Remark || '',
+          notice_period: row.notice_period || row['notice_period'] || row['Notice Period'] || '',
+          interview_status: row.interview_status || row['interview_status'] || row['Interview Status'] || 'applied',
+          applied_date: row.applied_date || row['applied_date'] || row['Applied Date'] || new Date().toISOString().split('T')[0]
+        }));
+        
+        setImportData(processedData);
+        setImportPreview(processedData.slice(0, 5)); // Show first 5 rows as preview
+        setShowImportPreview(true);
+        
+        // Validate the data
+        const { valid, errors } = validateImportData(processedData);
+        setImportErrors(errors);
+        
+        if (errors.length > 0) {
+          toast({
+            title: 'Validation errors found',
+            description: `${errors.length} error(s) found. Please review and fix them.`,
+            variant: 'destructive'
+          });
+        } else {
+          toast({
+            title: 'File uploaded successfully',
+            description: `${valid.length} valid records found`,
+            variant: 'default'
+          });
+        }
+      } catch (error: any) {
+        console.error('File reading error:', error);
+        toast({
+          title: 'Error reading file',
+          description: error.message || 'Unable to read the uploaded file. Please ensure it\'s a valid Excel file.',
+          variant: 'destructive'
+        });
+        // Reset state on error
+        setImportFile(null);
+        setImportData([]);
+        setImportErrors([]);
+        setImportPreview([]);
+        setShowImportPreview(false);
+      }
+    };
+    
+    reader.onerror = () => {
+      toast({
+        title: 'File reading error',
+        description: 'Failed to read the uploaded file',
+        variant: 'destructive'
+      });
+      setImportFile(null);
+      setImportData([]);
+      setImportErrors([]);
+      setImportPreview([]);
+      setShowImportPreview(false);
+    };
+    
+    reader.readAsArrayBuffer(file);
+  };
+
+  // Process import
+  const handleProcessImport = async () => {
+    if (importErrors.length > 0) {
+      toast({
+        title: 'Cannot proceed with errors',
+        description: 'Please fix all validation errors before importing',
+        variant: 'destructive'
+      });
+      return;
+    }
+    
+    if (importData.length === 0) {
+      toast({
+        title: 'No data to import',
+        description: 'Please upload a file with valid data',
+        variant: 'destructive'
+      });
+      return;
+    }
+    
+    setIsImporting(true);
+    
+    try {
+      let successCount = 0;
+      let errorCount = 0;
+      
+      for (const candidateData of importData) {
+        try {
+          // Insert candidate
+          const { data, error } = await supabase
+            .from('candidates')
+            .insert([
+              {
+                name: candidateData.name,
+                email: candidateData.email || null,
+                phone: candidateData.phone || null,
+                position: candidateData.position || null,
+                department: candidateData.department || null,
+                job_id: null, // Will need to be set manually or through job lookup
+                source: candidateData.source || null,
+                experience: candidateData.experience ? parseInt(candidateData.experience) : null,
+                monthly_yearly: candidateData.monthly_yearly || 'monthly',
+                expected_salary: candidateData.expected_salary ? parseInt(candidateData.expected_salary) : null,
+                current_salary: candidateData.current_salary ? parseInt(candidateData.current_salary) : null,
+                remark: candidateData.remark || null,
+                notice_period: candidateData.notice_period || null,
+                resume_uploaded: false,
+                resume_url: null,
+                interview_status: candidateData.interview_status || 'applied',
+                applied_date: candidateData.applied_date || new Date().toISOString().split('T')[0],
+              },
+            ])
+            .select();
+          
+          if (error) {
+            console.error('Error inserting candidate:', error);
+            errorCount++;
+          } else {
+            successCount++;
+          }
+        } catch (error) {
+          console.error('Error processing candidate:', error);
+          errorCount++;
+        }
+      }
+      
+      // Reset import state
+      setImportFile(null);
+      setImportData([]);
+      setImportErrors([]);
+      setImportPreview([]);
+      setShowImportPreview(false);
+      setIsImportDialogOpen(false);
+      
+      // Show results
+      if (successCount > 0) {
+        toast({
+          title: 'Import completed',
+          description: `Successfully imported ${successCount} candidates${errorCount > 0 ? `, ${errorCount} failed` : ''}`,
+          variant: 'default'
+        });
+        
+        // Refresh the candidates list
+        window.location.reload();
+      } else {
+        toast({
+          title: 'Import failed',
+          description: 'No candidates were imported successfully',
+          variant: 'destructive'
+        });
+      }
+    } catch (error) {
+      console.error('Import error:', error);
+      toast({
+        title: 'Import error',
+        description: 'An error occurred during import',
+        variant: 'destructive'
+      });
+    } finally {
+      setIsImporting(false);
+    }
+  };
+
+  // Reset import
+  const handleResetImport = () => {
+    setImportFile(null);
+    setImportData([]);
+    setImportErrors([]);
+    setImportPreview([]);
+    setShowImportPreview(false);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
   return (
     <div className="p-6 space-y-6">
       <div className="flex items-center gap-2 mb-4 w-full">
@@ -285,9 +1099,13 @@ const CandidateManagement: React.FC<CandidateManagementProps> = ({
           </DialogTrigger>
           <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700">
             <DialogHeader>
-              <DialogTitle className="text-slate-800 dark:text-white">Add New Candidate</DialogTitle>
+              <DialogTitle className="text-slate-800 dark:text-white">
+                {isEditMode ? 'Edit Candidate' : completingDraft ? 'Complete Draft' : 'Add New Candidate'}
+              </DialogTitle>
               <DialogDescription className="text-slate-600 dark:text-slate-300">
-                Enter candidate application details
+                {isEditMode ? 'Update the candidate\'s information below' : 
+                 completingDraft ? 'Complete the draft and add to candidates' : 
+                 'Enter candidate application details'}
               </DialogDescription>
             </DialogHeader>
             
@@ -334,7 +1152,13 @@ const CandidateManagement: React.FC<CandidateManagementProps> = ({
                   <Label htmlFor="jobId" className="text-slate-700 dark:text-slate-200">Applied Position *</Label>
                   <Select
                     value={formData.jobId}
-                    onValueChange={(value) => setFormData({ ...formData, jobId: value })}
+                    onValueChange={(value) => {
+                      setFormData({ ...formData, jobId: value });
+                      setIsCustomPosition(value === 'custom');
+                      if (value !== 'custom') {
+                        setCustomPosition('');
+                      }
+                    }}
                     required
                   >
                     <SelectTrigger className="border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
@@ -346,8 +1170,18 @@ const CandidateManagement: React.FC<CandidateManagementProps> = ({
                           {job.title} - {job.department}
                         </SelectItem>
                       ))}
+                      <SelectItem value="custom">Custom</SelectItem>
                     </SelectContent>
                   </Select>
+                  {isCustomPosition && (
+                    <Input
+                      value={customPosition}
+                      onChange={(e) => setCustomPosition(e.target.value)}
+                      placeholder="Enter custom job title"
+                      required
+                      className="border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500"
+                    />
+                  )}
                 </div>
                 
                 <div className="space-y-2">
@@ -404,6 +1238,23 @@ const CandidateManagement: React.FC<CandidateManagementProps> = ({
                     required
                     className="border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500"
                   />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="monthlyYearly" className="text-slate-700 dark:text-slate-200">Salary Type *</Label>
+                  <Select
+                    value={formData.monthlyYearly}
+                    onValueChange={(value) => setFormData({ ...formData, monthlyYearly: value })}
+                    required
+                  >
+                    <SelectTrigger className="border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
+                      <SelectValue placeholder="Select salary type" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-white dark:bg-slate-700 border-slate-200 dark:border-slate-600">
+                      <SelectItem value="monthly">Monthly</SelectItem>
+                      <SelectItem value="yearly">Yearly</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
                 
                 <div className="space-y-2">
@@ -477,16 +1328,29 @@ const CandidateManagement: React.FC<CandidateManagementProps> = ({
               </div>
               
               <div className="flex justify-end space-x-2">
-                <Button
-                  type="button"
+                                <Button 
+                  type="button" 
                   variant="outline"
-                  onClick={() => setIsDialogOpen(false)}
+                  onClick={() => {
+                    setIsDialogOpen(false);
+                    setIsEditMode(false);
+                    setEditingCandidate(null);
+                    setCompletingDraft(null);
+                  }}
                   className="border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700"
                 >
                   Cancel
                 </Button>
+                <Button 
+                  type="button" 
+                  onClick={handleSaveAsDraft}
+                  disabled={isSavingDraft}
+                  className="bg-slate-500 dark:bg-slate-600 hover:bg-slate-600 dark:hover:bg-slate-500 text-white shadow-lg hover:shadow-xl transition-all duration-200"
+                >
+                  {isSavingDraft ? 'Saving...' : 'Save as Draft'}
+                </Button>
                 <Button type="submit" className="bg-amber-600 dark:bg-slate-700 hover:bg-amber-700 dark:hover:bg-slate-600 text-white shadow-lg hover:shadow-xl transition-all duration-200">
-                  Add Candidate
+                  {isEditMode ? 'Update Candidate' : completingDraft ? 'Complete Draft' : 'Add Candidate'}
                 </Button>
               </div>
             </form>
@@ -514,6 +1378,36 @@ const CandidateManagement: React.FC<CandidateManagementProps> = ({
         <span className="ml-2 inline-flex items-center px-3 py-1 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-400 text-sm font-medium border border-blue-200 dark:border-blue-800">
           Candidates: {sortedCandidates.length}
         </span>
+        <div className="flex gap-2 ml-auto">
+          <button
+            onClick={() => setIsDraftsDialogOpen(true)}
+            className="px-4 py-1 bg-purple-500 hover:bg-purple-600 text-white rounded shadow text-sm font-medium flex items-center gap-1"
+          >
+            <FileText className="w-4 h-4" />
+            Drafts ({drafts.length})
+          </button>
+          <button
+            onClick={handleExportTemplate}
+            className="px-4 py-1 bg-green-500 hover:bg-green-600 text-white rounded shadow text-sm font-medium flex items-center gap-1"
+          >
+            <Download className="w-4 h-4" />
+            Template
+          </button>
+          <button
+            onClick={handleExport}
+            className="px-4 py-1 bg-amber-500 hover:bg-amber-600 text-white rounded shadow text-sm font-medium flex items-center gap-1"
+          >
+            <Download className="w-4 h-4" />
+            Export
+          </button>
+          <button
+            onClick={() => setIsImportDialogOpen(true)}
+            className="px-4 py-1 bg-blue-500 hover:bg-blue-600 text-white rounded shadow text-sm font-medium flex items-center gap-1"
+          >
+            <Upload className="w-4 h-4" />
+            Import
+          </button>
+        </div>
       </div>
 
       {/* Table and controls container */}
@@ -566,9 +1460,12 @@ const CandidateManagement: React.FC<CandidateManagementProps> = ({
               <TableRow className="border-b border-slate-200 dark:border-slate-600">
                 <TableHead className="border-r border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-200 font-semibold">Candidate</TableHead>
                 <TableHead className="border-r border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-200 font-semibold">Position</TableHead>
+                <TableHead className="border-r border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-200 font-semibold">Department</TableHead>
                 <TableHead className="border-r border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-200 font-semibold">Application Source</TableHead>
                 <TableHead className="border-r border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-200 font-semibold">Experience</TableHead>
+                <TableHead className="border-r border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-200 font-semibold">Monthly/Yearly</TableHead>
                 <TableHead className="border-r border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-200 font-semibold">Current Salary</TableHead>
+                <TableHead className="border-r border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-200 font-semibold">Remark</TableHead>
                 <TableHead className="border-r border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-200 font-semibold">Expected Salary</TableHead>
                 <TableHead className="border-r border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-200 font-semibold">Notice Period</TableHead>
                 <TableHead className="border-r border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-200 font-semibold">Status</TableHead>
@@ -595,9 +1492,12 @@ const CandidateManagement: React.FC<CandidateManagementProps> = ({
                     </div>
                   </TableCell>
                   <TableCell className="border-r border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white">{candidate.position}</TableCell>
+                  <TableCell className="border-r border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white">{candidate.department || 'N/A'}</TableCell>
                   <TableCell className="border-r border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white">{toProperCase(candidate.source) || 'N/A'}</TableCell>
                   <TableCell className="border-r border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white">{candidate.experience || 'N/A'}</TableCell>
+                  <TableCell className="border-r border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white capitalize">{candidate.monthlyYearly || 'N/A'}</TableCell>
                   <TableCell className="border-r border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white">{formatCurrency(candidate.currentSalary) || 'N/A'}</TableCell>
+                  <TableCell className="border-r border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white">{candidate.remark || 'N/A'}</TableCell>
                   <TableCell className="border-r border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white">{formatCurrency(candidate.expectedSalary)}</TableCell>
                   <TableCell className="border-r border-slate-200 dark:border-slate-700 capitalize text-slate-900 dark:text-white">{candidate.noticePeriod || 'N/A'}</TableCell>
                   <TableCell className="border-r border-slate-200 dark:border-slate-700">
@@ -617,16 +1517,27 @@ const CandidateManagement: React.FC<CandidateManagementProps> = ({
                       <Button
                         size="sm"
                         variant="outline"
-                        onClick={() => openStatusDialog(candidate)}
-                        className="border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700"
+                        onClick={() => openEditDialog(candidate)}
+                        className="border-blue-200 dark:border-blue-600 text-blue-700 dark:text-blue-200 hover:bg-blue-50 dark:hover:bg-blue-700"
+                        title="Edit Candidate"
                       >
                         <Edit className="w-3 h-3" />
                       </Button>
                       <Button
                         size="sm"
                         variant="outline"
+                        onClick={() => openStatusDialog(candidate)}
+                        className="border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700"
+                        title="Update Status"
+                      >
+                        <Settings className="w-3 h-3" />
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
                         onClick={() => openHistoryDialog(candidate)}
                         className="border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700"
+                        title="View History"
                       >
                         <History className="w-3 h-3" />
                       </Button>
@@ -774,6 +1685,237 @@ const CandidateManagement: React.FC<CandidateManagementProps> = ({
             </div>
           ) : (
             <div className="text-center py-8 text-gray-600">Resume is not present.</div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Import Dialog */}
+      <Dialog open={isImportDialogOpen} onOpenChange={setIsImportDialogOpen}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Upload className="w-5 h-5" />
+              Import Candidates
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-6">
+            {/* Instructions */}
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <h3 className="font-semibold text-blue-800 mb-2">Instructions:</h3>
+              <ol className="text-sm text-blue-700 space-y-1 list-decimal list-inside">
+                <li>Download the template using the "Template" button above</li>
+                <li>Fill in the candidate data following the template format</li>
+                <li>Save the file as Excel (.xlsx or .xls)</li>
+                <li>Upload the file here to import candidates</li>
+                <li>Review any validation errors and fix them in your file</li>
+                <li>Click "Import" to add the candidates to the database</li>
+              </ol>
+            </div>
+
+            {/* File Upload */}
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Upload Excel File
+                </label>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".xlsx,.xls"
+                  onChange={handleFileUpload}
+                  className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                />
+              </div>
+
+              {importFile && (
+                <div className="flex items-center gap-2 text-sm text-gray-600">
+                  <FileText className="w-4 h-4" />
+                  <span>{importFile.name}</span>
+                  <span>({(importFile.size / 1024).toFixed(1)} KB)</span>
+                </div>
+              )}
+            </div>
+
+            {/* Validation Errors */}
+            {importErrors.length > 0 && (
+              <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>
+                  <div className="space-y-2">
+                    <p className="font-semibold">Validation Errors ({importErrors.length}):</p>
+                    <div className="max-h-40 overflow-y-auto space-y-1">
+                      {importErrors.map((error, index) => (
+                        <div key={index} className="text-sm bg-red-50 p-2 rounded border border-red-200">
+                          {error}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </AlertDescription>
+              </Alert>
+            )}
+
+            {/* Import Preview */}
+            {showImportPreview && importPreview.length > 0 && (
+              <div className="space-y-4">
+                <h3 className="font-semibold text-gray-800">Data Preview (First 5 rows):</h3>
+                <div className="border rounded-lg overflow-hidden">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Name</TableHead>
+                        <TableHead>Email</TableHead>
+                        <TableHead>Position</TableHead>
+                        <TableHead>Department</TableHead>
+                        <TableHead>Experience</TableHead>
+                        <TableHead>Status</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {importPreview.map((row, index) => (
+                        <TableRow key={index}>
+                          <TableCell>{row.name || '-'}</TableCell>
+                          <TableCell>{row.email || '-'}</TableCell>
+                          <TableCell>{row.position || '-'}</TableCell>
+                          <TableCell>{row.department || '-'}</TableCell>
+                          <TableCell>{row.experience || '-'}</TableCell>
+                          <TableCell>{row.interview_status || 'applied'}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+                {importData.length > 5 && (
+                  <p className="text-sm text-gray-600">
+                    Showing first 5 rows of {importData.length} total records
+                  </p>
+                )}
+              </div>
+            )}
+
+            {/* Action Buttons */}
+            <div className="flex justify-end space-x-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleResetImport}
+                className="border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700"
+              >
+                Reset
+              </Button>
+              <Button
+                type="button"
+                onClick={handleProcessImport}
+                disabled={importErrors.length > 0 || importData.length === 0 || isImporting}
+                className="bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isImporting ? 'Importing...' : 'Import Candidates'}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Drafts Dialog */}
+      <Dialog open={isDraftsDialogOpen} onOpenChange={setIsDraftsDialogOpen}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-semibold text-slate-900 dark:text-white">
+              Candidate Drafts
+            </DialogTitle>
+            <DialogDescription className="text-slate-600 dark:text-slate-400">
+              Load or delete your saved candidate drafts
+            </DialogDescription>
+            <Button
+              onClick={fetchDrafts}
+              size="sm"
+              variant="outline"
+              className="w-fit"
+            >
+              Refresh Drafts
+            </Button>
+          </DialogHeader>
+          
+          {drafts.length === 0 ? (
+            <div className="text-center py-8">
+              <FileText className="w-12 h-12 text-slate-400 mx-auto mb-4" />
+              <p className="text-slate-600 dark:text-slate-400">No drafts found</p>
+              <p className="text-sm text-slate-500 dark:text-slate-500 mt-1">
+                Start creating a candidate to save drafts
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {drafts.map((draft) => (
+                <div
+                  key={draft.id}
+                  className="border border-slate-200 dark:border-slate-700 rounded-lg p-4 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
+                >
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-2">
+                        <h3 className="font-semibold text-slate-900 dark:text-white">
+                          {draft.name}
+                        </h3>
+                        <span className="text-xs bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400 px-2 py-1 rounded">
+                          Draft
+                        </span>
+                      </div>
+                      
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                        <div>
+                          <span className="text-slate-500 dark:text-slate-400">Position:</span>
+                          <p className="font-medium text-slate-900 dark:text-white">
+                            {draft.custom_position || draft.position || 'Not specified'}
+                          </p>
+                        </div>
+                        <div>
+                          <span className="text-slate-500 dark:text-slate-400">Email:</span>
+                          <p className="font-medium text-slate-900 dark:text-white">
+                            {draft.email || 'Not specified'}
+                          </p>
+                        </div>
+                        <div>
+                          <span className="text-slate-500 dark:text-slate-400">Phone:</span>
+                          <p className="font-medium text-slate-900 dark:text-white">
+                            {draft.phone || 'Not specified'}
+                          </p>
+                        </div>
+                        <div>
+                          <span className="text-slate-500 dark:text-slate-400">Experience:</span>
+                          <p className="font-medium text-slate-900 dark:text-white">
+                            {draft.experience ? `${draft.experience} years` : 'Not specified'}
+                          </p>
+                        </div>
+                      </div>
+                      
+                      <div className="mt-2 text-xs text-slate-500 dark:text-slate-400">
+                        Created: {new Date(draft.created_at).toLocaleDateString()} at {new Date(draft.created_at).toLocaleTimeString()}
+                      </div>
+                    </div>
+                    
+                    <div className="flex gap-2 ml-4">
+                      <Button
+                        onClick={() => loadDraft(draft)}
+                        size="sm"
+                        className="bg-amber-600 hover:bg-amber-700 text-white"
+                      >
+                        Load
+                      </Button>
+                      <Button
+                        onClick={() => deleteDraft(draft.id)}
+                        size="sm"
+                        variant="outline"
+                        className="border-red-200 text-red-600 hover:bg-red-50 dark:border-red-800 dark:text-red-400 dark:hover:bg-red-900/20"
+                      >
+                        Delete
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
           )}
         </DialogContent>
       </Dialog>

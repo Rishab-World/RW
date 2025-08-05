@@ -9,6 +9,8 @@ import { Badge } from '@/components/ui/badge';
 import { Plus, Edit, Trash2, Eye, FileText, Download, Calendar, User, Shield, Mail } from 'lucide-react';
 import { supabase } from '@/lib/supabaseClient';
 import html2pdf from 'html2pdf.js';
+import html2canvas from 'html2canvas';
+import jsPDF from 'jspdf';
 import { PDFViewer } from '@react-pdf/renderer';
 import ProbationReviewPDF from './ProbationReviewPDF';
 
@@ -49,6 +51,8 @@ const Templates: React.FC = () => {
   const [pdfFormSubmitted, setPdfFormSubmitted] = useState(false);
   const [pdfGenerating, setPdfGenerating] = useState(false);
   const [pdfError, setPdfError] = useState<string | null>(null);
+  const [showTextPreview, setShowTextPreview] = useState(false);
+  const [processedContent, setProcessedContent] = useState<string>('');
 
   const fetchTemplates = async () => {
     setLoading(true);
@@ -197,7 +201,7 @@ const Templates: React.FC = () => {
     setPdfUrl(null);
     setPdfGenerating(false);
     setPdfError(null);
-    
+
     if (template.type === 'Probation Review') {
       setPdfVariables({
         EMPLOYEE_NAME: '',
@@ -210,117 +214,61 @@ const Templates: React.FC = () => {
       return;
     }
 
-    // For other template types, generate PDF from content
     setPdfGenerating(true);
     try {
-      // Create a temporary element with the content
-      const tempDiv = document.createElement('div');
-      tempDiv.style.width = '210mm'; // A4 width
-      tempDiv.style.minHeight = '297mm'; // A4 height
-      tempDiv.style.padding = '20mm';
-      tempDiv.style.fontFamily = 'Arial, sans-serif';
-      tempDiv.style.fontSize = '12px';
-      tempDiv.style.lineHeight = '1.6';
-      tempDiv.style.color = '#000000';
-      tempDiv.style.backgroundColor = '#ffffff';
-      tempDiv.style.position = 'absolute';
-      tempDiv.style.left = '-9999px';
-      tempDiv.style.top = '0';
-      
-      // Set the content - handle both HTML and plain text
-      if (template.content.trim().startsWith('<') || template.content.includes('<div') || template.content.includes('<p>')) {
-        tempDiv.innerHTML = template.content;
-      } else {
-        // Convert plain text to HTML with proper formatting
-        const formattedContent = template.content
-          .replace(/\n\n/g, '</p><p>')
-          .replace(/\n/g, '<br>')
-          .replace(/\{([^}]+)\}/g, '<strong>[$1]</strong>'); // Highlight variables
-        tempDiv.innerHTML = `<p>${formattedContent}</p>`;
-      }
-      
-      document.body.appendChild(tempDiv);
-
       const options = {
-        margin: [10, 10, 10, 10],
+        margin: 0,
         filename: `${template.name}.pdf`,
-        image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: { 
-          scale: 2,
-          useCORS: true,
-          allowTaint: true,
-          backgroundColor: '#ffffff'
-        },
-        jsPDF: { 
-          unit: 'mm', 
-          format: 'a4', 
-          orientation: 'portrait' 
-        }
+        image: { type: 'jpeg', quality: 1 },
+        html2canvas: { scale: 2, useCORS: true },
+        jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' },
       };
 
-      const blob = await html2pdf().set(options).from(tempDiv).outputPdf('blob');
-      const url = URL.createObjectURL(blob);
-      setPdfUrl(url);
-      setPdfGenerating(false);
-      
-      // Clean up
-      document.body.removeChild(tempDiv);
-    } catch (error) {
-      console.error('Error generating PDF:', error);
-      // Fallback: show content as text in a simple format
-      const tempDiv = document.createElement('div');
-      tempDiv.style.width = '210mm';
-      tempDiv.style.minHeight = '297mm';
-      tempDiv.style.padding = '20mm';
-      tempDiv.style.fontFamily = 'Arial, sans-serif';
-      tempDiv.style.fontSize = '12px';
-      tempDiv.style.lineHeight = '1.6';
-      tempDiv.style.color = '#000000';
-      tempDiv.style.backgroundColor = '#ffffff';
-      tempDiv.style.position = 'absolute';
-      tempDiv.style.left = '-9999px';
-      tempDiv.style.top = '0';
-      
-      // Simple text formatting with placeholder values for variables
-      let contentWithPlaceholders = template.content;
-      
-      // Replace common variables with placeholder values
-      const commonVariables = {
-        'EMPLOYEE_NAME': '[Employee Name]',
-        'COMPANY_NAME': '[Company Name]',
-        'DATE': '[Date]',
-        'DESIGNATION': '[Designation]',
-        'DEPARTMENT': '[Department]',
-        'JOINING_DATE': '[Joining Date]',
-        'SALARY': '[Salary]',
-        'MANAGER_NAME': '[Manager Name]'
-      };
-      
-      Object.entries(commonVariables).forEach(([variable, placeholder]) => {
-        const regex = new RegExp(`\\{${variable}\\}`, 'gi');
-        contentWithPlaceholders = contentWithPlaceholders.replace(regex, placeholder);
+      // Replace {VARIABLE} with formData values
+      const processedContent = template.content.replace(/\{(.*?)\}/g, (match, key) => {
+        const trimmedKey = key.trim();
+        return formData[trimmedKey] || '';
       });
-      
-      // Replace any remaining variables with generic placeholders
-      contentWithPlaceholders = contentWithPlaceholders.replace(/\{([^}]+)\}/g, '[$1]');
-      
-      const formattedText = contentWithPlaceholders.replace(/\n/g, '<br>');
-      tempDiv.innerHTML = `<div style="white-space: pre-wrap;">${formattedText}</div>`;
-      
+      setProcessedContent(processedContent);
+
+      const tempDiv = document.createElement('div');
+      tempDiv.innerHTML = processedContent;
+
+      Object.assign(tempDiv.style, {
+        position: 'fixed',
+        top: '0',
+        left: '0',
+        width: '800px',
+        minHeight: '1100px',
+        background: 'white',
+        opacity: '1',
+        zIndex: '9999',
+        transform: 'scale(1)',
+        padding: '48px 56px',
+        boxSizing: 'border-box',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+      });
+
       document.body.appendChild(tempDiv);
-      
+
+      await new Promise(resolve => requestAnimationFrame(() => resolve(null)));
+
       try {
-        const blob = await html2pdf().from(tempDiv).outputPdf('blob');
-        const url = URL.createObjectURL(blob);
-        setPdfUrl(url);
+        const blob = await html2pdf().set(options).from(tempDiv).toPdf().output('blob');
+        const blobUrl = URL.createObjectURL(blob);
+        setPdfUrl(blobUrl);
         setPdfGenerating(false);
-        document.body.removeChild(tempDiv);
-      } catch (fallbackError) {
-        console.error('Fallback PDF generation failed:', fallbackError);
+      } catch (error) {
         setPdfGenerating(false);
-        setPdfError('Failed to generate PDF. Please check the template content.');
+        setPdfError(`Failed to generate PDF: ${error.message}`);
+      } finally {
         document.body.removeChild(tempDiv);
       }
+    } catch (error) {
+      setPdfGenerating(false);
+      setPdfError(`Failed to generate PDF: ${error.message}`);
     }
   };
 
@@ -646,7 +594,7 @@ const Templates: React.FC = () => {
       </Dialog>
 
       {/* PDF Preview Dialog */}
-      <Dialog open={!!pdfPreviewTemplate} onOpenChange={() => { setPdfPreviewTemplate(null); setPdfUrl(null); setPdfFormSubmitted(false); setPdfGenerating(false); setPdfError(null); }}>
+      <Dialog open={!!pdfPreviewTemplate} onOpenChange={() => { setPdfPreviewTemplate(null); setPdfUrl(null); setPdfFormSubmitted(false); setPdfGenerating(false); setPdfError(null); setShowTextPreview(false); setProcessedContent(''); }}>
         <DialogContent className="max-w-5xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 max-h-[90vh]">
           <DialogHeader>
             <DialogTitle>PDF Preview</DialogTitle>
@@ -691,7 +639,37 @@ const Templates: React.FC = () => {
               )
             ) : (
               // PDF generation for other template types
-              pdfUrl ? (
+              showTextPreview ? (
+                <div className="h-full overflow-y-auto p-4 bg-white">
+                  <div className="mb-4 flex justify-between items-center">
+                    <h3 className="text-lg font-semibold text-slate-800 dark:text-slate-200">
+                      Text Preview: {pdfPreviewTemplate?.name}
+                    </h3>
+                    <Button
+                      onClick={() => setShowTextPreview(false)}
+                      variant="outline"
+                      size="sm"
+                      className="border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300"
+                    >
+                      Back to PDF
+                    </Button>
+                  </div>
+                  <div className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-md p-4">
+                    <div className="mb-4">
+                      <h4 className="font-semibold text-slate-800 dark:text-slate-200 mb-2">Original Content:</h4>
+                      <pre className="whitespace-pre-wrap font-mono text-sm text-slate-900 dark:text-slate-100 bg-slate-100 dark:bg-slate-700 p-2 rounded">
+                        {pdfPreviewTemplate?.content || 'No content available'}
+                      </pre>
+                    </div>
+                    <div>
+                      <h4 className="font-semibold text-slate-800 dark:text-slate-200 mb-2">Processed Content (for PDF):</h4>
+                      <pre className="whitespace-pre-wrap font-mono text-sm text-slate-900 dark:text-slate-100 bg-slate-100 dark:bg-slate-700 p-2 rounded">
+                        {processedContent || 'No processed content available'}
+                      </pre>
+                    </div>
+                  </div>
+                </div>
+              ) : pdfUrl ? (
                 <iframe src={pdfUrl} width="100%" height="100%" title="PDF Preview" />
               ) : pdfGenerating ? (
                 <div className="flex flex-col items-center justify-center h-full">
@@ -711,21 +689,37 @@ const Templates: React.FC = () => {
                   <div className="text-sm text-slate-400 dark:text-slate-500 max-w-md text-center mb-4">
                     Template: {pdfPreviewTemplate?.name}
                   </div>
-                  <Button
-                    onClick={() => handlePdfPreview(pdfPreviewTemplate!)}
-                    className="bg-amber-600 dark:bg-slate-700 hover:bg-amber-700 dark:hover:bg-slate-600 text-white"
-                  >
-                    Try Again
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button
+                      onClick={() => handlePdfPreview(pdfPreviewTemplate!)}
+                      className="bg-amber-600 dark:bg-slate-700 hover:bg-amber-700 dark:hover:bg-slate-600 text-white"
+                    >
+                      Try Again
+                    </Button>
+                    <Button
+                      onClick={() => setShowTextPreview(true)}
+                      variant="outline"
+                      className="border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300"
+                    >
+                      Show Text Preview
+                    </Button>
+                  </div>
                 </div>
               ) : (
                 <div className="flex flex-col items-center justify-center h-full">
                   <div className="text-center text-slate-500 dark:text-slate-400 mb-4">
                     Click "PDF Preview" to generate preview
                   </div>
-                  <div className="text-sm text-slate-400 dark:text-slate-500 max-w-md text-center">
+                  <div className="text-sm text-slate-400 dark:text-slate-500 max-w-md text-center mb-4">
                     Template: {pdfPreviewTemplate?.name}
                   </div>
+                  <Button
+                    onClick={() => setShowTextPreview(true)}
+                    variant="outline"
+                    className="border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300"
+                  >
+                    Show Text Preview
+                  </Button>
                 </div>
               )
             )}

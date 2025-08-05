@@ -34,11 +34,14 @@ interface Candidate {
   email: string;
   phone: string;
   position: string;
+  department?: string;
   jobId: string;
   source: string;
   experience: number;
+  monthlyYearly?: string;
   expectedSalary: number;
   currentSalary: number;
+  remark?: string;
   noticePeriod: string;
   interviewStatus: string;
   appliedDate: string;
@@ -501,9 +504,12 @@ const JobManagement: React.FC<JobManagementProps> = ({ jobs, onAddJob, onJobUpda
               <TableHeader>
                 <TableRow className="sticky top-0 bg-slate-100 dark:bg-slate-700 z-10 shadow-sm dark:shadow-slate-900/50 border-b border-slate-200 dark:border-slate-600">
                   <TableHead className="text-slate-700 dark:text-slate-200 font-semibold py-4">Candidate</TableHead>
+                  <TableHead className="text-slate-700 dark:text-slate-200 font-semibold py-4">Department</TableHead>
                   <TableHead className="text-slate-700 dark:text-slate-200 font-semibold py-4">Contact</TableHead>
                   <TableHead className="text-slate-700 dark:text-slate-200 font-semibold py-4">Experience</TableHead>
+                  <TableHead className="text-slate-700 dark:text-slate-200 font-semibold py-4">Salary Type</TableHead>
                   <TableHead className="text-slate-700 dark:text-slate-200 font-semibold py-4">Salary</TableHead>
+                  <TableHead className="text-slate-700 dark:text-slate-200 font-semibold py-4">Remark</TableHead>
                   <TableHead className="text-slate-700 dark:text-slate-200 font-semibold py-4">Notice Period</TableHead>
                   <TableHead className="text-slate-700 dark:text-slate-200 font-semibold py-4">Status</TableHead>
                   <TableHead className="text-slate-700 dark:text-slate-200 font-semibold py-4">Applied Date</TableHead>
@@ -523,6 +529,7 @@ const JobManagement: React.FC<JobManagementProps> = ({ jobs, onAddJob, onJobUpda
                         <div className="text-sm text-gray-500 dark:text-slate-400">{candidate.position}</div>
                       </div>
                     </TableCell>
+                    <TableCell className="text-slate-900 dark:text-white py-4">{candidate.department || 'N/A'}</TableCell>
                     <TableCell className="py-4">
                       <div>
                         <div className="text-sm text-slate-900 dark:text-white">{candidate.email}</div>
@@ -530,12 +537,14 @@ const JobManagement: React.FC<JobManagementProps> = ({ jobs, onAddJob, onJobUpda
                       </div>
                     </TableCell>
                     <TableCell className="text-slate-900 dark:text-white py-4">{candidate.experience} years</TableCell>
+                    <TableCell className="capitalize text-slate-900 dark:text-white py-4">{candidate.monthlyYearly || 'N/A'}</TableCell>
                     <TableCell className="py-4">
                       <div>
                         <div className="text-sm text-slate-900 dark:text-white">Current: ${candidate.currentSalary?.toLocaleString()}</div>
                         <div className="text-sm text-gray-500 dark:text-slate-400">Expected: ${candidate.expectedSalary?.toLocaleString()}</div>
                       </div>
                     </TableCell>
+                    <TableCell className="text-slate-900 dark:text-white py-4">{candidate.remark || 'N/A'}</TableCell>
                     <TableCell className="capitalize text-slate-900 dark:text-white py-4">{candidate.noticePeriod}</TableCell>
                     <TableCell className="py-4">
                       <Badge variant="outline" className={
@@ -552,7 +561,7 @@ const JobManagement: React.FC<JobManagementProps> = ({ jobs, onAddJob, onJobUpda
                 ))}
                 {jobCandidates.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={7} className="text-center py-12">
+                    <TableCell colSpan={10} className="text-center py-12">
                       <div className="flex flex-col items-center text-gray-500 dark:text-slate-400">
                         <Users className="w-12 h-12 mb-4 text-slate-400 dark:text-slate-500" />
                         <p className="text-lg font-medium">No applications received yet</p>

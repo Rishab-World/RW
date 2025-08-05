@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Upload, BarChart3, TrendingDown, Clock, UserX, Eye } from 'lucide-react';
+import { Upload, BarChart3, TrendingDown, Clock, UserX, Eye, Calendar } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
 import FileUpload from './FileUpload';
 import { useToast } from '@/hooks/use-toast';
@@ -43,6 +43,9 @@ interface EmployeeAttendance {
   attendance: {
     [key: string]: number;
   };
+  date_wise_details: {
+    [key: string]: string[]; // attendance type -> array of dates
+  };
   month: string;
 }
 
@@ -53,6 +56,9 @@ const AttendanceAnalysis: React.FC = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [selectedRecord, setSelectedRecord] = useState<AttendanceData | null>(null);
   const [showDetails, setShowDetails] = useState(false);
+  const [showDateWiseDetails, setShowDateWiseDetails] = useState(false);
+  const [selectedEmployee, setSelectedEmployee] = useState<EmployeeAttendance | null>(null);
+  const [selectedAttendanceType, setSelectedAttendanceType] = useState<string>('');
 
   const handleFileUpload = (file: File | null) => {
     setUploadedFile(file);
@@ -114,6 +120,7 @@ const AttendanceAnalysis: React.FC = () => {
           }
         }
         const attendance: { [key: string]: number } = {};
+        const dateWiseDetails: { [key: string]: string[] } = {};
         let totalDays = 0;
         for (const row of empRows) {
           const dateVal = row[0];
@@ -131,6 +138,13 @@ const AttendanceAnalysis: React.FC = () => {
             status = 'P';
           }
           attendance[status] = (attendance[status] || 0) + 1;
+          
+          // Store date-wise details
+          if (!dateWiseDetails[status]) {
+            dateWiseDetails[status] = [];
+          }
+          dateWiseDetails[status].push(new Date(dateVal).toLocaleDateString());
+          
           if (status !== '') totalDays++;
         }
         attendance['P'] = attendance['P'] || 0;
@@ -139,6 +153,7 @@ const AttendanceAnalysis: React.FC = () => {
           employeeId: empId,
           employeeName: empName,
           attendance,
+          date_wise_details: dateWiseDetails,
           month: firstDate || 'Unknown'
         });
       }
@@ -285,6 +300,13 @@ const AttendanceAnalysis: React.FC = () => {
     XLSX.writeFile(wb, `${selectedRecord.department}_${selectedRecord.month}_attendance.xlsx`);
   };
 
+  // Handle clicking on attendance count
+  const handleAttendanceCountClick = (employee: EmployeeAttendance, attendanceType: string) => {
+    setSelectedEmployee(employee);
+    setSelectedAttendanceType(attendanceType);
+    setShowDateWiseDetails(true);
+  };
+
   return (
     <div className="p-4 space-y-4 bg-slate-50 dark:bg-slate-900 min-h-screen">
       <Card className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700">
@@ -377,7 +399,17 @@ const AttendanceAnalysis: React.FC = () => {
                             <TableCell className="border-r border-slate-200 dark:border-slate-700 sticky left-0 bg-slate-100 dark:bg-slate-700 z-10 text-slate-900 dark:text-white">{employee.employeeId}</TableCell>
                             <TableCell className="border-r border-slate-200 dark:border-slate-700 sticky left-32 bg-slate-100 dark:bg-slate-700 z-10 text-slate-900 dark:text-white">{employee.employeeName}</TableCell>
                             {['P', ...((selectedRecord.leave_types || [])), 'ABS'].map((type, idx, arr) => (
-                              <TableCell key={type} className={idx < arr.length - 1 ? "border-r border-slate-200 dark:border-slate-700" : ""}>{employee.attendance[type] || 0}</TableCell>
+                              <TableCell 
+                                key={type} 
+                                className={`${idx < arr.length - 1 ? "border-r border-slate-200 dark:border-slate-700" : ""} cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors`}
+                                onClick={() => handleAttendanceCountClick(employee, type)}
+                                title={`Click to view date-wise details for ${type}`}
+                              >
+                                <div className="flex items-center justify-between">
+                                  <span>{employee.attendance[type] || 0}</span>
+                                  <Calendar className="h-3 w-3 text-slate-400" />
+                                </div>
+                              </TableCell>
                             ))}
                           </TableRow>
                         ))}
@@ -386,6 +418,61 @@ const AttendanceAnalysis: React.FC = () => {
                   </div>
                 ) : (
                   <div className="text-center text-slate-500 dark:text-slate-400">No employee details available.</div>
+                )}
+              </div>
+            </DialogContent>
+          </Dialog>
+
+          {/* Date-wise Details Dialog */}
+          <Dialog open={showDateWiseDetails} onOpenChange={setShowDateWiseDetails}>
+            <DialogContent className="max-w-2xl max-h-[80vh] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700">
+              <DialogHeader>
+                <DialogTitle className="text-slate-800 dark:text-white">
+                  Date-wise Details - {selectedEmployee?.employeeName} ({selectedAttendanceType})
+                </DialogTitle>
+              </DialogHeader>
+              <div className="mt-4 bg-white dark:bg-slate-800 rounded shadow p-2 border border-slate-200 dark:border-slate-700">
+                {selectedEmployee && selectedAttendanceType ? (
+                  <div>
+                    <div className="mb-4 p-3 bg-slate-50 dark:bg-slate-700 rounded-lg">
+                      <div className="text-sm text-slate-600 dark:text-slate-300">
+                        <strong>Employee ID:</strong> {selectedEmployee.employeeId}
+                      </div>
+                      <div className="text-sm text-slate-600 dark:text-slate-300">
+                        <strong>Employee Name:</strong> {selectedEmployee.employeeName}
+                      </div>
+                      <div className="text-sm text-slate-600 dark:text-slate-300">
+                        <strong>Attendance Type:</strong> {selectedAttendanceType}
+                      </div>
+                      <div className="text-sm text-slate-600 dark:text-slate-300">
+                        <strong>Total Count:</strong> {selectedEmployee.attendance[selectedAttendanceType] || 0}
+                      </div>
+                    </div>
+                    
+                    <div className="max-h-96 overflow-y-auto">
+                      {selectedEmployee.date_wise_details && selectedEmployee.date_wise_details[selectedAttendanceType] ? (
+                        <div>
+                          <h4 className="font-semibold text-slate-800 dark:text-white mb-2">Dates:</h4>
+                          <div className="grid grid-cols-2 gap-2">
+                            {selectedEmployee.date_wise_details[selectedAttendanceType].map((date, index) => (
+                              <div 
+                                key={index} 
+                                className="p-2 bg-slate-50 dark:bg-slate-700 rounded border border-slate-200 dark:border-slate-600 text-sm"
+                              >
+                                {date}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="text-center text-slate-500 dark:text-slate-400">
+                          No date-wise details available for {selectedAttendanceType}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="text-center text-slate-500 dark:text-slate-400">No details available.</div>
                 )}
               </div>
             </DialogContent>

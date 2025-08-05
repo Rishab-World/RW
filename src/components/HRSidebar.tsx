@@ -11,7 +11,22 @@ import {
   SidebarHeader,
   SidebarFooter,
 } from '@/components/ui/sidebar';
-import { Users, FileText, Calendar, User, LogOut, Coins, Clock, Target, CalendarDays } from 'lucide-react';
+import { 
+  Users, 
+  FileText, 
+  Calendar, 
+  User, 
+  LogOut, 
+  Coins, 
+  Clock, 
+  Target, 
+  CalendarDays, 
+  BarChart3, 
+  Building2, 
+  UserCheck, 
+  FileSpreadsheet,
+  Receipt
+} from 'lucide-react';
 import { useState } from 'react';
 
 interface HRSidebarProps {
@@ -24,7 +39,7 @@ interface HRSidebarProps {
 const menuItems = [
   {
     title: 'Dashboard',
-    icon: FileText,
+    icon: BarChart3,
     id: 'dashboard',
   },
 ];
@@ -78,14 +93,14 @@ const HRSidebar: React.FC<HRSidebarProps> = ({
               <SidebarMenuItem>
                 <SidebarMenuButton
                   onClick={() => setRecruitmentOpen((open) => !open)}
-                  isActive={['jobs', 'candidates', 'interviews'].includes(activeSection)}
+                  isActive={['jobs', 'candidates', 'interviews', 'draft'].includes(activeSection)}
                   className={`w-full justify-start transition-all duration-200 rounded-md dark:text-slate-200 dark:hover:bg-slate-800 dark:hover:text-white ${
-                    ['jobs', 'candidates', 'interviews'].includes(activeSection)
+                    ['jobs', 'candidates', 'interviews', 'draft'].includes(activeSection)
                       ? 'bg-gradient-to-r from-amber-100 to-yellow-100 dark:from-amber-900 dark:to-yellow-900 text-amber-800 dark:text-amber-300 border-r-2 border-amber-400 dark:border-amber-500'
                       : 'text-slate-700 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-200 dark:hover:bg-slate-800 dark:hover:text-white'
                   }`}
                 >
-                  <Users className="w-4 h-4" />
+                  <Building2 className="w-4 h-4" />
                   <span>Recruitment</span>
                   <span className="ml-auto">{recruitmentOpen ? '▾' : '▸'}</span>
                 </SidebarMenuButton>
@@ -114,6 +129,13 @@ const HRSidebar: React.FC<HRSidebarProps> = ({
                     >
                       Interviews
                     </button>
+                    <button
+                      className={`relative block w-full text-left px-2 pl-3 py-1 hover:bg-amber-50 dark:hover:bg-amber-900/30 ${activeSection === 'draft' ? 'bg-amber-100 dark:bg-amber-900/40 text-amber-800 dark:text-amber-200 font-semibold' : 'text-slate-700 dark:text-slate-200'}`}
+                      style={{ zIndex: 1, borderRadius: 0 }}
+                      onClick={() => onSectionChange('draft')}
+                    >
+                      Draft
+                    </button>
                   </div>
                 )}
               </SidebarMenuItem>
@@ -128,7 +150,7 @@ const HRSidebar: React.FC<HRSidebarProps> = ({
                       : 'text-slate-700 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-200 dark:hover:bg-slate-800 dark:hover:text-white'
                   }`}
                 >
-                  <User className="w-4 h-4" />
+                  <Users className="w-4 h-4" />
                   <span>Employees</span>
                   <span className="ml-auto">{employeeOpen ? '▾' : '▸'}</span>
                 </SidebarMenuButton>
@@ -214,7 +236,7 @@ const HRSidebar: React.FC<HRSidebarProps> = ({
                       : 'text-slate-700 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-200 dark:hover:bg-slate-800 dark:hover:text-white'
                   }`}
                 >
-                  <CalendarDays className="w-4 h-4" />
+                  <Calendar className="w-4 h-4" />
                   <span>Leave</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
@@ -308,7 +330,7 @@ const HRSidebar: React.FC<HRSidebarProps> = ({
                       : 'text-slate-700 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-200 dark:hover:bg-slate-800 dark:hover:text-white'
                   }`}
                 >
-                  <FileText className="w-4 h-4" />
+                  <FileSpreadsheet className="w-4 h-4" />
                   <span>Templates</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
@@ -323,7 +345,7 @@ const HRSidebar: React.FC<HRSidebarProps> = ({
                       : 'text-slate-700 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-200 dark:hover:bg-slate-800 dark:hover:text-white'
                   }`}
                 >
-                  <FileText className="w-4 h-4" />
+                  <Receipt className="w-4 h-4" />
                   <span>FNF Settlement</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>

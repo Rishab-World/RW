@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Eye } from 'lucide-react';
+import { Eye, Calendar } from 'lucide-react';
 import FileUpload from './FileUpload';
 import { useToast } from '@/hooks/use-toast';
 import * as XLSX from 'xlsx';
@@ -42,6 +42,9 @@ interface WeeklyEmployeeAttendance {
   attendance: {
     [key: string]: number;
   };
+  date_wise_details: {
+    [key: string]: string[]; // attendance type -> array of dates
+  };
   week_range: string;
 }
 
@@ -53,6 +56,9 @@ const WeeklyAttendanceAnalysis: React.FC = () => {
   const [selectedRecord, setSelectedRecord] = useState<WeeklyAttendanceData | null>(null);
   const [showDetails, setShowDetails] = useState(false);
   const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
+  const [showDateWiseDetails, setShowDateWiseDetails] = useState(false);
+  const [selectedEmployee, setSelectedEmployee] = useState<WeeklyEmployeeAttendance | null>(null);
+  const [selectedAttendanceType, setSelectedAttendanceType] = useState<string>('');
 
   const handleFileUpload = (file: File | null) => {
     setUploadedFile(file);
@@ -109,6 +115,7 @@ const WeeklyAttendanceAnalysis: React.FC = () => {
           }
         }
         const attendance: { [key: string]: number } = {};
+        const dateWiseDetails: { [key: string]: string[] } = {};
         // Helper logic for each row
         let helper: string[] = [];
         for (const row of empRows) {
@@ -121,19 +128,39 @@ const WeeklyAttendanceAnalysis: React.FC = () => {
           if (F === '' && G !== '') {
             helper.push('No Punch In');
             attendance['No Punch In'] = (attendance['No Punch In'] || 0) + 1;
+            if (!dateWiseDetails['No Punch In']) {
+              dateWiseDetails['No Punch In'] = [];
+            }
+            dateWiseDetails['No Punch In'].push(new Date(dateVal).toLocaleDateString());
           } else if (F !== '' && G === '') {
             helper.push('No Punch Out');
             attendance['No Punch Out'] = (attendance['No Punch Out'] || 0) + 1;
+            if (!dateWiseDetails['No Punch Out']) {
+              dateWiseDetails['No Punch Out'] = [];
+            }
+            dateWiseDetails['No Punch Out'].push(new Date(dateVal).toLocaleDateString());
           } else if (F === '' && G === '' && M === 'ABS') {
             helper.push('ABS');
             attendance['ABS'] = (attendance['ABS'] || 0) + 1;
+            if (!dateWiseDetails['ABS']) {
+              dateWiseDetails['ABS'] = [];
+            }
+            dateWiseDetails['ABS'].push(new Date(dateVal).toLocaleDateString());
           } else if (F === '' && G === '' && M !== '') {
             helper.push(M);
             attendance[M] = (attendance[M] || 0) + 1;
             allLeaveTypes.add(M);
+            if (!dateWiseDetails[M]) {
+              dateWiseDetails[M] = [];
+            }
+            dateWiseDetails[M].push(new Date(dateVal).toLocaleDateString());
           } else {
             helper.push('P');
             attendance['P'] = (attendance['P'] || 0) + 1;
+            if (!dateWiseDetails['P']) {
+              dateWiseDetails['P'] = [];
+            }
+            dateWiseDetails['P'].push(new Date(dateVal).toLocaleDateString());
           }
         }
         // Ensure all types are present
@@ -145,6 +172,7 @@ const WeeklyAttendanceAnalysis: React.FC = () => {
           employeeId: empId,
           employeeName: empName,
           attendance,
+          date_wise_details: dateWiseDetails,
           week_range: minDate && maxDate ? `${minDate.toLocaleDateString()} - ${maxDate.toLocaleDateString()}` : 'Unknown',
         });
       }
@@ -296,6 +324,13 @@ const WeeklyAttendanceAnalysis: React.FC = () => {
     XLSX.writeFile(wb, `${selectedRecord.department}_${selectedRecord.week_range}_weekly_attendance.xlsx`);
   };
 
+  // Handle clicking on attendance count
+  const handleAttendanceCountClick = (employee: WeeklyEmployeeAttendance, attendanceType: string) => {
+    setSelectedEmployee(employee);
+    setSelectedAttendanceType(attendanceType);
+    setShowDateWiseDetails(true);
+  };
+
   return (
     <div className="p-4 space-y-4 bg-slate-50 dark:bg-slate-900 min-h-screen">
       <Card className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700">
@@ -409,7 +444,17 @@ const WeeklyAttendanceAnalysis: React.FC = () => {
                             <TableCell className="border-r border-slate-200 dark:border-slate-700 sticky left-0 bg-slate-100 dark:bg-slate-700 z-40 font-medium text-slate-800 dark:text-white">{employee.employeeId}</TableCell>
                             <TableCell className="border-r border-slate-200 dark:border-slate-700 sticky left-32 bg-slate-100 dark:bg-slate-700 z-40 font-medium text-slate-800 dark:text-white">{employee.employeeName}</TableCell>
                             {selectedTypes.map((type, idx, arr) => (
-                              <TableCell key={type} className={idx < arr.length - 1 ? "border-r border-slate-200 dark:border-slate-700" : ""}>{employee.attendance[type] || 0}</TableCell>
+                              <TableCell 
+                                key={type} 
+                                className={`${idx < arr.length - 1 ? "border-r border-slate-200 dark:border-slate-700" : ""} cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors`}
+                                onClick={() => handleAttendanceCountClick(employee, type)}
+                                title={`Click to view date-wise details for ${type}`}
+                              >
+                                <div className="flex items-center justify-between">
+                                  <span>{employee.attendance[type] || 0}</span>
+                                  <Calendar className="h-3 w-3 text-slate-400" />
+                                </div>
+                              </TableCell>
                             ))}
                           </TableRow>
                         ))}
@@ -418,6 +463,61 @@ const WeeklyAttendanceAnalysis: React.FC = () => {
                   </div>
                 ) : (
                   <div className="text-center text-slate-500 dark:text-slate-400">No employee details available.</div>
+                )}
+              </div>
+            </DialogContent>
+          </Dialog>
+
+          {/* Date-wise Details Dialog */}
+          <Dialog open={showDateWiseDetails} onOpenChange={setShowDateWiseDetails}>
+            <DialogContent className="max-w-2xl max-h-[80vh] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700">
+              <DialogHeader>
+                <DialogTitle className="text-slate-800 dark:text-white">
+                  Date-wise Details - {selectedEmployee?.employeeName} ({selectedAttendanceType})
+                </DialogTitle>
+              </DialogHeader>
+              <div className="mt-4 bg-white dark:bg-slate-800 rounded shadow p-2 border border-slate-200 dark:border-slate-700">
+                {selectedEmployee && selectedAttendanceType ? (
+                  <div>
+                    <div className="mb-4 p-3 bg-slate-50 dark:bg-slate-700 rounded-lg">
+                      <div className="text-sm text-slate-600 dark:text-slate-300">
+                        <strong>Employee ID:</strong> {selectedEmployee.employeeId}
+                      </div>
+                      <div className="text-sm text-slate-600 dark:text-slate-300">
+                        <strong>Employee Name:</strong> {selectedEmployee.employeeName}
+                      </div>
+                      <div className="text-sm text-slate-600 dark:text-slate-300">
+                        <strong>Attendance Type:</strong> {selectedAttendanceType}
+                      </div>
+                      <div className="text-sm text-slate-600 dark:text-slate-300">
+                        <strong>Total Count:</strong> {selectedEmployee.attendance[selectedAttendanceType] || 0}
+                      </div>
+                    </div>
+                    
+                    <div className="max-h-96 overflow-y-auto">
+                      {selectedEmployee.date_wise_details && selectedEmployee.date_wise_details[selectedAttendanceType] ? (
+                        <div>
+                          <h4 className="font-semibold text-slate-800 dark:text-white mb-2">Dates:</h4>
+                          <div className="grid grid-cols-2 gap-2">
+                            {selectedEmployee.date_wise_details[selectedAttendanceType].map((date, index) => (
+                              <div 
+                                key={index} 
+                                className="p-2 bg-slate-50 dark:bg-slate-700 rounded border border-slate-200 dark:border-slate-600 text-sm"
+                              >
+                                {date}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="text-center text-slate-500 dark:text-slate-400">
+                          No date-wise details available for {selectedAttendanceType}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="text-center text-slate-500 dark:text-slate-400">No details available.</div>
                 )}
               </div>
             </DialogContent>

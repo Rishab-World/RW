@@ -111,13 +111,15 @@ const Index = () => {
         email: candidate.email,
         phone: candidate.phone,
         position: candidate.position,
+        department: candidate.department,
         jobId: candidate.job_id,
         source: candidate.source,
         experience: candidate.experience,
+        monthlyYearly: candidate.monthly_yearly,
         expectedSalary: candidate.expected_salary,
         currentSalary: candidate.current_salary,
-        noticePeriod: candidate.notice_period,
         remark: candidate.remark,
+        noticePeriod: candidate.notice_period,
         resumeUploaded: candidate.resume_uploaded,
         resumeFile: null,
         resume_url: candidate.resume_url,
@@ -286,13 +288,15 @@ const Index = () => {
           email: candidate.email,
           phone: candidate.phone,
           position: candidate.position,
-          job_id: candidate.jobId,
+          department: candidate.department,
+          job_id: candidate.jobId === 'custom' ? null : candidate.jobId, // Don't save "custom" as job_id
           source: candidate.source,
           experience: candidate.experience,
+          monthly_yearly: candidate.monthlyYearly,
           expected_salary: candidate.expectedSalary,
           current_salary: candidate.currentSalary,
-          notice_period: candidate.noticePeriod,
           remark: candidate.remark,
+          notice_period: candidate.noticePeriod,
           resume_uploaded: candidate.resumeUploaded,
           resume_url: resumeUrl,
           interview_status: candidate.interviewStatus,
@@ -307,23 +311,25 @@ const Index = () => {
       return;
     }
 
-    // 4. Update applications count in jobs table
-    // First, get the current applications count
-    const { data: jobData, error: jobError } = await supabase
-      .from('jobs')
-      .select('applications')
-      .eq('id', candidate.jobId)
-      .single();
-
-    if (!jobError && jobData) {
-      // Then update with the incremented count
-      const { error: updateError } = await supabase
+    // 4. Update applications count in jobs table (only if job_id exists and is not custom)
+    if (candidate.jobId && candidate.jobId !== 'custom') {
+      // First, get the current applications count
+      const { data: jobData, error: jobError } = await supabase
         .from('jobs')
-        .update({ applications: (jobData.applications || 0) + 1 })
-        .eq('id', candidate.jobId);
+        .select('applications')
+        .eq('id', candidate.jobId)
+        .single();
 
-      if (updateError) {
-        console.error('Failed to update applications count:', updateError);
+      if (!jobError && jobData) {
+        // Then update with the incremented count
+        const { error: updateError } = await supabase
+          .from('jobs')
+          .update({ applications: (jobData.applications || 0) + 1 })
+          .eq('id', candidate.jobId);
+
+        if (updateError) {
+          console.error('Failed to update applications count:', updateError);
+        }
       }
     }
 
@@ -425,6 +431,42 @@ const Index = () => {
     }
   };
 
+  const handleUpdateCandidate = async (updatedCandidate: any) => {
+    try {
+      // Update candidate in Supabase
+      const { error } = await supabase
+        .from('candidates')
+        .update({
+          name: updatedCandidate.name,
+          email: updatedCandidate.email,
+          phone: updatedCandidate.phone,
+          position: updatedCandidate.position,
+          department: updatedCandidate.department,
+          job_id: updatedCandidate.jobId === 'custom' || updatedCandidate.jobId === '' ? null : updatedCandidate.jobId,
+          source: updatedCandidate.source,
+          experience: updatedCandidate.experience,
+          monthly_yearly: updatedCandidate.monthlyYearly,
+          expected_salary: updatedCandidate.expectedSalary,
+          current_salary: updatedCandidate.currentSalary,
+          remark: updatedCandidate.remark,
+          notice_period: updatedCandidate.noticePeriod,
+        })
+        .eq('id', updatedCandidate.id);
+
+      if (error) {
+        console.error('Error updating candidate:', error);
+        throw new Error('Failed to update candidate: ' + error.message);
+      }
+
+      // Refresh data
+      await fetchCandidates();
+      await fetchStatusHistory();
+    } catch (error) {
+      console.error('Error in handleUpdateCandidate:', error);
+      throw error;
+    }
+  };
+
   if (!isAuthenticated) {
     return showRegister ? <Register onToggleLogin={() => setShowRegister(false)} /> : <Login onLogin={handleLogin} onToggleRegister={() => setShowRegister(true)} />;
   }
@@ -448,6 +490,7 @@ const Index = () => {
           candidates={candidates} 
           jobs={jobs} 
           onAddCandidate={handleAddCandidate}
+          onUpdateCandidate={handleUpdateCandidate}
           onUpdateCandidateStatus={handleUpdateCandidateStatus}
           statusHistory={statusHistory}
           userEmail={userEmail}
