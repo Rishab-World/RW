@@ -21,6 +21,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { supabase } from '@/lib/supabaseClient';
+import { formatDate, formatTimestamp } from '@/lib/utils';
 
 interface AttendanceData {
   id?: string;
@@ -143,7 +144,7 @@ const AttendanceAnalysis: React.FC = () => {
           if (!dateWiseDetails[status]) {
             dateWiseDetails[status] = [];
           }
-          dateWiseDetails[status].push(new Date(dateVal).toLocaleDateString());
+          dateWiseDetails[status].push(formatDate(dateVal));
           
           if (status !== '') totalDays++;
         }
@@ -288,16 +289,56 @@ const AttendanceAnalysis: React.FC = () => {
   // Download Excel for modal details
   const handleDownloadExcel = () => {
     if (!selectedRecord || !selectedRecord.employee_details) return;
-    const headers = ['Employee ID', 'Employee Name', ...['P', ...(selectedRecord.leave_types || []), 'ABS']];
+    
+    // Create headers for the main data
+    const attendanceTypes = ['P', ...(selectedRecord.leave_types || []), 'ABS'];
+    const headers = ['Employee ID', 'Employee Name', ...attendanceTypes];
+    
+    // Create main data rows
     const data = selectedRecord.employee_details.map(emp => [
       emp.employeeId,
       emp.employeeName,
-      ...['P', ...(selectedRecord.leave_types || []), 'ABS'].map(type => emp.attendance[type] || 0)
+      ...attendanceTypes.map(type => emp.attendance[type] || 0)
     ]);
-    const ws = XLSX.utils.aoa_to_sheet([headers, ...data]);
+    
+    // Create detailed date-wise sheet with new format
+    const detailedHeaders = ['Employee ID', 'Employee Name', 'Date', 'KPI Type', 'Count'];
+    const detailedData: any[] = [];
+    
+    selectedRecord.employee_details.forEach(emp => {
+      attendanceTypes.forEach(type => {
+        const dates = emp.date_wise_details?.[type] || [];
+        dates.forEach(date => {
+          detailedData.push([
+            emp.employeeId,
+            emp.employeeName,
+            date,
+            type,
+            1 // Count is 1 for each occurrence
+          ]);
+        });
+      });
+    });
+    
+    // Create workbook with two sheets
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'Attendance');
-    XLSX.writeFile(wb, `${selectedRecord.department}_${selectedRecord.month}_attendance.xlsx`);
+    
+    // Main attendance data sheet
+    const ws = XLSX.utils.aoa_to_sheet([headers, ...data]);
+    XLSX.utils.book_append_sheet(wb, ws, 'Attendance Summary');
+    
+    // Detailed date-wise sheet
+    if (detailedData.length > 0) {
+      const detailedWs = XLSX.utils.aoa_to_sheet([detailedHeaders, ...detailedData]);
+      XLSX.utils.book_append_sheet(wb, detailedWs, 'Date-wise Details');
+    }
+    
+    // Create a clean filename
+    const cleanMonth = selectedRecord.month.replace(/\s+/g, '_');
+    const cleanDepartment = selectedRecord.department.replace(/\s+/g, '_');
+    const filename = `${cleanDepartment}_Attendance_${cleanMonth}.xlsx`;
+    
+    XLSX.writeFile(wb, filename);
   };
 
   // Handle clicking on attendance count
@@ -342,7 +383,7 @@ const AttendanceAnalysis: React.FC = () => {
                         <TableCell className="border-r border-slate-200 dark:border-slate-700">{record.month}</TableCell>
                         <TableCell className="border-r border-slate-200 dark:border-slate-700">{record.attendance_percentage}%</TableCell>
                         <TableCell className="border-r border-slate-200 dark:border-slate-700">{record.total_employees}</TableCell>
-                        <TableCell className="border-r border-slate-200 dark:border-slate-700">{new Date(record.timestamp).toLocaleString()}</TableCell>
+                        <TableCell className="border-r border-slate-200 dark:border-slate-700">{formatTimestamp(record.timestamp)}</TableCell>
                         <TableCell>
                           <Button
                             variant="ghost"
@@ -370,7 +411,7 @@ const AttendanceAnalysis: React.FC = () => {
               <DialogHeader>
                 <div className="flex items-center justify-between mt-2">
                   <DialogTitle className="text-slate-800 dark:text-white">
-                    {selectedRecord?.department} - {selectedRecord?.month} Attendance Details
+                    {selectedRecord?.department} - Attendance Details ({selectedRecord?.month})
                   </DialogTitle>
                   <button
                     onClick={handleDownloadExcel}
@@ -459,7 +500,7 @@ const AttendanceAnalysis: React.FC = () => {
                                 key={index} 
                                 className="p-2 bg-slate-50 dark:bg-slate-700 rounded border border-slate-200 dark:border-slate-600 text-sm"
                               >
-                                {date}
+                                {formatDate(date)}
                               </div>
                             ))}
                           </div>

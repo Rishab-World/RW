@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { User, Save, Send } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/lib/supabaseClient';
 
 interface KYCData {
   employeeName: string;
@@ -75,11 +76,106 @@ const KYCDataForm: React.FC = () => {
     setKycData(prev => ({ ...prev, [field]: value }));
   };
 
-  const handleSave = () => {
-    toast({
-      title: "KYC Data Saved",
-      description: "Employee KYC information has been saved successfully.",
-    });
+  const handleSave = async () => {
+    try {
+      // Validate required fields
+      if (!kycData.employeeName.trim() || !kycData.emailId.trim()) {
+        toast({
+          title: "Missing Information",
+          description: "Please enter employee name and email address.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Prepare data for database (convert to snake_case)
+      const kycDataForDB = {
+        employee_name: kycData.employeeName,
+        father_name: kycData.fatherName,
+        husband_name: kycData.husbandName,
+        gender: kycData.gender,
+        marital_status: kycData.maritalStatus,
+        dob_aadhar: kycData.dobAadhar || null,
+        designation: kycData.designation,
+        basic_salary: kycData.basicSalary ? parseFloat(kycData.basicSalary) : null,
+        special_allowance: kycData.specialAllowance ? parseFloat(kycData.specialAllowance) : null,
+        conveyance: kycData.conveyance ? parseFloat(kycData.conveyance) : null,
+        hra: kycData.hra ? parseFloat(kycData.hra) : null,
+        cea: kycData.cea ? parseFloat(kycData.cea) : null,
+        books_perks: kycData.booksPerks ? parseFloat(kycData.booksPerks) : null,
+        telephonic: kycData.telephonic ? parseFloat(kycData.telephonic) : null,
+        gross_salary: kycData.grossSalary ? parseFloat(kycData.grossSalary) : null,
+        date_of_appointment: kycData.dateOfAppointment || null,
+        mobile_no: kycData.mobileNo,
+        email_id: kycData.emailId,
+        aadhar_no: kycData.aadharNo,
+        name_per_aadhar: kycData.namePerAadhar,
+        pan_no: kycData.panNo,
+        name_per_pan: kycData.namePerPan,
+        bank_account_no: kycData.bankAccountNo,
+        ifsc_code: kycData.ifscCode,
+        permanent_address: kycData.permanentAddress,
+        aadhar_address: kycData.aadharAddress,
+        grade: kycData.grade,
+      };
+
+      // Insert into database
+      const { error } = await supabase
+        .from('kyc_data')
+        .insert([kycDataForDB]);
+
+      if (error) {
+        console.error('Error saving KYC data:', error);
+        toast({
+          title: "Error",
+          description: "Failed to save KYC data. Please try again.",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "KYC Data Saved",
+          description: "Employee KYC information has been saved successfully.",
+        });
+        
+        // Reset form
+        setKycData({
+          employeeName: '',
+          fatherName: '',
+          husbandName: '',
+          gender: '',
+          maritalStatus: '',
+          dobAadhar: '',
+          designation: '',
+          basicSalary: '',
+          specialAllowance: '',
+          conveyance: '',
+          hra: '',
+          cea: '',
+          booksPerks: '',
+          telephonic: '',
+          grossSalary: '',
+          dateOfAppointment: '',
+          mobileNo: '',
+          emailId: '',
+          aadharNo: '',
+          namePerAadhar: '',
+          panNo: '',
+          namePerPan: '',
+          bankAccountNo: '',
+          ifscCode: '',
+          permanentAddress: '',
+          aadharAddress: '',
+          grade: ''
+        });
+      }
+    } catch (error) {
+      console.error('Error saving KYC data:', error);
+      toast({
+        title: "Error",
+        description: "Failed to save KYC data. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleSendPolicies = () => {

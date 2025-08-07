@@ -143,9 +143,9 @@ const HRSidebar: React.FC<HRSidebarProps> = ({
               <SidebarMenuItem>
                 <SidebarMenuButton
                   onClick={() => setEmployeeOpen((open) => !open)}
-                  isActive={['employees', 'confirmation', 'kyc-data'].includes(activeSection)}
+                  isActive={['employees', 'confirmation', 'kyc-data', 'kyc-table'].includes(activeSection)}
                   className={`w-full justify-start transition-all duration-200 rounded-md dark:text-slate-200 dark:hover:bg-slate-800 dark:hover:text-white ${
-                    ['employees', 'confirmation', 'kyc-data'].includes(activeSection)
+                    ['employees', 'confirmation', 'kyc-data', 'kyc-table'].includes(activeSection)
                       ? 'bg-gradient-to-r from-amber-100 to-yellow-100 dark:from-amber-900 dark:to-yellow-900 text-amber-800 dark:text-amber-300 border-r-2 border-amber-400 dark:border-amber-500'
                       : 'text-slate-700 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-200 dark:hover:bg-slate-800 dark:hover:text-white'
                   }`}
@@ -178,6 +178,13 @@ const HRSidebar: React.FC<HRSidebarProps> = ({
                       onClick={() => onSectionChange('kyc-data')}
                     >
                       KYC Data
+                    </button>
+                    <button
+                      className={`relative block w-full text-left px-2 pl-3 py-1 hover:bg-amber-50 dark:hover:bg-amber-900/30 ${activeSection === 'kyc-table' ? 'bg-amber-100 dark:bg-amber-900/40 text-amber-800 dark:text-amber-200 font-semibold' : 'text-slate-700 dark:text-slate-200'}`}
+                      style={{ zIndex: 1, borderRadius: 0 }}
+                      onClick={() => onSectionChange('kyc-table')}
+                    >
+                      KYC Table
                     </button>
                   </div>
                 )}

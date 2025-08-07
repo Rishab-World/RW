@@ -17,6 +17,7 @@ import MonthlyAttendance from '@/components/MonthlyAttendance';
 import SalaryBreakup from '@/pages/SalaryBreakup';
 import PMSQuarterlyReport from '@/components/PMSQuarterlyReport';
 import KYCDataSection from '@/components/KYCDataSection';
+import KYCTableSection from '@/components/KYCTableSection';
 import Templates from '@/components/Templates';
 import { supabase } from '@/lib/supabaseClient';
 
@@ -508,6 +509,8 @@ const Index = () => {
         return <EmployeeManagement employees={employees} refreshEmployees={fetchEmployees} />;
       case 'kyc-data':
         return <KYCDataSection />;
+      case 'kyc-table':
+        return <KYCTableSection />;
       case 'confirmation':
         return (
           <div className="p-6 min-h-screen bg-slate-50 dark:bg-slate-900">
