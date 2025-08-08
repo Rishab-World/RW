@@ -13,6 +13,23 @@ export const formatCurrency = (amount: number) => {
   }).format(amount);
 };
 
+// New function to format salary in K/Lac format with rupee symbol
+export const formatSalary = (amount: number): string => {
+  if (!amount || amount === 0) return 'N/A';
+  
+  if (amount >= 100000) {
+    // Convert to Lacs
+    const lacs = amount / 100000;
+    return `₹${lacs.toFixed(1)} Lac`;
+  } else if (amount >= 1000) {
+    // Convert to K
+    const k = amount / 1000;
+    return `₹${k}K`;
+  } else {
+    return `₹${amount}`;
+  }
+};
+
 // Utility function to format dates in dd-mmm-yy format
 export function formatDate(date: Date | string): string {
   const d = new Date(date);

@@ -600,6 +600,7 @@ const InterviewScheduling: React.FC<InterviewSchedulingProps> = ({
                       <span className={`status-badge ${
                         interview.status === 'scheduled' ? 'status-pending' :
                         interview.status === 'completed' ? 'status-completed' :
+                        interview.status === 'rejected' ? 'status-rejected' :
                         interview.status === 'cancelled' ? 'status-rejected' : 'status-active'
                       }`}>
                         {interview.status}

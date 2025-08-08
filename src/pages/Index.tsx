@@ -31,6 +31,39 @@ interface StatusChange {
   reason?: string;
 }
 
+interface Candidate {
+  id: string;
+  name: string;
+  email?: string;
+  phone?: string;
+  position?: string;
+  department?: string;
+  source?: string;
+  experience?: number;
+  cu_monthly_yearly?: string;
+  current_salary?: number;
+  ex_monthly_yearly?: string;
+  expected_salary?: number;
+  remark?: string;
+  notice_period?: string;
+  interview_status: string;
+  applied_date: string;
+  created_at?: string;
+  // Legacy fields for backward compatibility
+  jobId?: string;
+  monthlyYearly?: string;
+  expectedSalary?: number;
+  currentSalary?: number;
+  noticePeriod?: string;
+  interviewStatus?: string;
+  appliedDate?: string;
+  resumeUploaded?: boolean;
+  resumeFile?: File | null;
+  resume_url?: string;
+  isDraft?: boolean;
+  draftId?: string | null;
+}
+
 const Index = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [userEmail, setUserEmail] = useState('');
@@ -101,37 +134,150 @@ const Index = () => {
 
   // Fetch candidates from Supabase
   const fetchCandidates = async () => {
-    const { data, error } = await supabase
-      .from('candidates')
-      .select('*')
-      .order('applied_date', { ascending: false });
-    if (!error && data) {
-      setCandidates(data.map(candidate => ({
-        id: candidate.id,
-        name: candidate.name,
-        email: candidate.email,
-        phone: candidate.phone,
-        position: candidate.position,
-        department: candidate.department,
-        jobId: candidate.job_id,
-        source: candidate.source,
-        experience: candidate.experience,
-        monthlyYearly: candidate.monthly_yearly,
-        expectedSalary: candidate.expected_salary,
-        currentSalary: candidate.current_salary,
-        remark: candidate.remark,
-        noticePeriod: candidate.notice_period,
-        resumeUploaded: candidate.resume_uploaded,
-        resumeFile: null,
-        resume_url: candidate.resume_url,
-        interviewStatus: candidate.interview_status,
-        appliedDate: candidate.applied_date,
-      })));
+    try {
+      console.log('Fetching candidates... userEmail:', userEmail);
+      
+      // Fetch regular candidates
+      const { data: candidatesData, error: candidatesError } = await supabase
+        .from('candidates')
+        .select('*')
+        .order('applied_date', { ascending: false });
+      
+      if (candidatesError) {
+        console.error('Error fetching candidates:', candidatesError);
+      } else {
+        console.log('Candidates fetched:', candidatesData?.length || 0);
+      }
+
+      // Fetch drafts for the current user (only if userEmail is available)
+      let draftsData = null;
+      let draftsError = null;
+      
+      if (userEmail) {
+        console.log('Fetching drafts for user:', userEmail);
+        const draftsResult = await supabase
+          .from('candidate_drafts')
+          .select('*')
+          .eq('created_by', userEmail)
+          .order('created_at', { ascending: false });
+        
+        draftsData = draftsResult.data;
+        draftsError = draftsResult.error;
+        
+        if (draftsError) {
+          console.error('Error fetching drafts:', draftsError);
+        } else {
+          console.log('Drafts fetched:', draftsData?.length || 0);
+        }
+      } else {
+        console.log('No userEmail available, skipping drafts fetch');
+      }
+
+      if (candidatesData) {
+        const regularCandidates = candidatesData.map(candidate => ({
+          id: candidate.id,
+          name: candidate.name,
+          email: candidate.email,
+          phone: candidate.phone,
+          position: candidate.position,
+          department: candidate.department,
+          source: candidate.source,
+          experience: candidate.experience,
+          cu_monthly_yearly: candidate.cu_monthly_yearly,
+          current_salary: candidate.current_salary,
+          ex_monthly_yearly: candidate.ex_monthly_yearly,
+          expected_salary: candidate.expected_salary,
+          remark: candidate.remark,
+          notice_period: candidate.notice_period,
+          interview_status: candidate.interview_status,
+          applied_date: candidate.applied_date,
+          created_at: candidate.created_at,
+          // Legacy fields for backward compatibility
+          jobId: candidate.job_id,
+          monthlyYearly: candidate.monthly_yearly,
+          expectedSalary: candidate.expected_salary,
+          currentSalary: candidate.current_salary,
+          noticePeriod: candidate.notice_period,
+          interviewStatus: candidate.interview_status,
+          appliedDate: candidate.applied_date,
+          resumeUploaded: candidate.resume_uploaded,
+          resumeFile: null,
+          resume_url: candidate.resume_url,
+          isDraft: false,
+          draftId: null,
+        }));
+
+        // Convert drafts to candidate format
+        const draftCandidates = draftsData ? draftsData.map(draft => ({
+          id: `draft-${draft.id}`, // Use a special ID to distinguish drafts
+          name: draft.name,
+          email: draft.email,
+          phone: draft.phone,
+          position: draft.custom_position || draft.position,
+          department: draft.department,
+          jobId: draft.job_id,
+          source: draft.source,
+          experience: draft.experience,
+          monthlyYearly: draft.monthly_yearly,
+          expectedSalary: draft.expected_salary,
+          currentSalary: draft.current_salary,
+          remark: draft.remark,
+          noticePeriod: draft.notice_period,
+          resumeUploaded: draft.resume_uploaded,
+          resumeFile: null,
+          resume_url: null,
+          interviewStatus: 'draft',
+          appliedDate: draft.created_at.split('T')[0], // Use created date as applied date
+          isDraft: true,
+          draftId: draft.id,
+          created_at: draft.created_at,
+        })) : [];
+
+        // Combine regular candidates and drafts
+        const combinedCandidates = [...draftCandidates, ...regularCandidates];
+        console.log('Combined candidates:', combinedCandidates.length, 'drafts:', draftCandidates.length, 'regular:', regularCandidates.length);
+        setCandidates(combinedCandidates);
+      } else {
+        // If no candidates data, still set empty array
+        console.log('No candidates data available, setting empty array');
+        setCandidates([]);
+      }
+    } catch (error) {
+      console.error('Error in fetchCandidates:', error);
+      setCandidates([]);
     }
   };
 
-  // Fetch candidates on mount
-  useEffect(() => { fetchCandidates(); }, []);
+  // Check for existing authentication on mount
+  useEffect(() => {
+    const checkAuth = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        // Fetch username from users table
+        const { data, error } = await supabase
+          .from('users')
+          .select('username')
+          .eq('id', user.id)
+          .single();
+        if (!error && data?.username) {
+          setUserEmail(data.username);
+        } else {
+          setUserEmail(user.email || '');
+        }
+        setIsAuthenticated(true);
+      }
+    };
+    checkAuth();
+  }, []);
+
+  // Fetch candidates when userEmail is available
+  useEffect(() => { 
+    if (userEmail) {
+      fetchCandidates(); 
+    }
+  }, [userEmail]);
+
+
 
   const fetchEmployees = async () => {
     const { data, error } = await supabase
@@ -290,18 +436,16 @@ const Index = () => {
           phone: candidate.phone,
           position: candidate.position,
           department: candidate.department,
-          job_id: candidate.jobId === 'custom' ? null : candidate.jobId, // Don't save "custom" as job_id
           source: candidate.source,
           experience: candidate.experience,
-          monthly_yearly: candidate.monthlyYearly,
-          expected_salary: candidate.expectedSalary,
-          current_salary: candidate.currentSalary,
+          cu_monthly_yearly: candidate.cu_monthly_yearly || candidate.monthlyYearly,
+          current_salary: candidate.current_salary || candidate.currentSalary,
+          ex_monthly_yearly: candidate.ex_monthly_yearly || candidate.monthlyYearly,
+          expected_salary: candidate.expected_salary || candidate.expectedSalary,
           remark: candidate.remark,
-          notice_period: candidate.noticePeriod,
-          resume_uploaded: candidate.resumeUploaded,
-          resume_url: resumeUrl,
-          interview_status: candidate.interviewStatus,
-          applied_date: candidate.appliedDate,
+          notice_period: candidate.notice_period || candidate.noticePeriod,
+          interview_status: candidate.interview_status || candidate.interviewStatus || 'applied',
+          applied_date: candidate.applied_date || candidate.appliedDate,
         },
       ])
       .select();
@@ -385,7 +529,32 @@ const Index = () => {
       .eq('id', candidateId);
     if (!error) {
       await fetchCandidates();
+      await fetchInterviews(); // Refresh interviews to show updated status
     }
+
+    // Update interview status based on candidate status change
+    let interviewStatus = 'scheduled'; // default
+    if (newStatus === 'selected') {
+      interviewStatus = 'completed';
+    } else if (newStatus === 'rejected') {
+      interviewStatus = 'rejected';
+    } else if (newStatus === 'shortlisted') {
+      interviewStatus = 'scheduled';
+    } else if (newStatus === 'applied') {
+      interviewStatus = 'scheduled';
+    }
+
+    // Update the interview status for this candidate
+    const { error: interviewError } = await supabase
+      .from('interviews')
+      .update({ status: interviewStatus })
+      .eq('candidate_id', candidateId)
+      .eq('status', 'scheduled'); // Only update if currently scheduled
+
+    if (interviewError) {
+      console.error('Error updating interview status:', interviewError);
+    }
+
     // Insert into candidate_status_history table
     if (oldStatus) {
       await supabase.from('candidate_status_history').insert([
@@ -443,14 +612,15 @@ const Index = () => {
           phone: updatedCandidate.phone,
           position: updatedCandidate.position,
           department: updatedCandidate.department,
-          job_id: updatedCandidate.jobId === 'custom' || updatedCandidate.jobId === '' ? null : updatedCandidate.jobId,
           source: updatedCandidate.source,
           experience: updatedCandidate.experience,
-          monthly_yearly: updatedCandidate.monthlyYearly,
-          expected_salary: updatedCandidate.expectedSalary,
-          current_salary: updatedCandidate.currentSalary,
+          cu_monthly_yearly: updatedCandidate.cu_monthly_yearly || updatedCandidate.monthlyYearly,
+          current_salary: updatedCandidate.current_salary || updatedCandidate.currentSalary,
+          ex_monthly_yearly: updatedCandidate.ex_monthly_yearly || updatedCandidate.monthlyYearly,
+          expected_salary: updatedCandidate.expected_salary || updatedCandidate.expectedSalary,
           remark: updatedCandidate.remark,
-          notice_period: updatedCandidate.noticePeriod,
+          notice_period: updatedCandidate.notice_period || updatedCandidate.noticePeriod,
+          interview_status: updatedCandidate.interview_status || updatedCandidate.interviewStatus,
         })
         .eq('id', updatedCandidate.id);
 
@@ -497,6 +667,7 @@ const Index = () => {
           userEmail={userEmail}
           highlightedCandidate={highlightedCandidate}
           onClearHighlight={() => setHighlightedCandidate(null)}
+          refreshCandidates={fetchCandidates}
         />;
       case 'interviews':
         return <InterviewScheduling 

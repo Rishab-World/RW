@@ -988,13 +988,13 @@ const PMSQuarterlyReport: React.FC = () => {
       {/* Modal for details */}
       {showModal && modalData && (
         <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
-          <div className="bg-slate-900 rounded-lg shadow-lg w-full max-w-2xl relative border border-slate-700">
-            <div className="sticky top-0 z-10 bg-slate-900 p-6 pb-2 flex items-center justify-between rounded-t-lg border-b border-slate-700">
-              <h3 className="text-lg font-bold text-slate-100">
-                {modalData.employeeName} {modalData.employeeCode && (<span className="text-slate-400">- {modalData.employeeCode}</span>)} - Details
+          <div className="bg-white dark:bg-slate-900 rounded-lg shadow-lg w-full max-w-2xl relative border border-slate-200 dark:border-slate-700">
+            <div className="sticky top-0 z-10 bg-white dark:bg-slate-900 p-6 pb-2 flex items-center justify-between rounded-t-lg border-b border-slate-200 dark:border-slate-700">
+              <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100">
+                {modalData.employeeName} {modalData.employeeCode && (<span className="text-slate-600 dark:text-slate-400">- {modalData.employeeCode}</span>)} - Details
               </h3>
               <button
-                className="text-slate-400 hover:text-red-400 text-2xl ml-4"
+                className="text-slate-600 dark:text-slate-400 hover:text-red-500 dark:hover:text-red-400 text-2xl ml-4"
                 onClick={() => setShowModal(false)}
                 aria-label="Close"
               >
@@ -1003,69 +1003,69 @@ const PMSQuarterlyReport: React.FC = () => {
             </div>
             <div className="p-6 pt-2 max-h-[70vh] overflow-y-auto">
               <div className="mb-4">
-                <strong className="text-slate-200">KRA Scores</strong>
-                <Table className="w-full border mt-2 mb-4 border-slate-700">
-                  <TableHeader className="bg-slate-800">
+                <strong className="text-slate-900 dark:text-slate-200">KRA Scores</strong>
+                <Table className="w-full border mt-2 mb-4 border-slate-200 dark:border-slate-700">
+                  <TableHeader className="bg-slate-50 dark:bg-slate-800">
                     <TableRow>
-                      <TableHead className="border border-slate-700 text-slate-200">KRA</TableHead>
-                      <TableHead className="border border-slate-700 text-slate-200">Score</TableHead>
+                      <TableHead className="border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-200">KRA</TableHead>
+                      <TableHead className="border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-200">Score</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {modalData.kraDetails.map((k, i) => (
-                      <TableRow key={i} className="bg-slate-900 hover:bg-slate-800 transition-colors">
-                        <TableCell className="border border-slate-700 text-slate-100">{toProperCaseWithQuotes(k.name)}</TableCell>
-                        <TableCell className="border border-slate-700 text-slate-100">{k.score}</TableCell>
+                      <TableRow key={i} className="bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
+                        <TableCell className="border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100">{toProperCaseWithQuotes(k.name)}</TableCell>
+                        <TableCell className="border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100">{k.score}</TableCell>
                       </TableRow>
                     ))}
                     <TableRow>
-                      <TableCell className="border border-slate-700 font-semibold text-amber-200">Total</TableCell>
-                      <TableCell className="border border-slate-700 font-semibold text-amber-200">{modalData.kraScore} / {modalData.maxKRA}</TableCell>
+                      <TableCell className="border border-slate-200 dark:border-slate-700 font-semibold text-amber-600 dark:text-amber-200">Total</TableCell>
+                      <TableCell className="border border-slate-200 dark:border-slate-700 font-semibold text-amber-600 dark:text-amber-200">{modalData.kraScore} / {modalData.maxKRA}</TableCell>
                     </TableRow>
                   </TableBody>
                 </Table>
               </div>
               <div>
-                <strong className="text-slate-200">Goal Scores</strong>
-                <Table className="w-full border mt-2 border-slate-700">
-                  <TableHeader className="bg-slate-800">
+                <strong className="text-slate-900 dark:text-slate-200">Goal Scores</strong>
+                <Table className="w-full border mt-2 border-slate-200 dark:border-slate-700">
+                  <TableHeader className="bg-slate-50 dark:bg-slate-800">
                     <TableRow>
-                      <TableHead className="border border-slate-700 text-slate-200">Goal</TableHead>
-                      <TableHead className="border border-slate-700 text-slate-200">Score</TableHead>
+                      <TableHead className="border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-200">Goal</TableHead>
+                      <TableHead className="border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-200">Score</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {modalData.goalDetails.map((g, i) => (
-                      <TableRow key={i} className="bg-slate-900 hover:bg-slate-800 transition-colors">
-                        <TableCell className="border border-slate-700 text-slate-100">{toProperCaseWithQuotes(g.name)}</TableCell>
-                        <TableCell className="border border-slate-700 text-slate-100">{g.score}</TableCell>
+                      <TableRow key={i} className="bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
+                        <TableCell className="border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100">{toProperCaseWithQuotes(g.name)}</TableCell>
+                        <TableCell className="border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100">{g.score}</TableCell>
                       </TableRow>
                     ))}
                     <TableRow>
-                      <TableCell className="border border-slate-700 font-semibold text-amber-200">Total</TableCell>
-                      <TableCell className="border border-slate-700 font-semibold text-amber-200">{modalData.goalScore} / {modalData.maxGoal}</TableCell>
+                      <TableCell className="border border-slate-200 dark:border-slate-700 font-semibold text-amber-600 dark:text-amber-200">Total</TableCell>
+                      <TableCell className="border border-slate-200 dark:border-slate-700 font-semibold text-amber-600 dark:text-amber-200">{modalData.goalScore} / {modalData.maxGoal}</TableCell>
                     </TableRow>
                   </TableBody>
                 </Table>
               </div>
-              <div className="mt-4 p-3 border rounded bg-slate-800 border-slate-700 flex flex-col items-end">
-                <span className="font-semibold text-slate-200">Overall Total: {modalData.totalScore} / {modalData.maxTotal}</span>
-                <span className="font-semibold text-slate-200">Score: {modalData.percentageOutOf10} / 10</span>
+              <div className="mt-4 p-3 border rounded bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 flex flex-col items-end">
+                <span className="font-semibold text-slate-900 dark:text-slate-200">Overall Total: {modalData.totalScore} / {modalData.maxTotal}</span>
+                <span className="font-semibold text-slate-900 dark:text-slate-200">Score: {modalData.percentageOutOf10} / 10</span>
                 {editingRemark === modalData.employeeCode ? (
                   <div className="flex items-center space-x-2 mt-2 w-full justify-end">
                     <input
-                      className="border border-slate-700 rounded px-2 py-1 text-sm bg-slate-900 text-slate-100"
+                      className="border border-slate-300 dark:border-slate-700 rounded px-2 py-1 text-sm bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100"
                       value={remarkInput}
                       onChange={e => setRemarkInput(e.target.value)}
                       autoFocus
                     />
                     <Button size="sm" className="px-2 py-1 bg-amber-600 dark:bg-slate-700 hover:bg-amber-700 dark:hover:bg-slate-600 text-white" onClick={() => handleSaveRemark(modalData.employeeCode)}>Save</Button>
-                    <Button size="sm" variant="outline" className="px-2 py-1 border-slate-700 text-slate-200 bg-slate-800 hover:bg-slate-700" onClick={handleCancelRemark}>Cancel</Button>
+                    <Button size="sm" variant="outline" className="px-2 py-1 border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700" onClick={handleCancelRemark}>Cancel</Button>
                   </div>
                 ) : (
                   <div className="flex items-center space-x-2 mt-2 w-full justify-end">
-                    {modalData.remark && <span className="font-semibold text-slate-200">Remark: {modalData.remark}</span>}
-                    <button onClick={() => handleEditRemark(modalData.employeeCode, modalData.remark || '')} className="hover:text-amber-400">
+                    {modalData.remark && <span className="font-semibold text-slate-900 dark:text-slate-200">Remark: {modalData.remark}</span>}
+                    <button onClick={() => handleEditRemark(modalData.employeeCode, modalData.remark || '')} className="text-slate-600 dark:text-slate-400 hover:text-amber-500 dark:hover:text-amber-400">
                       <Pencil className="w-4 h-4" />
                     </button>
                   </div>
@@ -1078,12 +1078,12 @@ const PMSQuarterlyReport: React.FC = () => {
       {/* Department selection dialog */}
       {showDeptDialog && (
         <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
-          <div className="bg-slate-900 rounded-lg shadow-lg p-6 w-full max-w-md relative border border-slate-700">
-            <h3 className="text-lg font-bold mb-4 text-slate-100">Download PMS Report</h3>
+          <div className="bg-white dark:bg-slate-900 rounded-lg shadow-lg p-6 w-full max-w-md relative border border-slate-200 dark:border-slate-700">
+            <h3 className="text-lg font-bold mb-4 text-slate-900 dark:text-slate-100">Download PMS Report</h3>
             <div className="mb-4">
-              <label className="block mb-2 font-semibold text-slate-200">Select Department</label>
+              <label className="block mb-2 font-semibold text-slate-700 dark:text-slate-200">Select Department</label>
               <select
-                className="border border-slate-700 p-2 rounded w-full bg-slate-800 text-slate-100"
+                className="border border-slate-300 dark:border-slate-700 p-2 rounded w-full bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100"
                 value={selectedDept}
                 onChange={e => setSelectedDept(e.target.value)}
               >
@@ -1094,9 +1094,9 @@ const PMSQuarterlyReport: React.FC = () => {
               </select>
             </div>
             <div className="mb-4">
-              <label className="block mb-2 font-semibold text-slate-200">Select Quarter</label>
+              <label className="block mb-2 font-semibold text-slate-700 dark:text-slate-200">Select Quarter</label>
               <select
-                className="border border-slate-700 p-2 rounded w-full bg-slate-800 text-slate-100"
+                className="border border-slate-300 dark:border-slate-700 p-2 rounded w-full bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100"
                 value={selectedQuarter}
                 onChange={e => setSelectedQuarter(e.target.value)}
               >
@@ -1106,12 +1106,12 @@ const PMSQuarterlyReport: React.FC = () => {
                 ))}
               </select>
             </div>
-            <div className="text-sm text-slate-400 mb-4 p-3 bg-slate-800 rounded">
+            <div className="text-sm text-slate-600 dark:text-slate-400 mb-4 p-3 bg-slate-50 dark:bg-slate-800 rounded">
               <strong>Tip:</strong> Select a specific quarter to avoid worksheet name conflicts and get a more focused report.
             </div>
             <div className="flex justify-end gap-2">
               <button 
-                className="px-4 py-2 bg-slate-700 text-slate-200 rounded hover:bg-slate-800" 
+                className="px-4 py-2 bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 rounded hover:bg-slate-300 dark:hover:bg-slate-800" 
                 onClick={() => setShowDeptDialog(false)}
               >
                 Cancel

@@ -12,30 +12,41 @@ import { Users, Plus, Search, History, Edit, Eye, Download, Upload, AlertCircle,
 import CandidateStatusHistory from './CandidateStatusHistory';
 import FileUpload from './FileUpload';
 import { supabase } from '@/lib/supabaseClient';
-import { formatCurrency } from '@/lib/utils';
+import { formatCurrency, formatSalary } from '@/lib/utils';
 import * as XLSX from 'xlsx';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
 interface Candidate {
   id: string;
   name: string;
-  email: string;
-  phone: string;
-  position: string;
+  email?: string;
+  phone?: string;
+  position?: string;
   department?: string;
-  jobId: string;
-  source: string;
-  experience: number;
-  monthlyYearly?: string;
-  expectedSalary: number;
-  currentSalary: number;
+  source?: string;
+  experience?: number;
+  cu_monthly_yearly?: string;
+  current_salary?: number;
+  ex_monthly_yearly?: string;
+  expected_salary?: number;
   remark?: string;
-  noticePeriod: string;
-  resumeUploaded: boolean;
-  resumeFile: File | null;
-  interviewStatus: string;
-  appliedDate: string;
+  notice_period?: string;
+  interview_status: string;
+  applied_date: string;
+  created_at?: string;
+  // Legacy fields for backward compatibility
+  jobId?: string;
+  monthlyYearly?: string;
+  expectedSalary?: number;
+  currentSalary?: number;
+  noticePeriod?: string;
+  interviewStatus?: string;
+  appliedDate?: string;
+  resumeUploaded?: boolean;
+  resumeFile?: File | null;
   resume_url?: string;
+  isDraft?: boolean;
+  draftId?: string | null;
 }
 
 interface StatusChange {
@@ -58,6 +69,7 @@ interface CandidateManagementProps {
   userEmail: string;
   highlightedCandidate?: string | null;
   onClearHighlight?: () => void;
+  refreshCandidates?: () => void;
 }
 
 const CandidateManagement: React.FC<CandidateManagementProps> = ({ 
@@ -69,7 +81,8 @@ const CandidateManagement: React.FC<CandidateManagementProps> = ({
   statusHistory: _statusHistory,
   userEmail,
   highlightedCandidate,
-  onClearHighlight
+  onClearHighlight,
+  refreshCandidates
 }) => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isStatusDialogOpen, setIsStatusDialogOpen] = useState(false);
@@ -85,6 +98,9 @@ const CandidateManagement: React.FC<CandidateManagementProps> = ({
     newStatus: '',
     reason: '',
   });
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -319,6 +335,10 @@ const CandidateManagement: React.FC<CandidateManagementProps> = ({
         });
         setIsDialogOpen(false);
         fetchDrafts();
+        // Refresh candidates list to show the new draft
+        if (refreshCandidates) {
+          refreshCandidates();
+        }
       }
     } catch (error) {
       console.error('Error saving draft:', error);
@@ -373,11 +393,88 @@ const CandidateManagement: React.FC<CandidateManagementProps> = ({
           title: "Success",
           description: "Draft deleted successfully",
         });
+        // Refresh both drafts and candidates list
         fetchDrafts();
+        if (refreshCandidates) {
+          refreshCandidates();
+        }
       }
     } catch (error) {
       console.error('Error deleting draft:', error);
     }
+  };
+
+  const deleteDraftFromTable = async (draftId: string) => {
+    try {
+      const { error } = await supabase
+        .from('candidate_drafts')
+        .delete()
+        .eq('id', draftId);
+
+      if (error) {
+        console.error('Error deleting draft:', error);
+        toast({
+          title: "Error",
+          description: "Failed to delete draft",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Success",
+          description: "Draft deleted successfully",
+        });
+        // Refresh the candidates list to remove the draft from the table
+        if (refreshCandidates) {
+          refreshCandidates();
+        }
+      }
+    } catch (error) {
+      console.error('Error deleting draft:', error);
+    }
+  };
+
+  const loadDraftFromTable = (candidate: Candidate) => {
+    // Fetch the actual draft data from the database
+    const fetchDraftData = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('candidate_drafts')
+          .select('*')
+          .eq('id', candidate.draftId)
+          .single();
+
+        if (error) {
+          console.error('Error fetching draft:', error);
+          toast({
+            title: "Error",
+            description: "Failed to load draft",
+            variant: "destructive",
+          });
+          return;
+        }
+
+        if (data) {
+          // Store the draft data to load in ref
+          draftDataRef.current = data;
+          
+          // Set completing draft to track which draft we're completing
+          setCompletingDraft(data);
+          
+          // Set edit mode to false since we're loading a draft (not editing existing candidate)
+          setIsEditMode(false);
+          setEditingCandidate(null);
+          
+          // Open form dialog after a small delay to ensure state is set
+          setTimeout(() => {
+            setIsDialogOpen(true);
+          }, 50);
+        }
+      } catch (error) {
+        console.error('Error loading draft:', error);
+      }
+    };
+
+    fetchDraftData();
   };
 
 
@@ -404,6 +501,11 @@ const CandidateManagement: React.FC<CandidateManagementProps> = ({
 
       // Refresh drafts list
       await fetchDrafts();
+
+      // Refresh the candidates list to remove the draft from the table
+      if (refreshCandidates) {
+        refreshCandidates();
+      }
 
     } catch (error) {
       console.error('Error completing draft:', error);
@@ -440,19 +542,27 @@ const CandidateManagement: React.FC<CandidateManagementProps> = ({
         phone: formData.phone,
         position: isCustomPosition ? customPosition : (selectedJob?.title || ''),
         department: selectedJob?.department || '',
-        jobId: formData.jobId,
         source: sourceValue,
-        experience: parseInt(formData.experience),
-        monthlyYearly: formData.monthlyYearly,
-        expectedSalary: parseInt(formData.expectedSalary),
-        currentSalary: parseInt(formData.currentSalary),
+        experience: formData.experience ? parseInt(formData.experience) : undefined,
+        cu_monthly_yearly: formData.monthlyYearly,
+        current_salary: formData.currentSalary ? parseInt(formData.currentSalary) : undefined,
+        ex_monthly_yearly: formData.monthlyYearly,
+        expected_salary: formData.expectedSalary ? parseInt(formData.expectedSalary) : undefined,
         remark: formData.remark,
+        notice_period: formData.noticePeriod,
+        interview_status: editingCandidate.interview_status || editingCandidate.interviewStatus || 'applied',
+        applied_date: editingCandidate.applied_date || editingCandidate.appliedDate || new Date().toISOString().split('T')[0],
+        // Legacy fields for backward compatibility
+        jobId: formData.jobId,
+        monthlyYearly: formData.monthlyYearly,
+        expectedSalary: formData.expectedSalary ? parseInt(formData.expectedSalary) : undefined,
+        currentSalary: formData.currentSalary ? parseInt(formData.currentSalary) : undefined,
         noticePeriod: formData.noticePeriod,
+        interviewStatus: editingCandidate.interview_status || editingCandidate.interviewStatus,
+        appliedDate: editingCandidate.applied_date || editingCandidate.appliedDate,
         resumeUploaded: selectedFile !== null,
         resumeFile: selectedFile,
-        interviewStatus: editingCandidate.interviewStatus, // Keep existing status
-        appliedDate: editingCandidate.appliedDate, // Keep existing date
-        resume_url: editingCandidate.resume_url, // Keep existing resume URL
+        resume_url: editingCandidate.resume_url
       };
 
       // Call update function
@@ -481,18 +591,26 @@ const CandidateManagement: React.FC<CandidateManagementProps> = ({
         phone: formData.phone,
         position: isCustomPosition ? customPosition : (selectedJob?.title || ''),
         department: selectedJob?.department || '',
-        jobId: formData.jobId,
         source: sourceValue,
-        experience: parseInt(formData.experience),
-        monthlyYearly: formData.monthlyYearly,
-        expectedSalary: parseInt(formData.expectedSalary),
-        currentSalary: parseInt(formData.currentSalary),
+        experience: formData.experience ? parseInt(formData.experience) : undefined,
+        cu_monthly_yearly: formData.monthlyYearly,
+        current_salary: formData.currentSalary ? parseInt(formData.currentSalary) : undefined,
+        ex_monthly_yearly: formData.monthlyYearly,
+        expected_salary: formData.expectedSalary ? parseInt(formData.expectedSalary) : undefined,
         remark: formData.remark,
+        notice_period: formData.noticePeriod,
+        interview_status: 'applied',
+        applied_date: new Date().toISOString().split('T')[0],
+        // Legacy fields for backward compatibility
+        jobId: formData.jobId,
+        monthlyYearly: formData.monthlyYearly,
+        expectedSalary: formData.expectedSalary ? parseInt(formData.expectedSalary) : undefined,
+        currentSalary: formData.currentSalary ? parseInt(formData.currentSalary) : undefined,
         noticePeriod: formData.noticePeriod,
-        resumeUploaded: selectedFile !== null,
-        resumeFile: selectedFile,
         interviewStatus: 'applied',
         appliedDate: new Date().toISOString().split('T')[0],
+        resumeUploaded: selectedFile !== null,
+        resumeFile: selectedFile,
       };
 
       // Add candidate and delete draft
@@ -520,18 +638,26 @@ const CandidateManagement: React.FC<CandidateManagementProps> = ({
         phone: formData.phone,
         position: isCustomPosition ? customPosition : (selectedJob?.title || ''),
         department: selectedJob?.department || '',
-        jobId: formData.jobId,
         source: sourceValue,
-        experience: parseInt(formData.experience),
-        monthlyYearly: formData.monthlyYearly,
-        expectedSalary: parseInt(formData.expectedSalary),
-        currentSalary: parseInt(formData.currentSalary),
+        experience: formData.experience ? parseInt(formData.experience) : undefined,
+        cu_monthly_yearly: formData.monthlyYearly,
+        current_salary: formData.currentSalary ? parseInt(formData.currentSalary) : undefined,
+        ex_monthly_yearly: formData.monthlyYearly,
+        expected_salary: formData.expectedSalary ? parseInt(formData.expectedSalary) : undefined,
         remark: formData.remark,
+        notice_period: formData.noticePeriod,
+        interview_status: 'applied',
+        applied_date: new Date().toISOString().split('T')[0],
+        // Legacy fields for backward compatibility
+        jobId: formData.jobId,
+        monthlyYearly: formData.monthlyYearly,
+        expectedSalary: formData.expectedSalary ? parseInt(formData.expectedSalary) : undefined,
+        currentSalary: formData.currentSalary ? parseInt(formData.currentSalary) : undefined,
         noticePeriod: formData.noticePeriod,
-        resumeUploaded: selectedFile !== null,
-        resumeFile: selectedFile,
         interviewStatus: 'applied',
         appliedDate: new Date().toISOString().split('T')[0],
+        resumeUploaded: selectedFile !== null,
+        resumeFile: selectedFile,
       };
 
       onAddCandidate(newCandidate);
@@ -561,6 +687,7 @@ const CandidateManagement: React.FC<CandidateManagementProps> = ({
     setIsCustomPosition(false);
     setAgencyName('');
     setOtherSource('');
+    setCompletingDraft(null);
     
     setIsDialogOpen(false);
   };
@@ -672,31 +799,124 @@ const CandidateManagement: React.FC<CandidateManagementProps> = ({
   };
 
   const filteredCandidates = candidates.filter(candidate => {
-    const matchesSearch = candidate.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         candidate.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         candidate.position.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch = (candidate.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (candidate.email || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (candidate.phone || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (candidate.position || '').toLowerCase().includes(searchTerm.toLowerCase());
     
-    const matchesStatus = filterStatus === 'all' || candidate.interviewStatus === filterStatus;
+    const matchesStatus = filterStatus === 'all' || (candidate.interview_status || candidate.interviewStatus) === filterStatus;
     const matchesPosition = filterPosition === 'all' || candidate.position === filterPosition;
-    const matchesNoticePeriod = filterNoticePeriod === 'all' || candidate.noticePeriod === filterNoticePeriod;
-    const matchesDate = !filterDate || candidate.appliedDate === filterDate;
+    const matchesNoticePeriod = filterNoticePeriod === 'all' || (candidate.notice_period || candidate.noticePeriod) === filterNoticePeriod;
+    const matchesDate = !filterDate || (candidate.applied_date || candidate.appliedDate) === filterDate;
     
     return matchesSearch && matchesStatus && matchesPosition && matchesNoticePeriod && matchesDate;
   });
   // Sort by appliedDate descending (newest to oldest)
   const sortedCandidates = filteredCandidates.sort((a, b) => {
-    if (!a.appliedDate) return 1;
-    if (!b.appliedDate) return -1;
-    return new Date(b.appliedDate).getTime() - new Date(a.appliedDate).getTime();
+    const dateA = a.applied_date || a.appliedDate;
+    const dateB = b.applied_date || b.appliedDate;
+    if (!dateA) return 1;
+    if (!dateB) return -1;
+    return new Date(dateB).getTime() - new Date(dateA).getTime();
   });
 
+  // Pagination logic
+  const totalItems = sortedCandidates.length;
+  const totalPages = Math.ceil(totalItems / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedCandidates = sortedCandidates.slice(startIndex, endIndex);
+
+  // Reset to first page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, filterStatus, filterPosition, filterNoticePeriod, filterDate]);
+
   // Context-aware filter options based on sortedCandidates
-  const statusOptionsFiltered = Array.from(new Set(sortedCandidates.map(c => c.interviewStatus).filter(Boolean)));
+  const statusOptionsFiltered = Array.from(new Set(sortedCandidates.map(c => c.interview_status || c.interviewStatus).filter(Boolean)));
   const positionOptionsFiltered = Array.from(new Set(sortedCandidates.map(c => c.position).filter(Boolean)));
-  const noticePeriodOptionsFiltered = Array.from(new Set(sortedCandidates.map(c => c.noticePeriod).filter(Boolean)));
+  const noticePeriodOptionsFiltered = Array.from(new Set(sortedCandidates.map(c => c.notice_period || c.noticePeriod).filter(Boolean)));
 
   // Helper to capitalize each word
   const toProperCase = (str) => str ? str.replace(/\w\S*/g, (txt) => txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase()) : '';
+
+  // Helper to convert Excel date to proper format
+  const convertExcelDate = (dateValue: any): string => {
+    if (!dateValue) return new Date().toISOString().split('T')[0];
+    
+    // If it's already a string that looks like a date, return as is
+    if (typeof dateValue === 'string') {
+      // Check if it's already in a date format
+      if (dateValue.match(/^\d{4}-\d{2}-\d{2}$/) || dateValue.match(/^\d{2}\/\d{2}\/\d{4}$/) || dateValue.match(/^\d{2}-\d{2}-\d{4}$/)) {
+        return dateValue;
+      }
+    }
+    
+    // If it's a number (Excel serial date), convert it
+    if (typeof dateValue === 'number') {
+      // Excel dates are number of days since 1900-01-01
+      // But Excel incorrectly treats 1900 as a leap year, so we need to adjust
+      const excelEpoch = new Date(1900, 0, 1);
+      const date = new Date(excelEpoch.getTime() + (dateValue - 2) * 24 * 60 * 60 * 1000);
+      return date.toISOString().split('T')[0];
+    }
+    
+    // If it's a Date object, convert to string
+    if (dateValue instanceof Date) {
+      return dateValue.toISOString().split('T')[0];
+    }
+    
+    // Try to parse as a date string
+    try {
+      const parsedDate = new Date(dateValue);
+      if (!isNaN(parsedDate.getTime())) {
+        return parsedDate.toISOString().split('T')[0];
+      }
+    } catch (e) {
+      // If parsing fails, return current date
+    }
+    
+    // Default fallback
+    return new Date().toISOString().split('T')[0];
+  };
+
+  // Helper to format date for display (dd-mmm-yy format)
+  const formatDateForDisplay = (dateValue: any): string => {
+    if (!dateValue) return 'N/A';
+    
+    try {
+      const date = new Date(dateValue);
+      if (isNaN(date.getTime())) return 'N/A';
+      
+      // Format as dd-mmm-yy
+      const day = date.getDate().toString().padStart(2, '0');
+      const month = date.toLocaleDateString('en-US', { month: 'short' });
+      const year = date.getFullYear().toString().slice(-2);
+      
+      return `${day}-${month}-${year}`;
+    } catch (e) {
+      return 'N/A';
+    }
+  };
+
+  // Helper to format candidate contact info (name, email, phone)
+  const formatCandidateContact = (candidate: Candidate): string => {
+    const name = candidate.name || 'N/A';
+    const email = candidate.email || '';
+    const phone = candidate.phone || '';
+    
+    let contactInfo = name;
+    
+    if (email) {
+      contactInfo += `\n${email}`;
+    }
+    
+    if (phone) {
+      contactInfo += `\n${phone}`;
+    }
+    
+    return contactInfo;
+  };
 
   // Export to Excel function
   const handleExport = () => {
@@ -717,8 +937,9 @@ const CandidateManagement: React.FC<CandidateManagementProps> = ({
         department: 'Engineering',
         source: 'LinkedIn',
         experience: '3',
-        monthly_yearly: 'monthly',
+        cu_monthly_yearly: 'monthly',
         current_salary: '65000',
+        ex_monthly_yearly: 'monthly',
         expected_salary: '75000',
         remark: 'Strong technical background',
         notice_period: '1-month',
@@ -742,94 +963,13 @@ const CandidateManagement: React.FC<CandidateManagementProps> = ({
       const rowNumber = index + 2; // +2 because Excel is 1-indexed and we have header
       const rowErrors: string[] = [];
       
-      // Required field validations - only name is required
-      if (!row.name || row.name.trim() === '') {
+      // Only validate that name is present - all other fields are optional and accept any value
+      if (!row.name || String(row.name).trim() === '') {
         rowErrors.push(`Row ${rowNumber}: Name is required`);
       }
       
-      // Email validation - only if provided
-      if (row.email && row.email.trim() !== '') {
-        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(row.email)) {
-          rowErrors.push(`Row ${rowNumber}: Invalid email format`);
-        }
-      }
-      
-      // Check for duplicate emails - only if email is provided
-      if (row.email && row.email.trim() !== '') {
-        const existingEmails = candidates.map(candidate => candidate.email?.toLowerCase()).filter(Boolean);
-        if (existingEmails.includes(row.email.toLowerCase())) {
-          rowErrors.push(`Row ${rowNumber}: Email already exists in database`);
-        }
-        
-        // Check for duplicate emails within import data
-        const importEmails = data.slice(0, index).map(r => r.email?.toLowerCase()).filter(Boolean);
-        if (importEmails.includes(row.email.toLowerCase())) {
-          rowErrors.push(`Row ${rowNumber}: Duplicate email within import file`);
-        }
-      }
-      
-      // Date validation and Excel date conversion
-      if (row.applied_date) {
-        let appliedDate: Date;
-        
-        // Check if it's an Excel date serial number (numeric value)
-        if (typeof row.applied_date === 'number' || !isNaN(Number(row.applied_date))) {
-          const excelDateNumber = Number(row.applied_date);
-          
-          // Excel date serial numbers start from 1 (January 1, 1900)
-          // Valid range: 1 to 2958465 (December 31, 9999)
-          if (excelDateNumber >= 1 && excelDateNumber <= 2958465) {
-            // Convert Excel date serial number to JavaScript Date
-            const excelEpoch = new Date(1900, 0, 1); // January 1, 1900
-            const daysToAdd = excelDateNumber - 1; // Subtract 1 because Excel day 1 is 1900-01-01
-            
-            // Adjust for Excel's leap year bug (it incorrectly treats 1900 as leap year)
-            let adjustedDaysToAdd = daysToAdd;
-            if (excelDateNumber > 60) {
-              adjustedDaysToAdd -= 1;
-            }
-            
-            appliedDate = new Date(excelEpoch.getTime() + adjustedDaysToAdd * 24 * 60 * 60 * 1000);
-          } else {
-            rowErrors.push(`Row ${rowNumber}: Invalid Excel date serial number`);
-          }
-        } else {
-          // Try to parse as string date
-          const parsedDate = new Date(row.applied_date);
-          if (isNaN(parsedDate.getTime())) {
-            rowErrors.push(`Row ${rowNumber}: Invalid date format. Use YYYY-MM-DD or Excel date`);
-          }
-        }
-      }
-      
-      // Experience validation
-      if (row.experience && isNaN(Number(row.experience))) {
-        rowErrors.push(`Row ${rowNumber}: Experience must be a number`);
-      }
-      
-      // Salary validation
-      if (row.current_salary && isNaN(Number(row.current_salary))) {
-        rowErrors.push(`Row ${rowNumber}: Current salary must be a number`);
-      }
-      
-      if (row.expected_salary && isNaN(Number(row.expected_salary))) {
-        rowErrors.push(`Row ${rowNumber}: Expected salary must be a number`);
-      }
-      
-      // Monthly/Yearly validation
-      if (row.monthly_yearly && !['monthly', 'yearly'].includes(row.monthly_yearly.toLowerCase())) {
-        rowErrors.push(`Row ${rowNumber}: Monthly/Yearly must be 'monthly' or 'yearly'`);
-      }
-      
-      // Notice period validation
-      if (row.notice_period && !['immediate', '15-days', '1-month', '2-months', '3-months', 'negotiable'].includes(row.notice_period.toLowerCase())) {
-        rowErrors.push(`Row ${rowNumber}: Notice period must be one of: immediate, 15-days, 1-month, 2-months, 3-months, negotiable`);
-      }
-      
-      // Interview status validation
-      if (row.interview_status && !['applied', 'shortlisted', 'selected', 'rejected'].includes(row.interview_status.toLowerCase())) {
-        rowErrors.push(`Row ${rowNumber}: Interview status must be one of: applied, shortlisted, selected, rejected`);
-      }
+      // No other validations - accept any data type and format
+      // This allows maximum flexibility for importing vast datasets
       
       if (rowErrors.length > 0) {
         errors.push(...rowErrors);
@@ -901,22 +1041,23 @@ const CandidateManagement: React.FC<CandidateManagementProps> = ({
           return;
         }
         
-        // Ensure all rows have the required structure - only name is required
+        // Process data with maximum flexibility - only name is required
         const processedData = jsonData.map((row: any) => ({
-          name: row.name || row.Name || '',
-          email: row.email || row.Email || '',
-          phone: row.phone || row.Phone || '',
-          position: row.position || row.Position || '',
-          department: row.department || row.Department || '',
-          source: row.source || row.Source || '',
-          experience: row.experience || row.Experience || '',
-          monthly_yearly: row.monthly_yearly || row['monthly_yearly'] || row['Monthly/Yearly'] || 'monthly',
-          current_salary: row.current_salary || row['current_salary'] || row['Current Salary'] || '',
-          expected_salary: row.expected_salary || row['expected_salary'] || row['Expected Salary'] || '',
-          remark: row.remark || row.Remark || '',
-          notice_period: row.notice_period || row['notice_period'] || row['Notice Period'] || '',
-          interview_status: row.interview_status || row['interview_status'] || row['Interview Status'] || 'applied',
-          applied_date: row.applied_date || row['applied_date'] || row['Applied Date'] || new Date().toISOString().split('T')[0]
+          name: String(row.name || row.Name || row.NAME || ''),
+          email: row.email || row.Email || row.EMAIL || '',
+          phone: row.phone || row.Phone || row.PHONE || '',
+          position: row.position || row.Position || row.POSITION || '',
+          department: row.department || row.Department || row.DEPARTMENT || '',
+          source: row.source || row.Source || row.SOURCE || '',
+          experience: row.experience || row.Experience || row.EXPERIENCE || '',
+          cu_monthly_yearly: row.cu_monthly_yearly || row['cu_monthly_yearly'] || row['CU Monthly/Yearly'] || row['CU_MONTHLY_YEARLY'] || 'monthly',
+          current_salary: row.current_salary || row['current_salary'] || row['Current Salary'] || row['CURRENT_SALARY'] || '',
+          ex_monthly_yearly: row.ex_monthly_yearly || row['ex_monthly_yearly'] || row['EX Monthly/Yearly'] || row['EX_MONTHLY_YEARLY'] || 'monthly',
+          expected_salary: row.expected_salary || row['expected_salary'] || row['Expected Salary'] || row['EXPECTED_SALARY'] || '',
+          remark: row.remark || row.Remark || row.REMARK || '',
+          notice_period: row.notice_period || row['notice_period'] || row['Notice Period'] || row['NOTICE_PERIOD'] || '',
+          interview_status: row.interview_status || row['interview_status'] || row['Interview Status'] || row['INTERVIEW_STATUS'] || 'applied',
+          applied_date: convertExcelDate(row.applied_date || row['applied_date'] || row['Applied Date'] || row['APPLIED_DATE'])
         }));
         
         setImportData(processedData);
@@ -929,14 +1070,14 @@ const CandidateManagement: React.FC<CandidateManagementProps> = ({
         
         if (errors.length > 0) {
           toast({
-            title: 'Validation errors found',
-            description: `${errors.length} error(s) found. Please review and fix them.`,
+            title: 'Validation Errors Found',
+            description: `Found ${errors.length} validation errors. Please review and fix them.`,
             variant: 'destructive'
           });
         } else {
           toast({
-            title: 'File uploaded successfully',
-            description: `${valid.length} valid records found`,
+            title: 'File Uploaded Successfully',
+            description: `Found ${valid.length} valid candidates to import.`,
             variant: 'default'
           });
         }
@@ -1000,28 +1141,26 @@ const CandidateManagement: React.FC<CandidateManagementProps> = ({
       
       for (const candidateData of importData) {
         try {
-          // Insert candidate
+          // Insert candidate with maximum flexibility - accept any data type
           const { data, error } = await supabase
             .from('candidates')
             .insert([
               {
-                name: candidateData.name,
+                name: String(candidateData.name || ''),
                 email: candidateData.email || null,
                 phone: candidateData.phone || null,
                 position: candidateData.position || null,
                 department: candidateData.department || null,
-                job_id: null, // Will need to be set manually or through job lookup
                 source: candidateData.source || null,
-                experience: candidateData.experience ? parseInt(candidateData.experience) : null,
-                monthly_yearly: candidateData.monthly_yearly || 'monthly',
-                expected_salary: candidateData.expected_salary ? parseInt(candidateData.expected_salary) : null,
-                current_salary: candidateData.current_salary ? parseInt(candidateData.current_salary) : null,
+                experience: candidateData.experience ? String(candidateData.experience) : null,
+                cu_monthly_yearly: candidateData.cu_monthly_yearly || 'monthly',
+                current_salary: candidateData.current_salary ? String(candidateData.current_salary) : null,
+                ex_monthly_yearly: candidateData.ex_monthly_yearly || 'monthly',
+                expected_salary: candidateData.expected_salary ? String(candidateData.expected_salary) : null,
                 remark: candidateData.remark || null,
                 notice_period: candidateData.notice_period || null,
-                resume_uploaded: false,
-                resume_url: null,
                 interview_status: candidateData.interview_status || 'applied',
-                applied_date: candidateData.applied_date || new Date().toISOString().split('T')[0],
+                applied_date: candidateData.applied_date ? String(candidateData.applied_date) : new Date().toISOString().split('T')[0],
               },
             ])
             .select();
@@ -1124,32 +1263,30 @@ const CandidateManagement: React.FC<CandidateManagementProps> = ({
                 </div>
                 
                 <div className="space-y-2">
-                  <Label htmlFor="email" className="text-slate-700 dark:text-slate-200">Email *</Label>
+                  <Label htmlFor="email" className="text-slate-700 dark:text-slate-200">Email</Label>
                   <Input
                     id="email"
                     type="email"
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                     placeholder="john@example.com"
-                    required
                     className="border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500"
                   />
                 </div>
                 
                 <div className="space-y-2">
-                  <Label htmlFor="phone" className="text-slate-700 dark:text-slate-200">Phone Number *</Label>
+                  <Label htmlFor="phone" className="text-slate-700 dark:text-slate-200">Phone Number</Label>
                   <Input
                     id="phone"
                     value={formData.phone}
                     onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                     placeholder="+1 (555) 123-4567"
-                    required
                     className="border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500"
                   />
                 </div>
                 
                 <div className="space-y-2">
-                  <Label htmlFor="jobId" className="text-slate-700 dark:text-slate-200">Applied Position *</Label>
+                  <Label htmlFor="jobId" className="text-slate-700 dark:text-slate-200">Applied Position</Label>
                   <Select
                     value={formData.jobId}
                     onValueChange={(value) => {
@@ -1159,7 +1296,6 @@ const CandidateManagement: React.FC<CandidateManagementProps> = ({
                         setCustomPosition('');
                       }
                     }}
-                    required
                   >
                     <SelectTrigger className="border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
                       <SelectValue placeholder="Select job position" />
@@ -1185,7 +1321,7 @@ const CandidateManagement: React.FC<CandidateManagementProps> = ({
                 </div>
                 
                 <div className="space-y-2">
-                  <Label htmlFor="source" className="text-slate-700 dark:text-slate-200">Application Source *</Label>
+                  <Label htmlFor="source" className="text-slate-700 dark:text-slate-200">Application Source</Label>
                   <Select
                     value={formData.source}
                     onValueChange={value => {
@@ -1193,7 +1329,6 @@ const CandidateManagement: React.FC<CandidateManagementProps> = ({
                       setAgencyName('');
                       setOtherSource('');
                     }}
-                    required
                   >
                     <SelectTrigger className="border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
                       <SelectValue placeholder="Select source" />
@@ -1227,7 +1362,7 @@ const CandidateManagement: React.FC<CandidateManagementProps> = ({
                 </div>
                 
                 <div className="space-y-2">
-                  <Label htmlFor="experience" className="text-slate-700 dark:text-slate-200">Years of Experience *</Label>
+                  <Label htmlFor="experience" className="text-slate-700 dark:text-slate-200">Years of Experience</Label>
                   <Input
                     id="experience"
                     type="number"
@@ -1235,17 +1370,15 @@ const CandidateManagement: React.FC<CandidateManagementProps> = ({
                     value={formData.experience}
                     onChange={(e) => setFormData({ ...formData, experience: e.target.value })}
                     placeholder="3"
-                    required
                     className="border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500"
                   />
                 </div>
                 
                 <div className="space-y-2">
-                  <Label htmlFor="monthlyYearly" className="text-slate-700 dark:text-slate-200">Salary Type *</Label>
+                  <Label htmlFor="monthlyYearly" className="text-slate-700 dark:text-slate-200">Salary Type</Label>
                   <Select
                     value={formData.monthlyYearly}
                     onValueChange={(value) => setFormData({ ...formData, monthlyYearly: value })}
-                    required
                   >
                     <SelectTrigger className="border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
                       <SelectValue placeholder="Select salary type" />
@@ -1258,37 +1391,34 @@ const CandidateManagement: React.FC<CandidateManagementProps> = ({
                 </div>
                 
                 <div className="space-y-2">
-                  <Label htmlFor="currentSalary" className="text-slate-700 dark:text-slate-200">Current Salary *</Label>
+                  <Label htmlFor="currentSalary" className="text-slate-700 dark:text-slate-200">Current Salary</Label>
                   <Input
                     id="currentSalary"
                     type="number"
                     value={formData.currentSalary}
                     onChange={(e) => setFormData({ ...formData, currentSalary: e.target.value })}
                     placeholder="65000"
-                    required
                     className="border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500"
                   />
                 </div>
                 
                 <div className="space-y-2">
-                  <Label htmlFor="expectedSalary" className="text-slate-700 dark:text-slate-200">Expected Salary *</Label>
+                  <Label htmlFor="expectedSalary" className="text-slate-700 dark:text-slate-200">Expected Salary</Label>
                   <Input
                     id="expectedSalary"
                     type="number"
                     value={formData.expectedSalary}
                     onChange={(e) => setFormData({ ...formData, expectedSalary: e.target.value })}
                     placeholder="75000"
-                    required
                     className="border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500"
                   />
                 </div>
                 
                 <div className="space-y-2">
-                  <Label htmlFor="noticePeriod" className="text-slate-700 dark:text-slate-200">Notice Period *</Label>
+                  <Label htmlFor="noticePeriod" className="text-slate-700 dark:text-slate-200">Notice Period</Label>
                   <Select
                     value={formData.noticePeriod}
                     onValueChange={(value) => setFormData({ ...formData, noticePeriod: value })}
-                    required
                   >
                     <SelectTrigger className="border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
                       <SelectValue placeholder="Select notice period" />
@@ -1359,7 +1489,10 @@ const CandidateManagement: React.FC<CandidateManagementProps> = ({
         <Input
           type="text"
           value={searchTerm}
-          onChange={e => setSearchTerm(e.target.value)}
+          onChange={e => {
+            setSearchTerm(e.target.value);
+            setCurrentPage(1);
+          }}
           placeholder="Search candidates..."
           className="border border-slate-200 dark:border-slate-600 rounded px-3 py-2 text-sm flex-1 min-w-[200px] focus:outline-none focus:ring-2 focus:ring-amber-200 dark:focus:ring-amber-400 text-slate-800 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 shadow-sm bg-white dark:bg-slate-700"
         />
@@ -1370,6 +1503,7 @@ const CandidateManagement: React.FC<CandidateManagementProps> = ({
             setFilterNoticePeriod('all');
             setFilterDate('');
             setSearchTerm('');
+            setCurrentPage(1);
           }}
           className="px-4 py-2 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 rounded shadow text-sm font-medium border border-slate-300 dark:border-slate-600 transition-colors"
         >
@@ -1413,9 +1547,14 @@ const CandidateManagement: React.FC<CandidateManagementProps> = ({
       {/* Table and controls container */}
       <div className="bg-white dark:bg-slate-800 p-6 rounded-lg border border-slate-200 dark:border-slate-700 shadow-lg dark:shadow-xl">
         <div className="w-full grid grid-cols-1 sm:grid-cols-4 gap-3 items-center mb-4 px-1">
-          <Select value={filterStatus} onValueChange={setFilterStatus}>
+          <Select value={filterStatus} onValueChange={(value) => {
+            setFilterStatus(value);
+            setCurrentPage(1);
+          }}>
             <SelectTrigger className="w-full border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
-              <SelectValue placeholder="All Status" />
+              <SelectValue>
+                {filterStatus === 'all' ? 'All Status' : filterStatus}
+              </SelectValue>
             </SelectTrigger>
             <SelectContent className="bg-white dark:bg-slate-700 border-slate-200 dark:border-slate-600">
               <SelectItem value="all">All Status</SelectItem>
@@ -1424,7 +1563,10 @@ const CandidateManagement: React.FC<CandidateManagementProps> = ({
               ))}
             </SelectContent>
           </Select>
-          <Select value={filterPosition} onValueChange={setFilterPosition}>
+          <Select value={filterPosition} onValueChange={(value) => {
+            setFilterPosition(value);
+            setCurrentPage(1);
+          }}>
             <SelectTrigger className="w-full border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
               <SelectValue placeholder="All Positions" />
             </SelectTrigger>
@@ -1435,9 +1577,14 @@ const CandidateManagement: React.FC<CandidateManagementProps> = ({
               ))}
             </SelectContent>
           </Select>
-          <Select value={filterNoticePeriod} onValueChange={setFilterNoticePeriod}>
+          <Select value={filterNoticePeriod} onValueChange={(value) => {
+            setFilterNoticePeriod(value);
+            setCurrentPage(1);
+          }}>
             <SelectTrigger className="w-full border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
-              <SelectValue placeholder="All Notice Periods" />
+              <SelectValue>
+                {filterNoticePeriod === 'all' ? 'All Notice Periods' : filterNoticePeriod}
+              </SelectValue>
             </SelectTrigger>
             <SelectContent className="bg-white dark:bg-slate-700 border-slate-200 dark:border-slate-600">
               <SelectItem value="all">All Notice Periods</SelectItem>
@@ -1449,108 +1596,132 @@ const CandidateManagement: React.FC<CandidateManagementProps> = ({
           <Input
             type="date"
             value={filterDate}
-            onChange={e => setFilterDate(e.target.value)}
+            onChange={e => {
+              setFilterDate(e.target.value);
+              setCurrentPage(1);
+            }}
             placeholder="dd-----yyyy"
             className="w-full border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
           />
         </div>
         <div className="overflow-x-auto overflow-y-auto max-h-[56vh] w-full block scroll-to-highlight" ref={scrollRef} style={{ WebkitOverflowScrolling: 'touch' }}>
-          <Table className="min-w-[1200px] border border-slate-200 dark:border-slate-700">
+          <Table className="min-w-[1700px] border border-slate-200 dark:border-slate-700">
             <TableHeader className="sticky top-0 z-20 bg-slate-100 dark:bg-slate-700 shadow-sm dark:shadow-slate-900/50 border-t border-slate-200 dark:border-slate-600">
               <TableRow className="border-b border-slate-200 dark:border-slate-600">
-                <TableHead className="border-r border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-200 font-semibold">Candidate</TableHead>
+                <TableHead className="border-r border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-200 font-semibold">Name & Contact</TableHead>
                 <TableHead className="border-r border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-200 font-semibold">Position</TableHead>
                 <TableHead className="border-r border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-200 font-semibold">Department</TableHead>
-                <TableHead className="border-r border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-200 font-semibold">Application Source</TableHead>
+                <TableHead className="border-r border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-200 font-semibold">Source</TableHead>
                 <TableHead className="border-r border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-200 font-semibold">Experience</TableHead>
-                <TableHead className="border-r border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-200 font-semibold">Monthly/Yearly</TableHead>
-                <TableHead className="border-r border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-200 font-semibold">Current Salary</TableHead>
+                <TableHead className="border-r border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-200 font-semibold">CU Monthly/Yearly</TableHead>
+                <TableHead className="border-r border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-200 font-semibold w-32">Current Salary</TableHead>
+                <TableHead className="border-r border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-200 font-semibold">EX Monthly/Yearly</TableHead>
+                <TableHead className="border-r border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-200 font-semibold w-32">Expected Salary</TableHead>
                 <TableHead className="border-r border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-200 font-semibold">Remark</TableHead>
-                <TableHead className="border-r border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-200 font-semibold">Expected Salary</TableHead>
                 <TableHead className="border-r border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-200 font-semibold">Notice Period</TableHead>
-                <TableHead className="border-r border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-200 font-semibold">Status</TableHead>
-                <TableHead className="border-r border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-200 font-semibold">Applied Date</TableHead>
+                <TableHead className="border-r border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-200 font-semibold w-36">Interview Status</TableHead>
+                <TableHead className="border-r border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-200 font-semibold w-28">Applied Date</TableHead>
                 <TableHead className="text-slate-700 dark:text-slate-200 font-semibold">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody className="bg-white dark:bg-slate-800">
-              {sortedCandidates.map((candidate, index) => (
+              {paginatedCandidates.map((candidate, index) => (
                 <TableRow 
                   key={candidate.id} 
                   data-candidate-id={candidate.id}
                   className={`border-b border-slate-200 dark:border-slate-700 transition-all duration-300 hover:bg-slate-50 dark:hover:bg-slate-700/50 ${
                     highlightedCandidate === candidate.id 
                       ? 'highlight-row bg-amber-50 dark:bg-amber-900/20' 
-                      : index % 2 === 0 ? 'bg-white dark:bg-slate-800' : 'bg-slate-50/50 dark:bg-slate-800/50'
+                      : candidate.isDraft 
+                        ? 'bg-gray-50/50 dark:bg-gray-800/50' 
+                        : index % 2 === 0 ? 'bg-white dark:bg-slate-800' : 'bg-slate-50/50 dark:bg-slate-800/50'
                   }`}
                 >
-                  <TableCell className="border-r border-slate-200 dark:border-slate-700">
-                    <div>
-                      <div className="font-medium text-slate-900 dark:text-white">{candidate.name}</div>
-                      <div className="text-sm text-gray-600 dark:text-slate-400">{candidate.email}</div>
-                      <div className="text-sm text-gray-600 dark:text-slate-400">{candidate.phone}</div>
-                    </div>
+                  <TableCell className="border-r border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white whitespace-pre-line">
+                    <div className="font-semibold">{candidate.name}</div>
+                    {candidate.email && <div className="text-sm text-slate-600 dark:text-slate-400">{candidate.email}</div>}
+                    {candidate.phone && <div className="text-sm text-slate-600 dark:text-slate-400">{candidate.phone}</div>}
                   </TableCell>
-                  <TableCell className="border-r border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white">{candidate.position}</TableCell>
+                  <TableCell className="border-r border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white">{candidate.position || 'N/A'}</TableCell>
                   <TableCell className="border-r border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white">{candidate.department || 'N/A'}</TableCell>
                   <TableCell className="border-r border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white">{toProperCase(candidate.source) || 'N/A'}</TableCell>
                   <TableCell className="border-r border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white">{candidate.experience || 'N/A'}</TableCell>
-                  <TableCell className="border-r border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white capitalize">{candidate.monthlyYearly || 'N/A'}</TableCell>
-                  <TableCell className="border-r border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white">{formatCurrency(candidate.currentSalary) || 'N/A'}</TableCell>
+                  <TableCell className="border-r border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white capitalize">{candidate.cu_monthly_yearly || candidate.monthlyYearly || 'N/A'}</TableCell>
+                  <TableCell className="border-r border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white">{formatSalary(candidate.current_salary || candidate.currentSalary) || 'N/A'}</TableCell>
+                  <TableCell className="border-r border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white capitalize">{candidate.ex_monthly_yearly || candidate.monthlyYearly || 'N/A'}</TableCell>
+                  <TableCell className="border-r border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white">{formatSalary(candidate.expected_salary || candidate.expectedSalary) || 'N/A'}</TableCell>
                   <TableCell className="border-r border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white">{candidate.remark || 'N/A'}</TableCell>
-                  <TableCell className="border-r border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white">{formatCurrency(candidate.expectedSalary)}</TableCell>
-                  <TableCell className="border-r border-slate-200 dark:border-slate-700 capitalize text-slate-900 dark:text-white">{candidate.noticePeriod || 'N/A'}</TableCell>
+                  <TableCell className="border-r border-slate-200 dark:border-slate-700 capitalize text-slate-900 dark:text-white">{candidate.notice_period || candidate.noticePeriod || 'N/A'}</TableCell>
                   <TableCell className="border-r border-slate-200 dark:border-slate-700">
                     <span className={`status-badge ${
-                      candidate.interviewStatus === 'applied' ? 'status-pending' :
-                      candidate.interviewStatus === 'shortlisted' ? 'status-pending' :
-                      candidate.interviewStatus === 'selected' ? 'status-active' : 'status-rejected'
+                      candidate.isDraft ? 'status-draft' :
+                      (candidate.interview_status || candidate.interviewStatus) === 'applied' ? 'status-pending' :
+                      (candidate.interview_status || candidate.interviewStatus) === 'shortlisted' ? 'status-pending' :
+                      (candidate.interview_status || candidate.interviewStatus) === 'selected' ? 'status-active' : 'status-rejected'
                     }`}>
-                      {candidate.interviewStatus}
+                      {candidate.isDraft ? 'Draft' : (candidate.interview_status || candidate.interviewStatus)}
                     </span>
                   </TableCell>
                   <TableCell className="border-r border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white">
-                    {new Date(candidate.appliedDate).toLocaleDateString()}
+                    {formatDateForDisplay(candidate.applied_date || candidate.appliedDate)}
                   </TableCell>
                   <TableCell>
-                    <div className="flex space-x-2">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => openEditDialog(candidate)}
-                        className="border-blue-200 dark:border-blue-600 text-blue-700 dark:text-blue-200 hover:bg-blue-50 dark:hover:bg-blue-700"
-                        title="Edit Candidate"
-                      >
-                        <Edit className="w-3 h-3" />
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => openStatusDialog(candidate)}
-                        className="border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700"
-                        title="Update Status"
-                      >
-                        <Settings className="w-3 h-3" />
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => openHistoryDialog(candidate)}
-                        className="border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700"
-                        title="View History"
-                      >
-                        <History className="w-3 h-3" />
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => handleSeeResume(candidate)}
-                        disabled={!candidate.resume_url}
-                        title={candidate.resume_url ? 'View Resume' : 'No resume available'}
-                        className="border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-50"
-                      >
-                        <Eye className="w-3 h-3" />
-                      </Button>
+                    <div className="flex flex-col space-y-1">
+                      {candidate.isDraft ? (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => loadDraftFromTable(candidate)}
+                          className="border-amber-200 dark:border-amber-600 text-amber-700 dark:text-amber-200 hover:bg-amber-50 dark:hover:bg-amber-700"
+                          title="Complete Draft"
+                        >
+                          <Edit className="w-3 h-3" />
+                        </Button>
+                      ) : (
+                        <>
+                          <div className="flex space-x-1">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => openEditDialog(candidate)}
+                              className="border-blue-200 dark:border-blue-600 text-blue-700 dark:text-blue-200 hover:bg-blue-50 dark:hover:bg-blue-700"
+                              title="Edit Candidate"
+                            >
+                              <Edit className="w-3 h-3" />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => openStatusDialog(candidate)}
+                              className="border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700"
+                              title="Update Status"
+                            >
+                              <Settings className="w-3 h-3" />
+                            </Button>
+                          </div>
+                          <div className="flex space-x-1">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => openHistoryDialog(candidate)}
+                              className="border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700"
+                              title="View History"
+                            >
+                              <History className="w-3 h-3" />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleSeeResume(candidate)}
+                              disabled={!candidate.resume_url}
+                              title={candidate.resume_url ? 'View Resume' : 'No resume available'}
+                              className="border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-50"
+                            >
+                              <Eye className="w-3 h-3" />
+                            </Button>
+                          </div>
+                        </>
+                      )}
                     </div>
                   </TableCell>
                 </TableRow>
@@ -1562,6 +1733,103 @@ const CandidateManagement: React.FC<CandidateManagementProps> = ({
           <div className="text-center py-8">
             <Users className="w-12 h-12 text-gray-400 dark:text-slate-500 mx-auto mb-4" />
             <p className="text-gray-600 dark:text-slate-300">No candidates found</p>
+          </div>
+        )}
+
+        {/* Pagination Controls */}
+        {totalPages > 1 && (
+          <div className="flex items-center justify-between mt-4 px-4 py-3 bg-slate-50 dark:bg-slate-700 border-t border-slate-200 dark:border-slate-600">
+            <div className="flex items-center space-x-2">
+              <span className="text-sm text-slate-700 dark:text-slate-300">
+                Showing {startIndex + 1} to {Math.min(endIndex, totalItems)} of {totalItems} candidates
+              </span>
+              <Select value={itemsPerPage.toString()} onValueChange={(value) => {
+                setItemsPerPage(parseInt(value));
+                setCurrentPage(1);
+              }}>
+                <SelectTrigger className="w-20 h-8 text-xs border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-600">
+                  <SelectItem value="5">5</SelectItem>
+                  <SelectItem value="10">10</SelectItem>
+                  <SelectItem value="20">20</SelectItem>
+                  <SelectItem value="50">50</SelectItem>
+                </SelectContent>
+              </Select>
+              <span className="text-sm text-slate-700 dark:text-slate-300">per page</span>
+            </div>
+            
+            <div className="flex items-center space-x-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage(1)}
+                disabled={currentPage === 1}
+                className="h-8 px-2 text-xs border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-600 disabled:opacity-50"
+              >
+                First
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage(currentPage - 1)}
+                disabled={currentPage === 1}
+                className="h-8 px-2 text-xs border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-600 disabled:opacity-50"
+              >
+                Previous
+              </Button>
+              
+              <div className="flex items-center space-x-1">
+                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                  let pageNum;
+                  if (totalPages <= 5) {
+                    pageNum = i + 1;
+                  } else if (currentPage <= 3) {
+                    pageNum = i + 1;
+                  } else if (currentPage >= totalPages - 2) {
+                    pageNum = totalPages - 4 + i;
+                  } else {
+                    pageNum = currentPage - 2 + i;
+                  }
+                  
+                  return (
+                    <Button
+                      key={pageNum}
+                      variant={currentPage === pageNum ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => setCurrentPage(pageNum)}
+                      className={`h-8 w-8 text-xs ${
+                        currentPage === pageNum 
+                          ? 'bg-amber-600 hover:bg-amber-700 text-white' 
+                          : 'border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-600'
+                      }`}
+                    >
+                      {pageNum}
+                    </Button>
+                  );
+                })}
+              </div>
+              
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage(currentPage + 1)}
+                disabled={currentPage === totalPages}
+                className="h-8 px-2 text-xs border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-600 disabled:opacity-50"
+              >
+                Next
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage(totalPages)}
+                disabled={currentPage === totalPages}
+                className="h-8 px-2 text-xs border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-600 disabled:opacity-50"
+              >
+                Last
+              </Button>
+            </div>
           </div>
         )}
       </div>
@@ -1627,15 +1895,17 @@ const CandidateManagement: React.FC<CandidateManagementProps> = ({
 
       {/* Status History Dialog */}
       <Dialog open={isHistoryDialogOpen} onOpenChange={setIsHistoryDialogOpen}>
-        <DialogContent className="max-w-2xl bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700">
+        <DialogContent className="max-w-2xl max-h-[80vh] bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700">
           <DialogHeader>
             <DialogTitle className="text-slate-800 dark:text-white">Status History - {selectedCandidate?.name}</DialogTitle>
           </DialogHeader>
           {selectedCandidate && (
-            <CandidateStatusHistory 
-              candidateId={selectedCandidate.id}
-              statusHistory={historyRecords}
-            />
+            <div className="max-h-[60vh] overflow-y-auto">
+              <CandidateStatusHistory 
+                candidateId={selectedCandidate.id}
+                statusHistory={historyRecords}
+              />
+            </div>
           )}
         </DialogContent>
       </Dialog>
@@ -1863,26 +2133,26 @@ const CandidateManagement: React.FC<CandidateManagementProps> = ({
                         </span>
                       </div>
                       
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                        <div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
+                        <div className="min-w-0">
                           <span className="text-slate-500 dark:text-slate-400">Position:</span>
-                          <p className="font-medium text-slate-900 dark:text-white">
+                          <p className="font-medium text-slate-900 dark:text-white truncate">
                             {draft.custom_position || draft.position || 'Not specified'}
                           </p>
                         </div>
-                        <div>
+                        <div className="min-w-0">
                           <span className="text-slate-500 dark:text-slate-400">Email:</span>
-                          <p className="font-medium text-slate-900 dark:text-white">
+                          <p className="font-medium text-slate-900 dark:text-white break-all">
                             {draft.email || 'Not specified'}
                           </p>
                         </div>
-                        <div>
+                        <div className="min-w-0">
                           <span className="text-slate-500 dark:text-slate-400">Phone:</span>
                           <p className="font-medium text-slate-900 dark:text-white">
                             {draft.phone || 'Not specified'}
                           </p>
                         </div>
-                        <div>
+                        <div className="min-w-0">
                           <span className="text-slate-500 dark:text-slate-400">Experience:</span>
                           <p className="font-medium text-slate-900 dark:text-white">
                             {draft.experience ? `${draft.experience} years` : 'Not specified'}
