@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { User, Building, Calendar, Mail, Phone, Edit, FileText, Users, TrendingUp, Clock, Bell, Eye, Download, Upload, AlertCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { formatSalary } from '@/lib/utils';
 
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -50,6 +51,23 @@ const formatINR = (amount: number | string | undefined) => {
 
 // Helper to capitalize each word
 const toProperCase = (str) => str ? str.replace(/\w\S*/g, (txt) => txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase()) : '';
+
+// Helper to format date as dd-mmm-yy
+const formatDate = (dateString: string | null | undefined): string => {
+  if (!dateString) return '-';
+  try {
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return '-';
+    
+    const day = date.getDate().toString().padStart(2, '0');
+    const month = date.toLocaleDateString('en-US', { month: 'short' });
+    const year = date.getFullYear().toString().slice(-2);
+    
+    return `${day}-${month}-${year}`;
+  } catch {
+    return '-';
+  }
+};
 
 const EmployeeManagement: React.FC<EmployeeManagementProps> = ({ employees, refreshEmployees }) => {
   const { toast } = useToast();
@@ -120,31 +138,7 @@ const EmployeeManagement: React.FC<EmployeeManagementProps> = ({ employees, refr
   const managerOptions = useMemo(() => Array.from(new Set(employees.map(e => e.reportingManager).filter(Boolean))), [employees]);
   const statusOptions = useMemo(() => Array.from(new Set(employees.map(e => e.status).filter(Boolean))), [employees]);
 
-  // Check for confirmation process (6 months completion)
-  useEffect(() => {
-    const checkConfirmationProcess = () => {
-      const today = new Date();
-      employees.forEach(employee => {
-        const joinDate = new Date(employee.joinDate);
-        const sixMonthsLater = new Date(joinDate);
-        sixMonthsLater.setMonth(sixMonthsLater.getMonth() + 6);
-        
-        // Check if it's the day after 6 months completion
-        const dayAfterSixMonths = new Date(sixMonthsLater);
-        dayAfterSixMonths.setDate(dayAfterSixMonths.getDate() + 1);
-        
-        if (today.toDateString() === dayAfterSixMonths.toDateString()) {
-          // Send confirmation email to reporting manager
-          toast({
-            title: "Confirmation Email Sent",
-            description: `Probation form has been sent to ${employee.reportingManager} for ${employee.name}`,
-          });
-        }
-      });
-    };
 
-    checkConfirmationProcess();
-  }, [employees, toast]);
 
   const activeEmployees = employees.filter(emp => emp.status === 'active');
   const totalEmployees = employees.length;
@@ -999,9 +993,9 @@ const EmployeeManagement: React.FC<EmployeeManagementProps> = ({ employees, refr
                       <TableCell className="w-[200px] min-w-[200px] max-w-[200px] border-r border-slate-200 dark:border-slate-700 text-sm font-medium break-words leading-tight text-slate-900 dark:text-white">{emp.name}</TableCell>
                       <TableCell className="w-[150px] min-w-[150px] max-w-[150px] border-r border-slate-200 dark:border-slate-700 text-sm break-words leading-tight text-slate-900 dark:text-white">{emp.department || '-'}</TableCell>
                       <TableCell className="w-[150px] min-w-[150px] max-w-[150px] border-r border-slate-200 dark:border-slate-700 text-sm break-words leading-tight text-slate-900 dark:text-white">{emp.position || '-'}</TableCell>
-                      <TableCell className="w-[120px] min-w-[120px] max-w-[120px] border-r border-slate-200 dark:border-slate-700 text-sm break-words leading-tight text-slate-900 dark:text-white">{emp.joinDate ? new Date(emp.joinDate).toLocaleDateString() : '-'}</TableCell>
-                      <TableCell className="w-[120px] min-w-[120px] max-w-[120px] border-r border-slate-200 dark:border-slate-700 text-sm break-words leading-tight text-slate-900 dark:text-white">{emp.salary ? `₹${formatINR(emp.salary)}` : '-'}</TableCell>
-                      <TableCell className="w-[120px] min-w-[120px] max-w-[120px] border-r border-slate-200 dark:border-slate-700 text-sm break-words leading-tight text-slate-900 dark:text-white">{emp.costToHire ? `₹${formatINR(emp.costToHire)}` : '-'}</TableCell>
+                      <TableCell className="w-[120px] min-w-[120px] max-w-[120px] border-r border-slate-200 dark:border-slate-700 text-sm break-words leading-tight text-slate-900 dark:text-white">{formatDate(emp.joinDate)}</TableCell>
+                      <TableCell className="w-[120px] min-w-[120px] max-w-[120px] border-r border-slate-200 dark:border-slate-700 text-sm break-words leading-tight text-slate-900 dark:text-white">{emp.salary ? formatSalary(emp.salary) : '-'}</TableCell>
+                      <TableCell className="w-[120px] min-w-[120px] max-w-[120px] border-r border-slate-200 dark:border-slate-700 text-sm break-words leading-tight text-slate-900 dark:text-white">{emp.costToHire ? formatSalary(emp.costToHire) : '-'}</TableCell>
                       <TableCell className="w-[150px] min-w-[150px] max-w-[150px] border-r border-slate-200 dark:border-slate-700 text-sm break-words leading-tight text-slate-900 dark:text-white">{emp.reportingManager || '-'}</TableCell>
                       <TableCell className="w-[150px] min-w-[150px] max-w-[150px] border-r border-slate-200 dark:border-slate-700 text-sm break-words leading-tight text-slate-900 dark:text-white">{toProperCase(emp.source) || '-'}</TableCell>
                       <TableCell className="w-[100px] min-w-[100px] max-w-[100px] border-r border-slate-200 dark:border-slate-700 text-sm">
@@ -1060,7 +1054,7 @@ const EmployeeManagement: React.FC<EmployeeManagementProps> = ({ employees, refr
                       </div>
                       <div>
                         <span className="font-medium text-xs">Join Date:</span>
-                        <p className="text-sm">{new Date(modalEmployee.joinDate).toLocaleDateString()}</p>
+                        <p className="text-sm">{formatDate(modalEmployee.joinDate)}</p>
                       </div>
                       <div>
                         <span className="font-medium text-xs">Email:</span>
@@ -1068,7 +1062,7 @@ const EmployeeManagement: React.FC<EmployeeManagementProps> = ({ employees, refr
                       </div>
                       <div>
                         <span className="font-medium text-xs">Salary:</span>
-                        <p className="text-sm">₹{formatINR(modalEmployee.salary)}</p>
+                        <p className="text-sm">{modalEmployee.salary ? formatSalary(modalEmployee.salary) : '-'}</p>
                       </div>
                     </div>
                   </div>
@@ -1118,7 +1112,7 @@ const EmployeeManagement: React.FC<EmployeeManagementProps> = ({ employees, refr
                       </div>
                       <div>
                         <p className="text-xs font-medium text-gray-600 dark:text-gray-300">Join Date</p>
-                            <p className="text-base font-semibold text-gray-900 dark:text-gray-100">{new Date(modalEmployee.joinDate).toLocaleDateString()}</p>
+                            <p className="text-base font-semibold text-gray-900 dark:text-gray-100">{formatDate(modalEmployee.joinDate)}</p>
                       </div>
                     </div>
                   </CardContent>
@@ -1132,7 +1126,7 @@ const EmployeeManagement: React.FC<EmployeeManagementProps> = ({ employees, refr
                       </div>
                       <div>
                         <p className="text-xs font-medium text-gray-600 dark:text-gray-300">Salary</p>
-                            <p className="text-base font-semibold text-gray-900 dark:text-gray-100">₹{formatINR(modalEmployee.salary)}</p>
+                            <p className="text-base font-semibold text-gray-900 dark:text-gray-100">{modalEmployee.salary ? formatSalary(modalEmployee.salary) : '-'}</p>
                       </div>
                     </div>
                   </CardContent>

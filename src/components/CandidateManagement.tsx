@@ -12,7 +12,7 @@ import { Users, Plus, Search, History, Edit, Eye, Download, Upload, AlertCircle,
 import CandidateStatusHistory from './CandidateStatusHistory';
 import FileUpload from './FileUpload';
 import { supabase } from '@/lib/supabaseClient';
-import { formatCurrency, formatSalary } from '@/lib/utils';
+import { formatCurrency, formatSalary, formatSalaryRange } from '@/lib/utils';
 import * as XLSX from 'xlsx';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
@@ -92,7 +92,8 @@ const CandidateManagement: React.FC<CandidateManagementProps> = ({
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
   const [filterPosition, setFilterPosition] = useState('all');
-  const [filterNoticePeriod, setFilterNoticePeriod] = useState('all');
+  const [filterDepartment, setFilterDepartment] = useState('all');
+  const [filterSource, setFilterSource] = useState('all');
   const [filterDate, setFilterDate] = useState('');
   const [statusFormData, setStatusFormData] = useState({
     newStatus: '',
@@ -108,7 +109,10 @@ const CandidateManagement: React.FC<CandidateManagementProps> = ({
     jobId: '',
     source: '',
     experience: '',
-    monthlyYearly: 'monthly',
+    cuMonthlyYearly: 'monthly',
+    exMonthlyYearly: 'monthly',
+    department: '',
+    appliedDate: new Date().toISOString().split('T')[0],
     expectedSalary: '',
     currentSalary: '',
     remark: '',
@@ -140,6 +144,13 @@ const CandidateManagement: React.FC<CandidateManagementProps> = ({
   const [isImporting, setIsImporting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // New state variables for dropdown options
+  const [cuMonthlyYearlyOptions, setCuMonthlyYearlyOptions] = useState([]);
+  const [exMonthlyYearlyOptions, setExMonthlyYearlyOptions] = useState([]);
+  const [departmentOptions, setDepartmentOptions] = useState([]);
+  const [isAddingDepartment, setIsAddingDepartment] = useState(false);
+  const [newDepartmentName, setNewDepartmentName] = useState('');
+
   // Clear highlight when component mounts or highlighted candidate changes
   useEffect(() => {
     if (highlightedCandidate && onClearHighlight) {
@@ -159,6 +170,39 @@ const CandidateManagement: React.FC<CandidateManagementProps> = ({
       return () => clearTimeout(timer);
     }
   }, [highlightedCandidate, onClearHighlight]);
+
+  // Fetch dropdown options when component mounts
+  useEffect(() => {
+    const fetchDropdownOptions = async () => {
+      try {
+        // Fetch CU Monthly/Yearly options
+        const { data: cuOptions } = await supabase
+          .from('cu_monthly_yearly_options')
+          .select('*')
+          .order('id');
+        if (cuOptions) setCuMonthlyYearlyOptions(cuOptions);
+
+        // Fetch EX Monthly/Yearly options
+        const { data: exOptions } = await supabase
+          .from('ex_monthly_yearly_options')
+          .select('*')
+          .order('id');
+        if (exOptions) setExMonthlyYearlyOptions(exOptions);
+
+        // Fetch department options
+        const { data: deptOptions } = await supabase
+          .from('departments')
+          .select('*')
+          .eq('is_active', true)
+          .order('department_name');
+        if (deptOptions) setDepartmentOptions(deptOptions);
+      } catch (error) {
+        console.error('Error fetching dropdown options:', error);
+      }
+    };
+
+    fetchDropdownOptions();
+  }, []);
 
   const draftDataRef = useRef<any>(null);
 
@@ -193,7 +237,10 @@ const CandidateManagement: React.FC<CandidateManagementProps> = ({
           jobId: draft.custom_position ? 'custom' : (draft.job_id || ''),
           source: source,
           experience: draft.experience?.toString() || '',
-          monthlyYearly: draft.monthly_yearly || 'monthly',
+          cuMonthlyYearly: draft.cu_monthly_yearly || 'monthly',
+          exMonthlyYearly: draft.ex_monthly_yearly || 'monthly',
+          department: draft.department || '',
+          appliedDate: draft.applied_date || new Date().toISOString().split('T')[0],
           expectedSalary: draft.expected_salary?.toString() || '',
           currentSalary: draft.current_salary?.toString() || '',
           remark: draft.remark || '',
@@ -223,7 +270,10 @@ const CandidateManagement: React.FC<CandidateManagementProps> = ({
           jobId: '',
           source: '',
           experience: '',
-          monthlyYearly: 'monthly',
+          cuMonthlyYearly: 'monthly',
+          exMonthlyYearly: 'monthly',
+          department: '',
+          appliedDate: new Date().toISOString().split('T')[0],
           expectedSalary: '',
           currentSalary: '',
           remark: '',
@@ -306,7 +356,7 @@ const CandidateManagement: React.FC<CandidateManagementProps> = ({
         job_id: isCustomPosition ? null : (formData.jobId || null), // Don't save "custom" as job_id
         source: sourceValue || null,
         experience: formData.experience && formData.experience.trim() ? parseInt(formData.experience) : null,
-        monthly_yearly: formData.monthlyYearly || 'monthly',
+        cu_monthly_yearly: formData.cuMonthlyYearly || 'monthly',
         expected_salary: formData.expectedSalary && formData.expectedSalary.trim() ? parseFloat(formData.expectedSalary) : null,
         current_salary: formData.currentSalary && formData.currentSalary.trim() ? parseFloat(formData.currentSalary) : null,
         remark: formData.remark || null,
@@ -544,17 +594,17 @@ const CandidateManagement: React.FC<CandidateManagementProps> = ({
         department: selectedJob?.department || '',
         source: sourceValue,
         experience: formData.experience ? parseInt(formData.experience) : undefined,
-        cu_monthly_yearly: formData.monthlyYearly,
+        cu_monthly_yearly: formData.cuMonthlyYearly,
         current_salary: formData.currentSalary ? parseInt(formData.currentSalary) : undefined,
-        ex_monthly_yearly: formData.monthlyYearly,
+        ex_monthly_yearly: formData.exMonthlyYearly,
         expected_salary: formData.expectedSalary ? parseInt(formData.expectedSalary) : undefined,
         remark: formData.remark,
         notice_period: formData.noticePeriod,
         interview_status: editingCandidate.interview_status || editingCandidate.interviewStatus || 'applied',
-        applied_date: editingCandidate.applied_date || editingCandidate.appliedDate || new Date().toISOString().split('T')[0],
+        applied_date: formData.appliedDate || editingCandidate.applied_date || editingCandidate.appliedDate || new Date().toISOString().split('T')[0],
         // Legacy fields for backward compatibility
         jobId: formData.jobId,
-        monthlyYearly: formData.monthlyYearly,
+        monthlyYearly: formData.cuMonthlyYearly,
         expectedSalary: formData.expectedSalary ? parseInt(formData.expectedSalary) : undefined,
         currentSalary: formData.currentSalary ? parseInt(formData.currentSalary) : undefined,
         noticePeriod: formData.noticePeriod,
@@ -590,20 +640,20 @@ const CandidateManagement: React.FC<CandidateManagementProps> = ({
         email: formData.email,
         phone: formData.phone,
         position: isCustomPosition ? customPosition : (selectedJob?.title || ''),
-        department: selectedJob?.department || '',
+        department: formData.department || selectedJob?.department || '',
         source: sourceValue,
         experience: formData.experience ? parseInt(formData.experience) : undefined,
-        cu_monthly_yearly: formData.monthlyYearly,
+        cu_monthly_yearly: formData.cuMonthlyYearly,
         current_salary: formData.currentSalary ? parseInt(formData.currentSalary) : undefined,
-        ex_monthly_yearly: formData.monthlyYearly,
+        ex_monthly_yearly: formData.exMonthlyYearly,
         expected_salary: formData.expectedSalary ? parseInt(formData.expectedSalary) : undefined,
         remark: formData.remark,
         notice_period: formData.noticePeriod,
         interview_status: 'applied',
-        applied_date: new Date().toISOString().split('T')[0],
+        applied_date: formData.appliedDate || new Date().toISOString().split('T')[0],
         // Legacy fields for backward compatibility
         jobId: formData.jobId,
-        monthlyYearly: formData.monthlyYearly,
+        monthlyYearly: formData.cuMonthlyYearly,
         expectedSalary: formData.expectedSalary ? parseInt(formData.expectedSalary) : undefined,
         currentSalary: formData.currentSalary ? parseInt(formData.currentSalary) : undefined,
         noticePeriod: formData.noticePeriod,
@@ -640,17 +690,17 @@ const CandidateManagement: React.FC<CandidateManagementProps> = ({
         department: selectedJob?.department || '',
         source: sourceValue,
         experience: formData.experience ? parseInt(formData.experience) : undefined,
-        cu_monthly_yearly: formData.monthlyYearly,
+        cu_monthly_yearly: formData.cuMonthlyYearly,
         current_salary: formData.currentSalary ? parseInt(formData.currentSalary) : undefined,
-        ex_monthly_yearly: formData.monthlyYearly,
+        ex_monthly_yearly: formData.exMonthlyYearly,
         expected_salary: formData.expectedSalary ? parseInt(formData.expectedSalary) : undefined,
         remark: formData.remark,
         notice_period: formData.noticePeriod,
         interview_status: 'applied',
-        applied_date: new Date().toISOString().split('T')[0],
+        applied_date: formData.appliedDate || new Date().toISOString().split('T')[0],
         // Legacy fields for backward compatibility
         jobId: formData.jobId,
-        monthlyYearly: formData.monthlyYearly,
+        monthlyYearly: formData.cuMonthlyYearly,
         expectedSalary: formData.expectedSalary ? parseInt(formData.expectedSalary) : undefined,
         currentSalary: formData.currentSalary ? parseInt(formData.currentSalary) : undefined,
         noticePeriod: formData.noticePeriod,
@@ -669,19 +719,22 @@ const CandidateManagement: React.FC<CandidateManagementProps> = ({
     }
     
     // Reset form
-    setFormData({
-      name: '',
-      email: '',
-      phone: '',
-      jobId: '',
-      source: '',
-      experience: '',
-      monthlyYearly: 'monthly',
-      expectedSalary: '',
-      currentSalary: '',
-      remark: '',
-      noticePeriod: '',
-    });
+            setFormData({
+          name: '',
+          email: '',
+          phone: '',
+          jobId: '',
+          source: '',
+          experience: '',
+          cuMonthlyYearly: 'monthly',
+          exMonthlyYearly: 'monthly',
+          department: '',
+          appliedDate: new Date().toISOString().split('T')[0],
+          expectedSalary: '',
+          currentSalary: '',
+          remark: '',
+          noticePeriod: '',
+        });
     setSelectedFile(null);
     setCustomPosition('');
     setIsCustomPosition(false);
@@ -773,7 +826,10 @@ const CandidateManagement: React.FC<CandidateManagementProps> = ({
       jobId: isCustomPos ? 'custom' : (job?.id || ''),
       source: source,
       experience: candidate.experience?.toString() || '',
-      monthlyYearly: candidate.monthlyYearly || 'monthly',
+      cuMonthlyYearly: candidate.cu_monthly_yearly || 'monthly',
+      exMonthlyYearly: candidate.ex_monthly_yearly || 'monthly',
+      department: candidate.department || '',
+      appliedDate: candidate.applied_date || new Date().toISOString().split('T')[0],
       expectedSalary: candidate.expectedSalary?.toString() || '',
       currentSalary: candidate.currentSalary?.toString() || '',
       remark: candidate.remark || '',
@@ -806,10 +862,11 @@ const CandidateManagement: React.FC<CandidateManagementProps> = ({
     
     const matchesStatus = filterStatus === 'all' || (candidate.interview_status || candidate.interviewStatus) === filterStatus;
     const matchesPosition = filterPosition === 'all' || candidate.position === filterPosition;
-    const matchesNoticePeriod = filterNoticePeriod === 'all' || (candidate.notice_period || candidate.noticePeriod) === filterNoticePeriod;
+    const matchesDepartment = filterDepartment === 'all' || candidate.department === filterDepartment;
+    const matchesSource = filterSource === 'all' || (candidate.source || '').toLowerCase().includes(filterSource.toLowerCase());
     const matchesDate = !filterDate || (candidate.applied_date || candidate.appliedDate) === filterDate;
     
-    return matchesSearch && matchesStatus && matchesPosition && matchesNoticePeriod && matchesDate;
+    return matchesSearch && matchesStatus && matchesPosition && matchesDepartment && matchesSource && matchesDate;
   });
   // Sort by appliedDate descending (newest to oldest)
   const sortedCandidates = filteredCandidates.sort((a, b) => {
@@ -830,12 +887,13 @@ const CandidateManagement: React.FC<CandidateManagementProps> = ({
   // Reset to first page when filters change
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchTerm, filterStatus, filterPosition, filterNoticePeriod, filterDate]);
+  }, [searchTerm, filterStatus, filterPosition, filterDepartment, filterSource, filterDate]);
 
   // Context-aware filter options based on sortedCandidates
   const statusOptionsFiltered = Array.from(new Set(sortedCandidates.map(c => c.interview_status || c.interviewStatus).filter(Boolean)));
   const positionOptionsFiltered = Array.from(new Set(sortedCandidates.map(c => c.position).filter(Boolean)));
-  const noticePeriodOptionsFiltered = Array.from(new Set(sortedCandidates.map(c => c.notice_period || c.noticePeriod).filter(Boolean)));
+  const departmentOptionsFiltered = Array.from(new Set(sortedCandidates.map(c => c.department).filter(Boolean)));
+  const sourceOptionsFiltered = Array.from(new Set(sortedCandidates.map(c => c.source).filter(Boolean)));
 
   // Helper to capitalize each word
   const toProperCase = (str) => str ? str.replace(/\w\S*/g, (txt) => txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase()) : '';
@@ -1231,7 +1289,7 @@ const CandidateManagement: React.FC<CandidateManagementProps> = ({
       <div className="flex items-center gap-2 mb-4 w-full">
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
-            <Button className="flex items-center space-x-2 bg-amber-600 dark:bg-slate-700 hover:bg-amber-700 dark:hover:bg-slate-600 text-white shadow-lg hover:shadow-xl transition-all duration-200">
+            <Button className="flex items-center space-x-2 bg-slate-600 dark:bg-slate-700 hover:bg-slate-700 dark:hover:bg-slate-600 text-white shadow-lg hover:shadow-xl transition-all duration-200">
               <Plus className="w-4 h-4" />
               <span>Add Candidate</span>
             </Button>
@@ -1300,10 +1358,10 @@ const CandidateManagement: React.FC<CandidateManagementProps> = ({
                     <SelectTrigger className="border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
                       <SelectValue placeholder="Select job position" />
                     </SelectTrigger>
-                    <SelectContent className="bg-white dark:bg-slate-700 border-slate-200 dark:border-slate-600">
+                    <SelectContent className="bg-white dark:bg-slate-700 border-slate-200 dark:border-slate-600 max-h-48 overflow-y-auto">
                       {jobs.map((job) => (
                         <SelectItem key={job.id} value={job.id}>
-                          {job.title} - {job.department}
+                          {toProperCase(job.title)} - {toProperCase(job.department)}
                         </SelectItem>
                       ))}
                       <SelectItem value="custom">Custom</SelectItem>
@@ -1319,6 +1377,34 @@ const CandidateManagement: React.FC<CandidateManagementProps> = ({
                     />
                   )}
                 </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="department" className="text-slate-700 dark:text-slate-200">Department</Label>
+                  <div className="flex gap-2">
+                    <Select
+                      value={formData.department}
+                      onValueChange={(value) => setFormData({ ...formData, department: value })}
+                    >
+                      <SelectTrigger className="flex-1 border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
+                        <SelectValue placeholder="Select department" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-white dark:bg-slate-700 border-slate-200 dark:border-slate-600 max-h-48 overflow-y-auto">
+                        {departmentOptions.map((dept) => (
+                          <SelectItem key={dept.id} value={dept.department_name}>
+                            {toProperCase(dept.department_name)}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Button
+                      type="button"
+                      onClick={() => setIsAddingDepartment(true)}
+                      className="px-3 py-2 bg-green-600 hover:bg-green-700 text-white"
+                    >
+                      <Plus className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
                 
                 <div className="space-y-2">
                   <Label htmlFor="source" className="text-slate-700 dark:text-slate-200">Application Source</Label>
@@ -1333,7 +1419,7 @@ const CandidateManagement: React.FC<CandidateManagementProps> = ({
                     <SelectTrigger className="border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
                       <SelectValue placeholder="Select source" />
                     </SelectTrigger>
-                    <SelectContent className="bg-white dark:bg-slate-700 border-slate-200 dark:border-slate-600">
+                    <SelectContent className="bg-white dark:bg-slate-700 border-slate-200 dark:border-slate-600 max-h-48 overflow-y-auto">
                       <SelectItem value="referral">Employee Referral</SelectItem>
                       <SelectItem value="linkedin">LinkedIn</SelectItem>
                       <SelectItem value="indeed">Indeed</SelectItem>
@@ -1375,21 +1461,24 @@ const CandidateManagement: React.FC<CandidateManagementProps> = ({
                 </div>
                 
                 <div className="space-y-2">
-                  <Label htmlFor="monthlyYearly" className="text-slate-700 dark:text-slate-200">Salary Type</Label>
+                  <Label htmlFor="cuMonthlyYearly" className="text-slate-700 dark:text-slate-200">CU Monthly/Yearly</Label>
                   <Select
-                    value={formData.monthlyYearly}
-                    onValueChange={(value) => setFormData({ ...formData, monthlyYearly: value })}
+                    value={formData.cuMonthlyYearly}
+                    onValueChange={(value) => setFormData({ ...formData, cuMonthlyYearly: value })}
                   >
                     <SelectTrigger className="border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
-                      <SelectValue placeholder="Select salary type" />
+                      <SelectValue placeholder="Select CU salary type" />
                     </SelectTrigger>
-                    <SelectContent className="bg-white dark:bg-slate-700 border-slate-200 dark:border-slate-600">
-                      <SelectItem value="monthly">Monthly</SelectItem>
-                      <SelectItem value="yearly">Yearly</SelectItem>
+                    <SelectContent className="bg-white dark:bg-slate-700 border-slate-200 dark:border-slate-600 max-h-48 overflow-y-auto">
+                      {cuMonthlyYearlyOptions.map((option) => (
+                        <SelectItem key={option.id} value={option.option_value}>
+                          {toProperCase(option.display_name)}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
-                
+
                 <div className="space-y-2">
                   <Label htmlFor="currentSalary" className="text-slate-700 dark:text-slate-200">Current Salary</Label>
                   <Input
@@ -1401,7 +1490,26 @@ const CandidateManagement: React.FC<CandidateManagementProps> = ({
                     className="border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500"
                   />
                 </div>
-                
+
+                <div className="space-y-2">
+                  <Label htmlFor="exMonthlyYearly" className="text-slate-700 dark:text-slate-200">EX Monthly/Yearly</Label>
+                  <Select
+                    value={formData.exMonthlyYearly}
+                    onValueChange={(value) => setFormData({ ...formData, exMonthlyYearly: value })}
+                  >
+                    <SelectTrigger className="border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
+                      <SelectValue placeholder="Select EX salary type" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-white dark:bg-slate-700 border-slate-200 dark:border-slate-600 max-h-48 overflow-y-auto">
+                      {exMonthlyYearlyOptions.map((option) => (
+                        <SelectItem key={option.id} value={option.option_value}>
+                          {toProperCase(option.display_name)}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
                 <div className="space-y-2">
                   <Label htmlFor="expectedSalary" className="text-slate-700 dark:text-slate-200">Expected Salary</Label>
                   <Input
@@ -1423,7 +1531,7 @@ const CandidateManagement: React.FC<CandidateManagementProps> = ({
                     <SelectTrigger className="border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
                       <SelectValue placeholder="Select notice period" />
                     </SelectTrigger>
-                    <SelectContent className="bg-white dark:bg-slate-700 border-slate-200 dark:border-slate-600">
+                    <SelectContent className="bg-white dark:bg-slate-700 border-slate-200 dark:border-slate-600 max-h-48 overflow-y-auto">
                       <SelectItem value="immediate">Immediate</SelectItem>
                       <SelectItem value="15-days">15 Days</SelectItem>
                       <SelectItem value="1-month">1 Month</SelectItem>
@@ -1432,6 +1540,17 @@ const CandidateManagement: React.FC<CandidateManagementProps> = ({
                       <SelectItem value="negotiable">Negotiable</SelectItem>
                     </SelectContent>
                   </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="appliedDate" className="text-slate-700 dark:text-slate-200">Applied Date</Label>
+                  <Input
+                    id="appliedDate"
+                    type="date"
+                    value={formData.appliedDate}
+                    onChange={(e) => setFormData({ ...formData, appliedDate: e.target.value })}
+                    className="border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                  />
                 </div>
                 
                 <div className="space-y-2 md:col-span-2">
@@ -1479,13 +1598,89 @@ const CandidateManagement: React.FC<CandidateManagementProps> = ({
                 >
                   {isSavingDraft ? 'Saving...' : 'Save as Draft'}
                 </Button>
-                <Button type="submit" className="bg-amber-600 dark:bg-slate-700 hover:bg-amber-700 dark:hover:bg-slate-600 text-white shadow-lg hover:shadow-xl transition-all duration-200">
+                <Button type="submit" className="bg-slate-600 dark:bg-slate-700 hover:bg-slate-700 dark:hover:bg-slate-600 text-white shadow-lg hover:shadow-xl transition-all duration-200">
                   {isEditMode ? 'Update Candidate' : completingDraft ? 'Complete Draft' : 'Add Candidate'}
                 </Button>
               </div>
             </form>
           </DialogContent>
         </Dialog>
+
+        {/* Add Department Dialog */}
+        <Dialog open={isAddingDepartment} onOpenChange={setIsAddingDepartment}>
+          <DialogContent className="max-w-md bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700">
+            <DialogHeader>
+              <DialogTitle className="text-slate-900 dark:text-slate-100">Add New Department</DialogTitle>
+              <DialogDescription className="text-slate-600 dark:text-slate-400">
+                Enter the name of the new department to add to the system.
+              </DialogDescription>
+            </DialogHeader>
+            <form onSubmit={async (e) => {
+              e.preventDefault();
+              if (!newDepartmentName.trim()) return;
+              
+              try {
+                const { data, error } = await supabase.rpc('add_department', {
+                  new_department_name: newDepartmentName.trim()
+                });
+                
+                if (error) throw error;
+                
+                toast({
+                  title: "Success",
+                  description: data || "Department added successfully",
+                });
+                
+                // Refresh department options
+                const { data: deptOptions } = await supabase
+                  .from('departments')
+                  .select('*')
+                  .eq('is_active', true)
+                  .order('department_name');
+                if (deptOptions) setDepartmentOptions(deptOptions);
+                
+                setNewDepartmentName('');
+                setIsAddingDepartment(false);
+              } catch (error) {
+                console.error('Error adding department:', error);
+                toast({
+                  title: "Error",
+                  description: "Failed to add department",
+                  variant: "destructive",
+                });
+              }
+            }} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="newDepartmentName" className="text-slate-700 dark:text-slate-200">Department Name</Label>
+                <Input
+                  id="newDepartmentName"
+                  value={newDepartmentName}
+                  onChange={(e) => setNewDepartmentName(e.target.value)}
+                  placeholder="Enter department name"
+                  required
+                  className="border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                />
+              </div>
+              <div className="flex justify-end space-x-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setIsAddingDepartment(false);
+                    setNewDepartmentName('');
+                  }}
+                  className="border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700"
+                >
+                  Cancel
+                </Button>
+                <Button type="submit" className="bg-slate-600 hover:bg-slate-700 text-white">
+                  Add Department
+                </Button>
+              </div>
+            </form>
+          </DialogContent>
+        </Dialog>
+
         <Input
           type="text"
           value={searchTerm}
@@ -1500,7 +1695,8 @@ const CandidateManagement: React.FC<CandidateManagementProps> = ({
           onClick={() => {
             setFilterStatus('all');
             setFilterPosition('all');
-            setFilterNoticePeriod('all');
+            setFilterDepartment('all');
+            setFilterSource('all');
             setFilterDate('');
             setSearchTerm('');
             setCurrentPage(1);
@@ -1510,33 +1706,33 @@ const CandidateManagement: React.FC<CandidateManagementProps> = ({
           Clear Filters
         </button>
         <span className="ml-2 inline-flex items-center px-3 py-1 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-400 text-sm font-medium border border-blue-200 dark:border-blue-800">
-          Candidates: {sortedCandidates.length}
+          Candidates: {candidates.length}
         </span>
         <div className="flex gap-2 ml-auto">
           <button
             onClick={() => setIsDraftsDialogOpen(true)}
-            className="px-4 py-1 bg-purple-500 hover:bg-purple-600 text-white rounded shadow text-sm font-medium flex items-center gap-1"
+            className="px-4 py-1 bg-slate-600 hover:bg-slate-700 text-white rounded shadow text-sm font-medium flex items-center gap-1"
           >
             <FileText className="w-4 h-4" />
             Drafts ({drafts.length})
           </button>
           <button
             onClick={handleExportTemplate}
-            className="px-4 py-1 bg-green-500 hover:bg-green-600 text-white rounded shadow text-sm font-medium flex items-center gap-1"
+            className="px-4 py-1 bg-slate-600 hover:bg-slate-700 text-white rounded shadow text-sm font-medium flex items-center gap-1"
           >
             <Download className="w-4 h-4" />
             Template
           </button>
           <button
             onClick={handleExport}
-            className="px-4 py-1 bg-amber-500 hover:bg-amber-600 text-white rounded shadow text-sm font-medium flex items-center gap-1"
+            className="px-4 py-1 bg-slate-600 hover:bg-slate-700 text-white rounded shadow text-sm font-medium flex items-center gap-1"
           >
             <Download className="w-4 h-4" />
             Export
           </button>
           <button
             onClick={() => setIsImportDialogOpen(true)}
-            className="px-4 py-1 bg-blue-500 hover:bg-blue-600 text-white rounded shadow text-sm font-medium flex items-center gap-1"
+            className="px-4 py-1 bg-slate-600 hover:bg-slate-700 text-white rounded shadow text-sm font-medium flex items-center gap-1"
           >
             <Upload className="w-4 h-4" />
             Import
@@ -1546,20 +1742,20 @@ const CandidateManagement: React.FC<CandidateManagementProps> = ({
 
       {/* Table and controls container */}
       <div className="bg-white dark:bg-slate-800 p-6 rounded-lg border border-slate-200 dark:border-slate-700 shadow-lg dark:shadow-xl">
-        <div className="w-full grid grid-cols-1 sm:grid-cols-4 gap-3 items-center mb-4 px-1">
+        <div className="w-full flex justify-between items-center mb-4 px-1">
           <Select value={filterStatus} onValueChange={(value) => {
             setFilterStatus(value);
             setCurrentPage(1);
           }}>
-            <SelectTrigger className="w-full border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
+            <SelectTrigger className="w-44 border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
               <SelectValue>
                 {filterStatus === 'all' ? 'All Status' : filterStatus}
               </SelectValue>
             </SelectTrigger>
-            <SelectContent className="bg-white dark:bg-slate-700 border-slate-200 dark:border-slate-600">
+            <SelectContent className="bg-white dark:bg-slate-700 border-slate-200 dark:border-slate-600 max-h-48 overflow-y-auto w-44">
               <SelectItem value="all">All Status</SelectItem>
               {statusOptionsFiltered.map(status => (
-                <SelectItem key={status} value={status}>{status}</SelectItem>
+                <SelectItem key={status} value={status}>{toProperCase(status)}</SelectItem>
               ))}
             </SelectContent>
           </Select>
@@ -1567,29 +1763,45 @@ const CandidateManagement: React.FC<CandidateManagementProps> = ({
             setFilterPosition(value);
             setCurrentPage(1);
           }}>
-            <SelectTrigger className="w-full border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
+            <SelectTrigger className="w-44 border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
               <SelectValue placeholder="All Positions" />
             </SelectTrigger>
-            <SelectContent className="bg-white dark:bg-slate-700 border-slate-200 dark:border-slate-600">
+            <SelectContent className="bg-white dark:bg-slate-700 border-slate-200 dark:border-slate-600 max-h-48 overflow-y-auto w-44">
               <SelectItem value="all">All Positions</SelectItem>
               {positionOptionsFiltered.map(position => (
-                <SelectItem key={position} value={position}>{position}</SelectItem>
+                <SelectItem key={position} value={position}>{toProperCase(position)}</SelectItem>
               ))}
             </SelectContent>
           </Select>
-          <Select value={filterNoticePeriod} onValueChange={(value) => {
-            setFilterNoticePeriod(value);
+          <Select value={filterDepartment} onValueChange={(value) => {
+            setFilterDepartment(value);
             setCurrentPage(1);
           }}>
-            <SelectTrigger className="w-full border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
+            <SelectTrigger className="w-44 border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
               <SelectValue>
-                {filterNoticePeriod === 'all' ? 'All Notice Periods' : filterNoticePeriod}
+                {filterDepartment === 'all' ? 'All Departments' : filterDepartment}
               </SelectValue>
             </SelectTrigger>
-            <SelectContent className="bg-white dark:bg-slate-700 border-slate-200 dark:border-slate-600">
-              <SelectItem value="all">All Notice Periods</SelectItem>
-              {noticePeriodOptionsFiltered.map(noticePeriod => (
-                <SelectItem key={noticePeriod} value={noticePeriod}>{noticePeriod}</SelectItem>
+            <SelectContent className="bg-white dark:bg-slate-700 border-slate-200 dark:border-slate-600 max-h-48 overflow-y-auto w-44">
+              <SelectItem value="all">All Departments</SelectItem>
+              {departmentOptionsFiltered.map(department => (
+                <SelectItem key={department} value={department}>{toProperCase(department)}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select value={filterSource} onValueChange={(value) => {
+            setFilterSource(value);
+            setCurrentPage(1);
+          }}>
+            <SelectTrigger className="w-44 border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
+              <SelectValue>
+                {filterSource === 'all' ? 'All Sources' : toProperCase(filterSource)}
+              </SelectValue>
+            </SelectTrigger>
+            <SelectContent className="bg-white dark:bg-slate-700 border-slate-200 dark:border-slate-600 max-h-48 overflow-y-auto w-44">
+              <SelectItem value="all">All Sources</SelectItem>
+              {sourceOptionsFiltered.map(source => (
+                <SelectItem key={source} value={source}>{toProperCase(source)}</SelectItem>
               ))}
             </SelectContent>
           </Select>
@@ -1601,27 +1813,27 @@ const CandidateManagement: React.FC<CandidateManagementProps> = ({
               setCurrentPage(1);
             }}
             placeholder="dd-----yyyy"
-            className="w-full border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+            className="w-44 border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
           />
         </div>
-        <div className="overflow-x-auto overflow-y-auto max-h-[56vh] w-full block scroll-to-highlight" ref={scrollRef} style={{ WebkitOverflowScrolling: 'touch' }}>
-          <Table className="min-w-[1700px] border border-slate-200 dark:border-slate-700">
+        <div className="mt-4 w-full overflow-x-auto overflow-y-auto max-h-[60vh] border border-gray-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800">
+          <Table className="w-full min-w-[1700px] border border-gray-200 dark:border-slate-700">
             <TableHeader className="sticky top-0 z-20 bg-slate-100 dark:bg-slate-700 shadow-sm dark:shadow-slate-900/50 border-t border-slate-200 dark:border-slate-600">
-              <TableRow className="border-b border-slate-200 dark:border-slate-600">
-                <TableHead className="border-r border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-200 font-semibold">Name & Contact</TableHead>
-                <TableHead className="border-r border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-200 font-semibold">Position</TableHead>
-                <TableHead className="border-r border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-200 font-semibold">Department</TableHead>
-                <TableHead className="border-r border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-200 font-semibold">Source</TableHead>
-                <TableHead className="border-r border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-200 font-semibold">Experience</TableHead>
-                <TableHead className="border-r border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-200 font-semibold">CU Monthly/Yearly</TableHead>
-                <TableHead className="border-r border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-200 font-semibold w-32">Current Salary</TableHead>
-                <TableHead className="border-r border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-200 font-semibold">EX Monthly/Yearly</TableHead>
-                <TableHead className="border-r border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-200 font-semibold w-32">Expected Salary</TableHead>
-                <TableHead className="border-r border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-200 font-semibold">Remark</TableHead>
-                <TableHead className="border-r border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-200 font-semibold">Notice Period</TableHead>
-                <TableHead className="border-r border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-200 font-semibold w-36">Interview Status</TableHead>
-                <TableHead className="border-r border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-200 font-semibold w-28">Applied Date</TableHead>
-                <TableHead className="text-slate-700 dark:text-slate-200 font-semibold">Actions</TableHead>
+              <TableRow>
+                <TableHead className="sticky top-0 z-20 bg-slate-100 dark:bg-slate-700 min-w-[200px] border-r border-slate-200 dark:border-slate-600 whitespace-nowrap text-sm font-semibold text-slate-700 dark:text-slate-200">Name & Contact</TableHead>
+                <TableHead className="sticky top-0 z-20 bg-slate-100 dark:bg-slate-700 w-[150px] min-w-[150px] max-w-[150px] border-r border-slate-200 dark:border-slate-600 text-sm font-semibold text-slate-700 dark:text-slate-200">Position</TableHead>
+                <TableHead className="sticky top-0 z-20 bg-slate-100 dark:bg-slate-700 w-[150px] min-w-[150px] max-w-[150px] border-r border-slate-200 dark:border-slate-600 text-sm font-semibold text-slate-700 dark:text-slate-200">Department</TableHead>
+                <TableHead className="sticky top-0 z-20 bg-slate-100 dark:bg-slate-700 w-[120px] min-w-[120px] max-w-[120px] border-r border-slate-200 dark:border-slate-600 text-sm font-semibold text-slate-700 dark:text-slate-200">Source</TableHead>
+                <TableHead className="sticky top-0 z-20 bg-slate-100 dark:bg-slate-700 w-[120px] min-w-[120px] max-w-[120px] border-r border-slate-200 dark:border-slate-600 text-sm font-semibold text-slate-700 dark:text-slate-200">Experience</TableHead>
+                <TableHead className="sticky top-0 z-20 bg-slate-100 dark:bg-slate-700 w-[140px] min-w-[140px] max-w-[140px] border-r border-slate-200 dark:border-slate-600 text-sm font-semibold text-slate-700 dark:text-slate-200">CU Monthly/Yearly</TableHead>
+                <TableHead className="sticky top-0 z-20 bg-slate-100 dark:bg-slate-700 w-[120px] min-w-[120px] max-w-[120px] border-r border-slate-200 dark:border-slate-600 text-sm font-semibold text-slate-700 dark:text-slate-200">Current Salary</TableHead>
+                <TableHead className="sticky top-0 z-20 bg-slate-100 dark:bg-slate-700 w-[140px] min-w-[140px] max-w-[140px] border-r border-slate-200 dark:border-slate-600 text-sm font-semibold text-slate-700 dark:text-slate-200">EX Monthly/Yearly</TableHead>
+                <TableHead className="sticky top-0 z-20 bg-slate-100 dark:bg-slate-700 w-[120px] min-w-[120px] max-w-[120px] border-r border-slate-200 dark:border-slate-600 text-sm font-semibold text-slate-700 dark:text-slate-200">Expected Salary</TableHead>
+                <TableHead className="sticky top-0 z-20 bg-slate-100 dark:bg-slate-700 w-[120px] min-w-[120px] max-w-[120px] border-r border-slate-200 dark:border-slate-600 text-sm font-semibold text-slate-700 dark:text-slate-200">Remark</TableHead>
+                <TableHead className="sticky top-0 z-20 bg-slate-100 dark:bg-slate-700 w-[120px] min-w-[120px] max-w-[120px] border-r border-slate-200 dark:border-slate-600 text-sm font-semibold text-slate-700 dark:text-slate-200">Notice Period</TableHead>
+                <TableHead className="sticky top-0 z-20 bg-slate-100 dark:bg-slate-700 w-[120px] min-w-[120px] max-w-[120px] border-r border-slate-200 dark:border-slate-600 text-sm font-semibold text-slate-700 dark:text-slate-200">Interview Status</TableHead>
+                <TableHead className="sticky top-0 z-20 bg-slate-100 dark:bg-slate-700 w-[120px] min-w-[120px] max-w-[120px] border-r border-slate-200 dark:border-slate-600 text-sm font-semibold text-slate-700 dark:text-slate-200">Applied Date</TableHead>
+                <TableHead className="sticky top-0 z-20 bg-slate-100 dark:bg-slate-700 w-[120px] min-w-[120px] max-w-[120px] text-sm font-semibold text-slate-700 dark:text-slate-200">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody className="bg-white dark:bg-slate-800">
@@ -1629,27 +1841,21 @@ const CandidateManagement: React.FC<CandidateManagementProps> = ({
                 <TableRow 
                   key={candidate.id} 
                   data-candidate-id={candidate.id}
-                  className={`border-b border-slate-200 dark:border-slate-700 transition-all duration-300 hover:bg-slate-50 dark:hover:bg-slate-700/50 ${
-                    highlightedCandidate === candidate.id 
-                      ? 'highlight-row bg-amber-50 dark:bg-amber-900/20' 
-                      : candidate.isDraft 
-                        ? 'bg-gray-50/50 dark:bg-gray-800/50' 
-                        : index % 2 === 0 ? 'bg-white dark:bg-slate-800' : 'bg-slate-50/50 dark:bg-slate-800/50'
-                  }`}
+                  className="border-b border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-all duration-300"
                 >
-                  <TableCell className="border-r border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white whitespace-pre-line">
+                  <TableCell className="min-w-[200px] border-r border-slate-200 dark:border-slate-700 text-sm font-medium break-words leading-tight text-slate-900 dark:text-white">
                     <div className="font-semibold">{candidate.name}</div>
                     {candidate.email && <div className="text-sm text-slate-600 dark:text-slate-400">{candidate.email}</div>}
                     {candidate.phone && <div className="text-sm text-slate-600 dark:text-slate-400">{candidate.phone}</div>}
                   </TableCell>
-                  <TableCell className="border-r border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white">{candidate.position || 'N/A'}</TableCell>
-                  <TableCell className="border-r border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white">{candidate.department || 'N/A'}</TableCell>
-                  <TableCell className="border-r border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white">{toProperCase(candidate.source) || 'N/A'}</TableCell>
-                  <TableCell className="border-r border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white">{candidate.experience || 'N/A'}</TableCell>
-                  <TableCell className="border-r border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white capitalize">{candidate.cu_monthly_yearly || candidate.monthlyYearly || 'N/A'}</TableCell>
+                  <TableCell className="w-[150px] min-w-[150px] max-w-[150px] border-r border-slate-200 dark:border-slate-700 text-sm break-words leading-tight text-slate-900 dark:text-white">{candidate.position || 'N/A'}</TableCell>
+                  <TableCell className="w-[150px] min-w-[150px] max-w-[150px] border-r border-slate-200 dark:border-slate-700 text-sm break-words leading-tight text-slate-900 dark:text-white">{candidate.department || 'N/A'}</TableCell>
+                  <TableCell className="w-[120px] min-w-[120px] max-w-[120px] border-r border-slate-200 dark:border-slate-700 text-sm break-words leading-tight text-slate-900 dark:text-white">{toProperCase(candidate.source) || 'N/A'}</TableCell>
+                  <TableCell className="w-[120px] min-w-[120px] max-w-[120px] border-r border-slate-200 dark:border-slate-600 text-sm break-words leading-tight text-slate-900 dark:text-white">{candidate.experience || 'N/A'}</TableCell>
+                  <TableCell className="w-[140px] min-w-[140px] max-w-[140px] border-r border-slate-200 dark:border-slate-600 text-sm break-words leading-tight text-slate-900 dark:text-white capitalize">{candidate.cu_monthly_yearly || candidate.monthlyYearly || 'N/A'}</TableCell>
                   <TableCell className="border-r border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white">{formatSalary(candidate.current_salary || candidate.currentSalary) || 'N/A'}</TableCell>
                   <TableCell className="border-r border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white capitalize">{candidate.ex_monthly_yearly || candidate.monthlyYearly || 'N/A'}</TableCell>
-                  <TableCell className="border-r border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white">{formatSalary(candidate.expected_salary || candidate.expectedSalary) || 'N/A'}</TableCell>
+                  <TableCell className="border-r border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white">{formatSalaryRange((candidate.expected_salary || candidate.expectedSalary)?.toString()) || 'N/A'}</TableCell>
                   <TableCell className="border-r border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white">{candidate.remark || 'N/A'}</TableCell>
                   <TableCell className="border-r border-slate-200 dark:border-slate-700 capitalize text-slate-900 dark:text-white">{candidate.notice_period || candidate.noticePeriod || 'N/A'}</TableCell>
                   <TableCell className="border-r border-slate-200 dark:border-slate-700">
@@ -1732,19 +1938,19 @@ const CandidateManagement: React.FC<CandidateManagementProps> = ({
         {sortedCandidates.length === 0 && (
           <div className="text-center py-8">
             <Users className="w-12 h-12 text-gray-400 dark:text-slate-500 mx-auto mb-4" />
-            <p className="text-gray-600 dark:text-slate-300">No candidates found</p>
+            <p className="text-gray-600 dark:text-slate-300">No candidates found matching the current filters</p>
           </div>
         )}
 
         {/* Pagination Controls */}
-        {totalPages > 1 && (
+        {totalItems > 0 && (
           <div className="flex items-center justify-between mt-4 px-4 py-3 bg-slate-50 dark:bg-slate-700 border-t border-slate-200 dark:border-slate-600">
             <div className="flex items-center space-x-2">
               <span className="text-sm text-slate-700 dark:text-slate-300">
-                Showing {startIndex + 1} to {Math.min(endIndex, totalItems)} of {totalItems} candidates
+                {totalItems > 0 ? `Showing ${startIndex + 1} to ${Math.min(endIndex, totalItems)} of ${totalItems} candidates` : 'No candidates to display'}
               </span>
               <Select value={itemsPerPage.toString()} onValueChange={(value) => {
-                setItemsPerPage(parseInt(value));
+                setItemsPerPage(parseInt(value) || 10);
                 setCurrentPage(1);
               }}>
                 <SelectTrigger className="w-20 h-8 text-xs border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800">
@@ -1765,7 +1971,7 @@ const CandidateManagement: React.FC<CandidateManagementProps> = ({
                 variant="outline"
                 size="sm"
                 onClick={() => setCurrentPage(1)}
-                disabled={currentPage === 1}
+                disabled={currentPage === 1 || totalItems === 0}
                 className="h-8 px-2 text-xs border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-600 disabled:opacity-50"
               >
                 First
@@ -1774,14 +1980,14 @@ const CandidateManagement: React.FC<CandidateManagementProps> = ({
                 variant="outline"
                 size="sm"
                 onClick={() => setCurrentPage(currentPage - 1)}
-                disabled={currentPage === 1}
+                disabled={currentPage === 1 || totalItems === 0}
                 className="h-8 px-2 text-xs border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-600 disabled:opacity-50"
               >
                 Previous
               </Button>
               
               <div className="flex items-center space-x-1">
-                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                {totalPages > 0 && Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
                   let pageNum;
                   if (totalPages <= 5) {
                     pageNum = i + 1;
@@ -1815,7 +2021,7 @@ const CandidateManagement: React.FC<CandidateManagementProps> = ({
                 variant="outline"
                 size="sm"
                 onClick={() => setCurrentPage(currentPage + 1)}
-                disabled={currentPage === totalPages}
+                disabled={currentPage === totalPages || totalItems === 0}
                 className="h-8 px-2 text-xs border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-600 disabled:opacity-50"
               >
                 Next
@@ -1824,7 +2030,7 @@ const CandidateManagement: React.FC<CandidateManagementProps> = ({
                 variant="outline"
                 size="sm"
                 onClick={() => setCurrentPage(totalPages)}
-                disabled={currentPage === totalPages}
+                disabled={currentPage === totalPages || totalItems === 0}
                 className="h-8 px-2 text-xs border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-600 disabled:opacity-50"
               >
                 Last
@@ -1885,7 +2091,7 @@ const CandidateManagement: React.FC<CandidateManagementProps> = ({
               >
                 Cancel
               </Button>
-              <Button type="submit" className="bg-amber-600 dark:bg-slate-700 hover:bg-amber-700 dark:hover:bg-slate-600 text-white shadow-lg hover:shadow-xl transition-all duration-200">
+              <Button type="submit" className="bg-slate-600 dark:bg-slate-700 hover:bg-slate-700 dark:hover:bg-slate-600 text-white shadow-lg hover:shadow-xl transition-all duration-200">
                 Update Status
               </Button>
             </div>
@@ -2074,14 +2280,14 @@ const CandidateManagement: React.FC<CandidateManagementProps> = ({
               >
                 Reset
               </Button>
-              <Button
-                type="button"
-                onClick={handleProcessImport}
-                disabled={importErrors.length > 0 || importData.length === 0 || isImporting}
-                className="bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isImporting ? 'Importing...' : 'Import Candidates'}
-              </Button>
+                              <Button
+                  type="button"
+                  onClick={handleProcessImport}
+                  disabled={importErrors.length > 0 || importData.length === 0 || isImporting}
+                  className="bg-slate-600 hover:bg-slate-700 text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isImporting ? 'Importing...' : 'Import Candidates'}
+                </Button>
             </div>
           </div>
         </DialogContent>
@@ -2169,7 +2375,7 @@ const CandidateManagement: React.FC<CandidateManagementProps> = ({
                       <Button
                         onClick={() => loadDraft(draft)}
                         size="sm"
-                        className="bg-amber-600 hover:bg-amber-700 text-white"
+                        className="bg-slate-600 hover:bg-slate-700 text-white"
                       >
                         Load
                       </Button>

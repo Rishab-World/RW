@@ -137,17 +137,41 @@ const Index = () => {
     try {
       console.log('Fetching candidates... userEmail:', userEmail);
       
-      // Fetch regular candidates
-      const { data: candidatesData, error: candidatesError } = await supabase
-        .from('candidates')
-        .select('*')
-        .order('applied_date', { ascending: false });
+      // Fetch regular candidates - fetch all records using pagination
+      // Alternative: Use .limit(10000) if pagination is too complex
+      let allCandidates = [];
+      let hasMore = true;
+      let page = 0;
+      const pageSize = 1000;
       
-      if (candidatesError) {
-        console.error('Error fetching candidates:', candidatesError);
-      } else {
-        console.log('Candidates fetched:', candidatesData?.length || 0);
+      while (hasMore) {
+        const { data: pageData, error: pageError } = await supabase
+          .from('candidates')
+          .select('*')
+          .order('applied_date', { ascending: false })
+          .range(page * pageSize, (page + 1) * pageSize - 1);
+        
+        if (pageError) {
+          console.error('Error fetching candidates page:', page, pageError);
+          break;
+        }
+        
+        if (pageData && pageData.length > 0) {
+          allCandidates = [...allCandidates, ...pageData];
+          page++;
+          
+          // If we got less than pageSize, we've reached the end
+          if (pageData.length < pageSize) {
+            hasMore = false;
+          }
+        } else {
+          hasMore = false;
+        }
       }
+      
+      const candidatesData = allCandidates;
+      
+      console.log('Candidates fetched:', candidatesData?.length || 0, 'using', page, 'pages');
 
       // Fetch drafts for the current user (only if userEmail is available)
       let draftsData = null;
