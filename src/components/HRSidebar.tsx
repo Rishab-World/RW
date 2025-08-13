@@ -25,7 +25,9 @@ import {
   Building2, 
   UserCheck, 
   FileSpreadsheet,
-  Receipt
+  Receipt,
+  Mail,
+  AlertCircle
 } from 'lucide-react';
 import { useState } from 'react';
 
@@ -319,14 +321,46 @@ const HRSidebar: React.FC<HRSidebarProps> = ({
                   </div>
                 )}
               </SidebarMenuItem>
-              {/* Templates menu item after PMS */}
+                            {/* Mail Master menu item after PMS */}
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  onClick={() => onSectionChange('mail-master')}
+                  isActive={activeSection === 'mail-master'}
+                  className={`w-full justify-start transition-all duration-200 rounded-md dark:text-slate-200 dark:hover:bg-slate-800 dark:hover:text-white ${
+                    activeSection === 'mail-master'
+                      ? 'bg-gradient-to-r from-amber-100 to-yellow-100 dark:from-amber-900 dark:to-yellow-900 text-amber-800 dark:text-amber-300 border-r-2 border-amber-400 dark:border-amber-500' 
+                      : 'text-slate-700 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-200 dark:hover:bg-slate-800 dark:hover:text-white'
+                  }`}
+                >
+                  <Mail className="w-4 h-4" />
+                  <span>Mail Master</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              
+              {/* Early Month Attendance menu item */}
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  onClick={() => onSectionChange('early-month-attendance')}
+                  isActive={activeSection === 'early-month-attendance'}
+                  className={`w-full justify-start transition-all duration-200 rounded-md dark:text-slate-200 dark:hover:bg-slate-800 dark:hover:text-white ${
+                    activeSection === 'early-month-attendance'
+                      ? 'bg-gradient-to-r from-amber-100 to-yellow-100 dark:from-amber-900 dark:to-yellow-900 text-amber-800 dark:text-amber-300 border-r-2 border-amber-400 dark:border-amber-500' 
+                      : 'text-slate-700 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-200 dark:hover:bg-slate-800 dark:hover:text-white'
+                  }`}
+                >
+                  <AlertCircle className="w-4 h-4" />
+                  <span>Early Month Attendance</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              
+              {/* Templates menu item after Early Month Attendance */}
               <SidebarMenuItem>
                 <SidebarMenuButton
                   onClick={() => onSectionChange('templates')}
                   isActive={activeSection === 'templates'}
                   className={`w-full justify-start transition-all duration-200 rounded-md dark:text-slate-200 dark:hover:bg-slate-800 dark:hover:text-white ${
                     activeSection === 'templates'
-                      ? 'bg-gradient-to-r from-amber-100 to-yellow-100 dark:from-amber-900 dark:to-yellow-900 text-amber-800 dark:text-amber-300 border-r-2 border-amber-400 dark:border-amber-500'
+                      ? 'bg-gradient-to-r from-amber-100 to-yellow-100 dark:from-amber-900 dark:to-yellow-900 text-amber-800 dark:text-amber-300 border-r-2 border-amber-400 dark:border-amber-500' 
                       : 'text-slate-700 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-200 dark:hover:bg-slate-800 dark:hover:text-white'
                   }`}
                 >

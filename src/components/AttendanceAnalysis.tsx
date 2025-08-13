@@ -240,14 +240,14 @@ const AttendanceAnalysis: React.FC = () => {
 
       if (error) throw error;
 
-      setAttendanceData(prev => [...prev, {
+      setAttendanceData(prev => [{
         ...savedData,
         early_leaving: savedData.early_leaving,
         total_employees: savedData.total_employees,
         attendance_percentage: savedData.attendance_percentage,
         employee_details: savedData.employee_details,
         leave_types: newAttendanceData.leave_types
-      }]);
+      }, ...prev]);
       setUploadedFile(null);
       setIsProcessing(false);
       toast({
@@ -466,7 +466,7 @@ const AttendanceAnalysis: React.FC = () => {
 
           {/* Date-wise Details Dialog */}
           <Dialog open={showDateWiseDetails} onOpenChange={setShowDateWiseDetails}>
-            <DialogContent className="max-w-2xl max-h-[80vh] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700">
+            <DialogContent className="max-w-4xl max-h-[80vh] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 trofify-dialog-content">
               <DialogHeader>
                 <DialogTitle className="text-slate-800 dark:text-white">
                   Date-wise Details - {selectedEmployee?.employeeName} ({selectedAttendanceType})
@@ -490,15 +490,16 @@ const AttendanceAnalysis: React.FC = () => {
                       </div>
                     </div>
                     
-                    <div className="max-h-96 overflow-y-auto">
+                    <div className="overflow-y-auto" style={{ maxHeight: 'calc(60vh - 200px)' }}>
                       {selectedEmployee.date_wise_details && selectedEmployee.date_wise_details[selectedAttendanceType] ? (
                         <div>
                           <h4 className="font-semibold text-slate-800 dark:text-white mb-2">Dates:</h4>
-                          <div className="grid grid-cols-2 gap-2">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 trofify-date-container">
                             {selectedEmployee.date_wise_details[selectedAttendanceType].map((date, index) => (
                               <div 
                                 key={index} 
-                                className="p-2 bg-slate-50 dark:bg-slate-700 rounded border border-slate-200 dark:border-slate-600 text-sm"
+                                className="p-2 bg-slate-50 dark:bg-slate-700 rounded border border-slate-200 dark:border-slate-600 text-sm trofify-date-item"
+                                title={formatDate(date)}
                               >
                                 {formatDate(date)}
                               </div>

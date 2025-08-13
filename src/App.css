@@ -40,3 +40,39 @@
 .read-the-docs {
   color: #888;
 }
+
+/* Date container styles for attendance components */
+.trofify-date-container {
+  min-width: 0;
+  word-break: break-word;
+  overflow-wrap: break-word;
+  hyphens: auto;
+  max-height: 100%;
+  overflow: hidden;
+}
+
+.trofify-date-item {
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  height: fit-content;
+}
+
+.trofify-date-item:hover {
+  white-space: normal;
+  word-break: break-word;
+}
+
+/* Ensure dialog content doesn't overflow */
+.trofify-dialog-content {
+  max-height: 80vh;
+  overflow: hidden;
+}
+
+.trofify-date-scroll-container {
+  max-height: calc(60vh - 200px);
+  overflow-y: auto;
+  overflow-x: hidden;
+}

@@ -19,6 +19,9 @@ import PMSQuarterlyReport from '@/components/PMSQuarterlyReport';
 import KYCDataSection from '@/components/KYCDataSection';
 import KYCTableSection from '@/components/KYCTableSection';
 import Templates from '@/components/Templates';
+import LeaveManagement from '@/components/LeaveManagement';
+import MailMaster from '@/components/MailMaster';
+import EarlyMonthAttendance from '@/components/EarlyMonthAttendance';
 import { supabase } from '@/lib/supabaseClient';
 
 interface StatusChange {
@@ -718,16 +721,7 @@ const Index = () => {
           </div>
         );
       case 'leave':
-        return (
-          <div className="p-6 min-h-screen bg-slate-50 dark:bg-slate-900">
-            <div className="max-w-7xl mx-auto">
-              <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg shadow-lg p-6">
-                <h2 className="text-2xl font-bold text-slate-800 dark:text-white mb-6">Leave Management</h2>
-                <p className="text-slate-600 dark:text-slate-300">Leave management functionality will be implemented here.</p>
-              </div>
-            </div>
-          </div>
-        );
+        return <LeaveManagement />;
       case 'salary':
         return <SalaryMaster isManagement={true} />;
       case 'salarycalc':
@@ -764,6 +758,10 @@ const Index = () => {
             </div>
           </div>
         );
+      case 'mail-master':
+        return <MailMaster />;
+      case 'early-month-attendance':
+        return <EarlyMonthAttendance />;
       case 'templates':
         return <Templates />;
       default:
@@ -798,6 +796,8 @@ const Index = () => {
     salarybreakup: 'Salary Breakup',
     'pms-quarterly': 'Quarterly PMS Report',
     'pms-yearly': 'Yearly PMS Report',
+    'mail-master': 'Mail Master',
+    'early-month-attendance': 'Early Month Attendance',
   };
 
   let sectionTitle = '';
@@ -836,6 +836,10 @@ const Index = () => {
       sectionTitle = 'Quarterly PMS Report'; break;
     case 'pms-yearly':
       sectionTitle = 'Yearly PMS Report'; break;
+    case 'mail-master':
+      sectionTitle = 'Mail Master'; break;
+    case 'early-month-attendance':
+      sectionTitle = 'Early Month Attendance'; break;
     case 'templates':
       sectionTitle = 'Document Templates'; break;
     default:

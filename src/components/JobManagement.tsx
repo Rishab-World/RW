@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -64,6 +64,9 @@ const JobManagement: React.FC<JobManagementProps> = ({ jobs, onAddJob, onJobUpda
   const [editingJob, setEditingJob] = useState<Job | null>(null);
   const [selectedJob, setSelectedJob] = useState<Job | null>(null);
   const [jobCandidates, setJobCandidates] = useState<Candidate[]>([]);
+  const [departmentOptions, setDepartmentOptions] = useState<any[]>([]);
+  const [isAddingDepartment, setIsAddingDepartment] = useState(false);
+  const [newDepartmentName, setNewDepartmentName] = useState('');
   const [formData, setFormData] = useState({
     title: '',
     department: '',
@@ -77,6 +80,53 @@ const JobManagement: React.FC<JobManagementProps> = ({ jobs, onAddJob, onJobUpda
     roleType: '',
   });
   const [isUpdating, setIsUpdating] = useState(false);
+
+  // Fetch department options on component mount
+  useEffect(() => {
+    fetchDepartmentOptions();
+  }, []);
+
+  const fetchDepartmentOptions = async () => {
+    try {
+      const { data: deptOptions } = await supabase
+        .from('departments')
+        .select('*')
+        .eq('is_active', true)
+        .order('department_name');
+      if (deptOptions) setDepartmentOptions(deptOptions);
+    } catch (error) {
+      console.error('Error fetching department options:', error);
+    }
+  };
+
+  const addNewDepartment = async () => {
+    if (!newDepartmentName.trim()) return;
+    
+    try {
+      const { error } = await supabase
+        .from('departments')
+        .insert([{ department_name: newDepartmentName.trim() }]);
+      
+      if (error) throw error;
+      
+      toast({
+        title: "Success",
+        description: "Department added successfully",
+      });
+      
+      // Refresh department options
+      await fetchDepartmentOptions();
+      
+      setNewDepartmentName('');
+      setIsAddingDepartment(false);
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to add department",
+        variant: "destructive",
+      });
+    }
+  };
 
   const openEditDialog = (job: Job) => {
     setEditingJob(job);
@@ -234,24 +284,31 @@ const JobManagement: React.FC<JobManagementProps> = ({ jobs, onAddJob, onJobUpda
                 
                 <div className="space-y-2">
                   <Label htmlFor="department" className="text-slate-700 dark:text-slate-200">Department *</Label>
-                  <Select
-                    value={formData.department}
-                    onValueChange={(value) => setFormData({ ...formData, department: value })}
-                    required
-                  >
-                    <SelectTrigger className="border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
-                      <SelectValue placeholder="Select department" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-white dark:bg-slate-700 border-slate-200 dark:border-slate-600">
-                      <SelectItem value="Engineering">Engineering</SelectItem>
-                      <SelectItem value="Product">Product</SelectItem>
-                      <SelectItem value="Marketing">Marketing</SelectItem>
-                      <SelectItem value="Sales">Sales</SelectItem>
-                      <SelectItem value="Human Resources">Human Resources</SelectItem>
-                      <SelectItem value="Finance">Finance</SelectItem>
-                      <SelectItem value="Operations">Operations</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <div className="flex gap-2">
+                    <Select
+                      value={formData.department}
+                      onValueChange={(value) => setFormData({ ...formData, department: value })}
+                      required
+                    >
+                      <SelectTrigger className="flex-1 border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
+                        <SelectValue placeholder="Select department" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-white dark:bg-slate-700 border-slate-200 dark:border-slate-600 max-h-48 overflow-y-auto">
+                        {departmentOptions.map(dept => (
+                          <SelectItem key={dept.id} value={dept.department_name}>
+                            {dept.department_name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Button
+                      type="button"
+                      onClick={() => setIsAddingDepartment(true)}
+                      className="px-3 py-2 bg-green-600 hover:bg-green-700 text-white"
+                    >
+                      <Plus className="w-4 h-4" />
+                    </Button>
+                  </div>
                 </div>
                 
                 <div className="space-y-2">
@@ -573,6 +630,50 @@ const JobManagement: React.FC<JobManagementProps> = ({ jobs, onAddJob, onJobUpda
               </TableBody>
             </Table>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Add Department Dialog */}
+      <Dialog open={isAddingDepartment} onOpenChange={setIsAddingDepartment}>
+        <DialogContent className="max-w-md bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700">
+          <DialogHeader>
+            <DialogTitle className="text-slate-800 dark:text-white">Add New Department</DialogTitle>
+            <DialogDescription className="text-slate-600 dark:text-slate-300">
+              Create a new department for job postings
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={(e) => {
+            e.preventDefault();
+            addNewDepartment();
+          }} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="newDepartmentName" className="text-slate-700 dark:text-slate-200">Department Name</Label>
+              <Input
+                id="newDepartmentName"
+                value={newDepartmentName}
+                onChange={(e) => setNewDepartmentName(e.target.value)}
+                placeholder="Enter department name"
+                required
+                className="border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-200"
+              />
+            </div>
+            <div className="flex justify-end space-x-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setIsAddingDepartment(false);
+                  setNewDepartmentName('');
+                }}
+                className="border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700"
+              >
+                Cancel
+              </Button>
+              <Button type="submit" className="bg-green-600 hover:bg-green-700 text-white">
+                Add Department
+              </Button>
+            </div>
+          </form>
         </DialogContent>
       </Dialog>
     </div>
