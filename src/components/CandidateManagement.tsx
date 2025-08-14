@@ -291,7 +291,68 @@ const CandidateManagement: React.FC<CandidateManagementProps> = ({
   // Load drafts when component mounts
   useEffect(() => {
     fetchDrafts();
-  }, []);
+    
+    // Subscribe to real-time changes for candidates
+    const candidatesSubscription = supabase
+      .channel('candidates_changes')
+      .on('postgres_changes', 
+        { 
+          event: '*', 
+          schema: 'public', 
+          table: 'candidates' 
+        }, 
+        (payload) => {
+          console.log('Candidates change received:', payload);
+          // Refresh candidates list when changes occur
+          if (refreshCandidates) {
+            refreshCandidates();
+          }
+        }
+      )
+      .subscribe();
+
+    // Subscribe to real-time changes for candidate drafts
+    const draftsSubscription = supabase
+      .channel('candidate_drafts_changes')
+      .on('postgres_changes', 
+        { 
+          event: '*', 
+          schema: 'public', 
+          table: 'candidate_drafts' 
+        }, 
+        (payload) => {
+          console.log('Candidate drafts change received:', payload);
+          fetchDrafts();
+        }
+      )
+      .subscribe();
+
+    // Subscribe to real-time changes for candidate status history
+    const statusHistorySubscription = supabase
+      .channel('candidate_status_history_changes')
+      .on('postgres_changes', 
+        { 
+          event: '*', 
+          schema: 'public', 
+          table: 'candidate_status_history' 
+        }, 
+        (payload) => {
+          console.log('Candidate status history change received:', payload);
+          // Refresh candidates list when status changes occur
+          if (refreshCandidates) {
+            refreshCandidates();
+          }
+        }
+      )
+      .subscribe();
+
+    // Cleanup subscriptions on unmount
+    return () => {
+      candidatesSubscription.unsubscribe();
+      draftsSubscription.unsubscribe();
+      statusHistorySubscription.unsubscribe();
+    };
+  }, [refreshCandidates]);
 
   const fetchDrafts = async () => {
     try {
@@ -356,7 +417,6 @@ const CandidateManagement: React.FC<CandidateManagementProps> = ({
         job_id: isCustomPosition ? null : (formData.jobId || null), // Don't save "custom" as job_id
         source: sourceValue || null,
         experience: formData.experience && formData.experience.trim() ? parseInt(formData.experience) : null,
-        cu_monthly_yearly: formData.cuMonthlyYearly || 'monthly',
         expected_salary: formData.expectedSalary && formData.expectedSalary.trim() ? parseFloat(formData.expectedSalary) : null,
         current_salary: formData.currentSalary && formData.currentSalary.trim() ? parseFloat(formData.currentSalary) : null,
         remark: formData.remark || null,
